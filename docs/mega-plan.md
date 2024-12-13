@@ -1,5 +1,4 @@
 # **The MEGA Plan: Retire Before 40 with $5M+ Liquid Cash**
-*By Mike Fuscoletti: Nerd King, Arbitrage God, Options Sorcerer, Bitcoin Believer, and Rutgers Hoops Diehard*
 
 ---
 
