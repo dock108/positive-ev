@@ -1,5 +1,3 @@
-Here’s a complete, GitHub-ready Project Plan for automating data capture from OddsJam, tailored to handle login requirements and dynamic page changes:
-
 # **OddsJam Data Capture Automation**
 
 ---
@@ -112,7 +110,7 @@ This project aims to automate the collection of arbitrage betting data from Odds
      with open("cookies.pkl", "rb") as file:
          cookies = pickle.load(file)
 
-     driver.get("https://oddsjam.com/betting-tools/arbitrage")
+     driver.get("https://oddsjam.com/betting-tools/positive-ev")
      for cookie in cookies:
          driver.add_cookie(cookie)
      driver.refresh()
@@ -196,22 +194,6 @@ This project aims to automate the collection of arbitrage betting data from Odds
 
 ## **The Big Picture**
 
-This project automates data collection from OddsJam, enabling consistent and accurate tracking of arbitrage opportunities. By capturing dynamic changes and storing structured data, it provides a foundation for advanced analysis and modeling.
+This project automates data collection from OddsJam, enabling consistent and accurate tracking of +EV opportunities. By capturing dynamic changes and storing structured data, it provides a foundation for advanced analysis and modeling.
 
 ---
-
-## **How to Run the Project**
-
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/yourusername/oddsjam-data-capture.git
-```
-	2.	Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-	3.	Run the script:
-```bash
-python main.py
-```
