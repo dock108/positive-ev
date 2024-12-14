@@ -1,199 +1,230 @@
-# **OddsJam Data Capture Automation**
+# **OddsJam Positive EV Data Gathering Project Plan**
 
 ---
 
 ## **Project Overview**
 
-This project aims to automate the collection of arbitrage betting data from OddsJam. The system will:
-1. **Log in** to OddsJam and navigate to the Arbitrage Betting page.
-2. **Monitor the odds table** for changes and save updated data to a local file.
-3. Enable further **parsing and analysis** of the collected data for modeling and decision-making.
+This project automates the collection of **Positive EV (+EV) betting data** from OddsJam's `/positive-ev` page. The system will:
+1. **Log in** to OddsJam using email/password or Google authentication.
+2. **Monitor the +EV table** for updates, including all betting lines (mainlines and player props).
+3. **Save the data** locally in a structured format for further analysis.
+4. **Automate results tracking** using game outcomes and detailed player statistics from box scores.
+5. Lay the foundation for future **machine learning integrations**.
+
+---
+
+## **Key Challenges and Considerations**
+
+1. **Authentication**:
+   - The `/login` page supports multiple login methods, including Google.
+   - If using the Google login, additional steps (e.g., handling redirects or tokens) may be required.
+
+2. **Dynamic Content**:
+   - The `/positive-ev` page content is dynamically rendered via JavaScript, so a headless browser (e.g., Selenium or Puppeteer) is required to extract data.
+
+3. **Comprehensive Data Tracking**:
+   - Mainlines (moneylines, spreads, totals) are easier to track, but player props require fetching detailed game stats (e.g., box scores).
+
+4. **Scalability**:
+   - The system needs to handle an increasing volume of betting lines and sports over time.
 
 ---
 
 ## **Goals**
 
-1. Automate the login process to access the odds data.  
-2. Monitor and capture real-time changes in the arbitrage table.  
-3. Save table data in a structured format (CSV or JSON) for further use.  
-4. Lay the foundation for future integration with machine learning models.
+1. Automate login to OddsJam (supporting email/password or Google authentication).
+2. Continuously monitor and save +EV betting data.
+3. Automate results tracking for mainlines and player props using box scores or detailed statistics.
+4. Save structured data in a database or CSV format for further analysis.
+5. Build a scalable foundation for future machine learning and analytics.
 
 ---
 
 ## **Technical Requirements**
 
 ### **Tools and Libraries**
-- **Python**: For scripting and automation.
+- **Python**:
   - `selenium` for browser automation.
-  - `pickle` for managing cookies.
+  - `requests` for API calls.
   - `pandas` for data parsing and storage.
-- **ChromeDriver**: To interact with Chrome.
-- **Git**: For version control.
+  - `beautifulsoup4` for HTML parsing.
+- **Sports Data API**:
+  - Examples: [SportsDataIO](https://sportsdata.io), [API-FOOTBALL](https://rapidapi.com/api-sports/api/api-football).
+- **Database**:
+  - SQLite (initial) or PostgreSQL (for scalability).
+- **ChromeDriver**: To enable Selenium to interact with the OddsJam interface.
 
 ---
 
-## **Project Workflow**
+## **Workflow**
 
-### **Step 1: Environment Setup**
+### **Step 1: Automate Login**
 
-1. **Install Dependencies**  
-   - Install Python packages:
-     ```bash
-     pip install selenium pandas
-     ```
-   - Download and install ChromeDriver (compatible with your Chrome version):
-     [ChromeDriver Download](https://chromedriver.chromium.org/downloads).
+#### **Email/Password Login**
 
-2. **Project Structure**
-   - Set up a folder structure:
-     ```
-     oddsjam-data-capture/
-     ├── main.py            # Main script
-     ├── credentials.json   # Stores login credentials
-     ├── cookies.pkl        # Cookies file for session persistence
-     ├── data/              # Directory for saved data files
-     ├── requirements.txt   # List of dependencies
-     └── README.md          # Documentation
-     ```
+```python
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+import pickle
+import time
 
----
+# Set up WebDriver
+driver = webdriver.Chrome()
+driver.get("https://oddsjam.com/login")
 
-### **Step 2: Automate Login**
+# Enter credentials
+email = driver.find_element(By.NAME, "email")
+email.send_keys("your_email@example.com")
 
-1. **Save Login Credentials**
-   - Create a `credentials.json` file:
-     ```json
-     {
-       "email": "your_email@example.com",
-       "password": "your_password"
-     }
-     ```
+password = driver.find_element(By.NAME, "password")
+password.send_keys("your_password")
+password.send_keys(Keys.RETURN)
 
-2. **Write the Login Script**
-   - Automate login using Selenium:
-     ```python
-     from selenium import webdriver
-     from selenium.webdriver.common.by import By
-     from selenium.webdriver.common.keys import Keys
-     import json
-     import pickle
+# Save session cookies
+time.sleep(5)
+with open("cookies.pkl", "wb") as file:
+    pickle.dump(driver.get_cookies(), file)
+```
 
-     # Load credentials
-     with open("credentials.json", "r") as file:
-         credentials = json.load(file)
+#### **Reuse Saved Cookies**
 
-     # Set up Selenium WebDriver
-     driver = webdriver.Chrome()
-     driver.get("https://oddsjam.com/login")
+```python
+with open("cookies.pkl", "rb") as file:
+    cookies = pickle.load(file)
+for cookie in cookies:
+    driver.add_cookie(cookie)
+driver.refresh()
+```
 
-     # Log in to OddsJam
-     email_field = driver.find_element(By.NAME, "email")
-     email_field.send_keys(credentials["email"])
+#### **Google Login (If Required)**
 
-     password_field = driver.find_element(By.NAME, "password")
-     password_field.send_keys(credentials["password"])
-     password_field.send_keys(Keys.RETURN)
-
-     # Save cookies for session persistence
-     with open("cookies.pkl", "wb") as file:
-         pickle.dump(driver.get_cookies(), file)
-     ```
+- **Considerations**:
+  - Automating Google login can be more complex due to OAuth flows.
+  - Workarounds:
+    - Perform the Google login manually once and save the session cookies.
+    - Use browser profiles to preserve login sessions across runs.
 
 ---
 
-### **Step 3: Navigate and Capture Data**
+### **Step 2: Capture +EV Data**
 
-1. **Reuse Cookies for Subsequent Logins**
-   - Load cookies to bypass repeated logins:
-     ```python
-     # Load cookies
-     with open("cookies.pkl", "rb") as file:
-         cookies = pickle.load(file)
+1. **Navigate to the +EV Page**:
+   - Once logged in, navigate to `https://oddsjam.com/positive-ev`.
 
-     driver.get("https://oddsjam.com/betting-tools/positive-ev")
-     for cookie in cookies:
-         driver.add_cookie(cookie)
-     driver.refresh()
-     ```
+2. **Locate the +EV Table**:
+   - Use Selenium to locate the dynamically rendered odds table:
 
-2. **Monitor and Save Table Changes**
-   - Continuously check for updates in the odds table:
-     ```python
-     import time
+   ```python
+   table = driver.find_element(By.CSS_SELECTOR, "div.table-class")  # Update selector
+   ```
 
-     old_table = None
-     while True:
-         table = driver.find_element(By.CSS_SELECTOR, "div.table-class")  # Update selector
-         current_table = table.get_attribute("outerHTML")
+3. **Monitor for Changes**:
+   - Compare the current table state with the previous state to detect updates:
 
-         if current_table != old_table:  # Detect changes
-             with open("data/latest_table.html", "w") as file:
-                 file.write(current_table)  # Save updated table locally
-             old_table = current_table
+   ```python
+   old_table = None
+   while True:
+       current_table = table.get_attribute("outerHTML")
+       if current_table != old_table:
+           with open("data/latest_table.html", "w") as file:
+               file.write(current_table)
+           old_table = current_table
+       time.sleep(10)  # Check every 10 seconds
+   ```
 
-         time.sleep(5)  # Check every 5 seconds
-     ```
+4. **Save Data in CSV Format**:
+   - Parse the saved table with `BeautifulSoup` to extract key details (event, market, line, odds, book).
 
----
+   ```python
+   from bs4 import BeautifulSoup
+   import pandas as pd
 
-### **Step 4: Parse and Store Data**
+   with open("data/latest_table.html", "r") as file:
+       soup = BeautifulSoup(file.read(), "html.parser")
 
-1. **Extract Relevant Fields**
-   - Use Python to parse the saved table and extract key details:
-     ```python
-     from bs4 import BeautifulSoup
-     import pandas as pd
+   rows = soup.select("tr")  # Update selector for rows
+   data = []
+   for row in rows:
+       cells = row.find_all("td")
+       data.append([cell.text.strip() for cell in cells])
 
-     # Load saved table
-     with open("data/latest_table.html", "r") as file:
-         html_content = file.read()
-
-     # Parse with BeautifulSoup
-     soup = BeautifulSoup(html_content, "html.parser")
-     rows = soup.select("tr")  # Update selector for table rows
-
-     # Extract data
-     data = []
-     for row in rows:
-         cells = row.find_all("td")
-         data.append([cell.text.strip() for cell in cells])
-
-     # Save to CSV
-     df = pd.DataFrame(data, columns=["Column1", "Column2", "Column3"])  # Update column names
-     df.to_csv("data/latest_table.csv", index=False)
-     ```
+   df = pd.DataFrame(data, columns=["Event", "Market", "Line", "Odds", "Book"])
+   df.to_csv("data/positive_ev.csv", index=False)
+   ```
 
 ---
 
-### **Step 5: Validation and Testing**
+### **Step 3: Automate Results Tracking**
 
-1. **Test the Script**
-   - Run the script during active betting hours to ensure it:
-     - Logs in successfully.
-     - Detects table changes in real time.
-     - Saves complete and accurate data.
+1. **Fetch Game Outcomes**:
 
-2. **Debug Issues**
-   - Check for stale cookies, incorrect selectors, or session timeouts.
+   ```python
+   import requests
+
+   API_URL = "https://api.sportsdata.io/v4/nba/scores/json/BoxScores"
+   API_KEY = "your_api_key"
+
+   def get_box_scores(date):
+       response = requests.get(f"{API_URL}/{date}", headers={"Ocp-Apim-Subscription-Key": API_KEY})
+       return response.json()
+   ```
+
+2. **Match Bets to Outcomes**:
+
+   ```python
+   def match_results(bets, box_scores):
+       for bet in bets:
+           for game in box_scores:
+               if bet["event"] in game["Teams"]:
+                   # Check player stats or final scores
+                   bet["result"] = "Win" if some_condition else "Loss"
+       return bets
+   ```
+
+3. **Save Results**:
+   - Append results to the original CSV or save to a new file:
+
+   ```python
+   pd.DataFrame(bets).to_csv("results/matched_results.csv", index=False)
+   ```
+
+---
+
+### **Step 4: Scale to All Betting Lines**
+
+1. **Start with Mainlines**:
+   - Focus on moneylines, spreads, and totals.
+
+2. **Add Support for Player Props**:
+   - Use box scores to validate bets on player stats (e.g., points, rebounds, assists).
+
+3. **Handle Edge Cases**:
+   - Bets voided due to player scratches or game cancellations.
+
+---
+
+## **Limitations**
+
+1. **Authentication**:
+   - Automating Google login is challenging; using saved cookies is recommended.
+
+2. **Data Availability**:
+   - Accurate results for player props depend on the quality of box score data from the API.
+
+3. **Scalability**:
+   - High-frequency updates may require database integration instead of CSV files.
 
 ---
 
 ## **Next Steps**
 
-1. **Improve Automation**
-   - Optimize table monitoring by reducing redundant saves.
-   - Add error handling for network or selector issues.
-
-2. **Integrate with Machine Learning**
-   - Use the collected data to train models for ranking +EV opportunities.
-
-3. **Build Real-Time Alerts**
-   - Notify via email or messaging apps (e.g., Discord) when new opportunities arise.
+1. Implement and validate data collection from the `/positive-ev` page.  
+2. Automate results tracking using API data for mainlines and player props.  
+3. Expand to additional sports or betting markets as needed.
 
 ---
 
 ## **The Big Picture**
 
-This project automates data collection from OddsJam, enabling consistent and accurate tracking of +EV opportunities. By capturing dynamic changes and storing structured data, it provides a foundation for advanced analysis and modeling.
-
----
+This project automates the data collection and results tracking workflow for +EV betting. It sets the foundation for advanced analytics, modeling, and scaling across betting markets.
