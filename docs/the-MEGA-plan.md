@@ -61,7 +61,7 @@ Retire before 40 (2030) with $5M+ liquid assets. Why? Because working for someon
     - Reinvest **$1,000/month from arbitrage profits**.  
   - Scale and compound:  
     - Target **10% monthly growth**.  
-    - By 2026, grow the account to **$50k**.  
+    - By 2027, grow the account to **$50k**.  
   - Advanced strategies (Years 3–5):  
     - Mix in medium-risk trades like vertical spreads.  
     - Build a **$1M+ portfolio** by 2029.
