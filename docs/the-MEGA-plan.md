@@ -102,7 +102,7 @@ Retire before 40 (2030) with $5M+ liquid assets. Why? Because working for someon
 ### **Year 2: Scaling Up (2026)**  
 - **Arbitrage:** Max out at $3,000–$5,000/month, reinvesting 50%.  
 - **Bitcoin:** Add $10k if prices drop before the halving.  
-- **Options:** Grow portfolio to $50k.  
+- **Options:** Grow portfolio to $50k profit.  
 - **Machine Learning:** Train advanced models and integrate into daily betting.
 
 ---
