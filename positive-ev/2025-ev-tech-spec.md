@@ -53,7 +53,7 @@ This document outlines the technical details for automating data collection by p
 - `logging`: Tracks script execution and errors.
 
 #### **Sample Code: Scrape +EV Odds**
-REPLACEWITHTRIPLETICKpython
+```python
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
@@ -92,7 +92,7 @@ odds_data.to_csv("data/odds_data.csv", mode="a", index=False, header=False)
 
 # Close browser
 driver.quit()
-REPLACEWITHTRIPLETICK
+```
 
 ---
 
@@ -103,7 +103,7 @@ REPLACEWITHTRIPLETICK
 - Match scraped odds to API results using event details (e.g., team names, start time).
 
 **Example API Workflow**:
-REPLACEWITHTRIPLETICKpython
+```python
 import requests
 
 def fetch_game_results(api_url, api_key):
@@ -119,7 +119,7 @@ def fetch_game_results(api_url, api_key):
 api_url = "https://api.sportsdata.io/v4/soccer/scores/json/GamesByDate/2024-12-13"
 api_key = "YOUR_API_KEY"
 results = fetch_game_results(api_url, api_key)
-REPLACEWITHTRIPLETICK
+```
 
 #### **Option 2: Web Scraping Box Scores**
 - Scrape sports websites for game results, focusing on:
@@ -127,14 +127,14 @@ REPLACEWITHTRIPLETICK
   - Final scores for mainline bets.
 
 **Example Box Score Scraping**:
-REPLACEWITHTRIPLETICKpython
+```python
 def scrape_box_scores(url):
     driver.get(url)
     soup = BeautifulSoup(driver.page_source, "html.parser")
     # Update selector logic based on page structure
     scores = soup.select("div.box-score")
     return [{"team": score.find("team-name").text, "score": score.find("score").text} for score in scores]
-REPLACEWITHTRIPLETICK
+```
 
 ---
 
@@ -168,12 +168,12 @@ REPLACEWITHTRIPLETICK
    - Remove odds entries older than 12 hours if they haven’t been validated.
 
 #### **Validation Script**
-REPLACEWITHTRIPLETICKpython
+```python
 def validate_data(df):
     valid_data = df.dropna(subset=["event_id", "odds", "timestamp"])
     fresh_data = valid_data[valid_data["timestamp"] > time.time() - 43200]  # Last 12 hours
     return fresh_data
-REPLACEWITHTRIPLETICK
+```
 
 ---
 
