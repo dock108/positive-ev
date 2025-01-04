@@ -85,6 +85,7 @@ def cleanup_logs(log_file):
                     if log_time >= two_hours_ago:
                         recent_lines.append(line)
                 except Exception as e:
+                    print(e)
                     continue  # Ignore malformed lines
 
             # Overwrite the log file with recent entries
