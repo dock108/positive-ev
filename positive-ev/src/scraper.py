@@ -22,7 +22,7 @@ os.makedirs(logs_folder, exist_ok=True)
 log_file = os.path.join(logs_folder, "scraping.log")
 logging.basicConfig(
     filename=log_file,
-    level=logging.DEBUG,
+    level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
@@ -139,7 +139,7 @@ def parse_cleaned_data(soup, timestamp):
                 win_probability = block.select_one("p.text-sm.text-white")
                 block_content["Win Probability"] = win_probability.text.strip() if win_probability else "N/A"
 
-                logging.debug(f"Extracted Row {index}: {block_content}")
+                logging.info(f"Extracted Row {index}: {block_content}")
                 data.append(block_content)
             except Exception as e:
                 logging.warning(f"Bet Block {index}: Failed to parse due to {e}")
