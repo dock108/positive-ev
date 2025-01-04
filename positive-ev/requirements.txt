@@ -16,7 +16,7 @@ cffi==1.16.0
 charset-normalizer==3.3.2
 click==8.1.7
 contourpy==1.2.0
-cryptography==42.0.8
+cryptography==44.0.0
 cycler==0.12.1
 dnspython==2.6.1
 docker==7.1.0
