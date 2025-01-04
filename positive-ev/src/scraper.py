@@ -10,7 +10,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 
 # Define folder structure
-base_dir = "/Users/michaelfuscoletti/Desktop/mega_plan/mega-plan/positive-ev"
+base_dir = "/Users/michaelfuscoletti/Desktop/mega-plan/positive-ev"
 output_folder = os.path.join(base_dir, "output")
 logs_folder = os.path.join(base_dir, "logs")
 
