@@ -1,213 +1,156 @@
-# **Technical Specifications: Phase 1 - Web Scraping and Data Automation**
+# Technical Specifications: Parsing NBA Box Scores and Resolving Bets
 
 ---
 
-## **1. Overview**
-
-This document outlines the technical details for automating data collection by periodically scraping web pages (e.g., OddsJam's Positive EV page) using Selenium and storing the results. Additionally, the system will fetch game results through APIs or web scraping, focusing on one sport (e.g., basketball or soccer) to refine the workflow during the MVP phase.
-
----
-
-## **2. Functional Components**
-
-### **2.1 Data Sources**
-- **Odds Data**:
-  - Scrape pages displaying +EV betting opportunities, including markets like moneylines, spreads, totals, and player props.
-  - Extract relevant odds and metadata.
-- **Game Results**:
-  - Retrieve results via APIs (e.g., SportsDataIO, API-Football) or web scraping box scores from sports websites.
-
-### **2.2 Data Collection**
-- **Frequency**: Scrape odds every 1-5 minutes, depending on market activity.
-- **Key Data Points**:
-  - Game/Event Details: Teams, players, start time, market type.
-  - Odds: Values for each market and sportsbook.
-  - Timestamps: To track line movements and stale data.
+## Objective
+Extend the existing betting data pipeline by adding the capability to:
+1. Scrape NBA box scores daily, including player and team statistics.
+2. Store NBA box score data in a structured database table for historical analysis.
+3. Match unresolved bets (from the `betting_data` table) with NBA box score data based on bet type, player/team, and conditions.
+4. Automatically determine bet results (`Win` or `Loss`) and update the database.
 
 ---
 
-## **3. Architecture Design**
+## Architecture Overview
 
-### **3.1 Workflow**
+### Data Sources
+- **NBA Box Scores**: Web scraping from reliable sources (e.g., ESPN, NBA.com).
+- **Betting Data**: Existing SQLite database (`betting_data.db`).
 
-1. **Odds Data Scraping**:
-   - Use Selenium to load and capture the webpage.
-   - Extract odds and relevant metadata into structured formats (e.g., JSON or CSV).
-2. **Results Retrieval**:
-   - Use APIs or scrape box scores for corresponding game outcomes.
-   - Match scraped odds to game results for validation and analysis.
-3. **Storage**:
-   - Save data in SQLite or CSV for initial storage.
-   - Include metadata for easy filtering and analysis.
+### Steps
+1. Scrape and parse NBA box scores for the current date.
+2. Save box score data to the `nba_box_scores` table in the SQLite database.
+3. Loop through unresolved bets in the `betting_data` table and match them to the box score data.
+4. Determine results based on conditions in `Description` (e.g., "Under 59.5" or "Brandon Clarke Under 6.5").
+5. Update the `Result` field in the `betting_data` table.
 
 ---
 
-## **4. Technical Implementation**
+## Database Design
 
-### **4.1 Odds Data Scraping with Selenium**
+### **1. NBA Box Scores Table**
+```sql
+CREATE TABLE IF NOT EXISTS nba_box_scores (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    game_date TEXT,
+    teams TEXT,
+    player_name TEXT,
+    stat_category TEXT,
+    stat_value REAL
+);
+```
 
-#### **Key Libraries**
-- `selenium`: Automates browser interactions.
-- `beautifulsoup4`: Parses HTML for data extraction.
-- `pandas`: Stores and manipulates scraped data.
-- `logging`: Tracks script execution and errors.
+- **Fields**:
+  - `game_date`: Date of the game (e.g., "2025-01-04").
+  - `teams`: Teams involved in the game (e.g., "Denver Nuggets vs San Antonio Spurs").
+  - `player_name`: Name of the player (if applicable).
+  - `stat_category`: Statistic category (e.g., "Points", "Rebounds", "Total Points").
+  - `stat_value`: Value of the statistic (e.g., "59.5" or "7").
 
-#### **Sample Code: Scrape +EV Odds**
-```python
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from bs4 import BeautifulSoup
-import pandas as pd
-import time
-import logging
-
-# Set up logging
-logging.basicConfig(filename="scraping.log", level=logging.INFO)
-
-# Configure Selenium
-driver = webdriver.Chrome()
-
-# Open OddsJam +EV page
-url = "https://oddsjam.com/positive-ev"
-driver.get(url)
-time.sleep(5)  # Allow page to load
-
-# Extract odds table
-page_source = driver.page_source
-soup = BeautifulSoup(page_source, "html.parser")
-
-# Parse table
-def parse_odds_table(soup):
-    rows = soup.select("tr")  # Update selector based on page structure
-    data = []
-    for row in rows:
-        cells = row.find_all("td")
-        if cells:
-            data.append([cell.text.strip() for cell in cells])
-    return pd.DataFrame(data, columns=["Event", "Market", "Odds", "Sportsbook", "Timestamp"])
-
-# Save to CSV
-odds_data = parse_odds_table(soup)
-odds_data.to_csv("data/odds_data.csv", mode="a", index=False, header=False)
-
-# Close browser
-driver.quit()
+### **2. Betting Data Table** (Existing)
+```sql
+CREATE TABLE IF NOT EXISTS betting_data (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bet_id TEXT,
+    timestamp TEXT,
+    ev_percent TEXT,
+    event_time TEXT,
+    event_teams TEXT,
+    sport_league TEXT,
+    bet_type TEXT,
+    description TEXT,
+    odds TEXT,
+    sportsbook TEXT,
+    bet_size TEXT,
+    win_probability TEXT,
+    result TEXT DEFAULT ''
+);
 ```
 
 ---
 
-### **4.2 Results Retrieval**
+## Data Matching Process
 
-#### **Option 1: API Integration**
-- Use sports APIs to fetch game results (e.g., API-Football for soccer, SportsDataIO for basketball).
-- Match scraped odds to API results using event details (e.g., team names, start time).
-
-**Example API Workflow**:
-```python
-import requests
-
-def fetch_game_results(api_url, api_key):
-    headers = {"Authorization": f"Bearer {api_key}"}
-    response = requests.get(api_url, headers=headers)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        logging.error(f"Failed to fetch results: {response.status_code}")
-        return None
-
-# Example usage
-api_url = "https://api.sportsdata.io/v4/soccer/scores/json/GamesByDate/2024-12-13"
-api_key = "YOUR_API_KEY"
-results = fetch_game_results(api_url, api_key)
+### Input: Example Bet
+```json
+{
+    "bet_id": "3494ab0c3b491b428ceb635249bfdb7a",
+    "event_teams": "Memphis Grizzlies vs Golden State Warriors",
+    "description": "Brandon Clarke Under 6.5",
+    "bet_type": "Player Rebounds"
+}
 ```
 
-#### **Option 2: Web Scraping Box Scores**
-- Scrape sports websites for game results, focusing on:
-  - Team stats and player props.
-  - Final scores for mainline bets.
+### Steps
+1. **Find Relevant Game**:
+   - Match `event_teams` from `betting_data` with `teams` in `nba_box_scores`.
 
-**Example Box Score Scraping**:
-```python
-def scrape_box_scores(url):
-    driver.get(url)
-    soup = BeautifulSoup(driver.page_source, "html.parser")
-    # Update selector logic based on page structure
-    scores = soup.select("div.box-score")
-    return [{"team": score.find("team-name").text, "score": score.find("score").text} for score in scores]
-```
+2. **Identify Bet Type**:
+   - Parse the `description` field:
+     - **Player Name**: Extracted as "Brandon Clarke".
+     - **Condition**: Extracted as "Under 6.5".
 
----
+3. **Query Box Scores**:
+   - Search `nba_box_scores` for:
+     - `teams='Memphis Grizzlies vs Golden State Warriors'`
+     - `player_name='Brandon Clarke'`
+     - `stat_category='Rebounds'`
 
-### **4.3 Database Design**
-
-#### **Odds Table**
-- `event_id`: Unique identifier for the game/event.
-- `team_1`: First team/player.
-- `team_2`: Second team/player.
-- `market`: Market type (e.g., moneyline, spread, prop).
-- `odds`: Numeric odds value.
-- `timestamp`: Time of scraping.
-
-#### **Results Table**
-- `event_id`: Matches the odds table.
-- `team_1_score`: Final score for the first team.
-- `team_2_score`: Final score for the second team.
-- `player_stats`: JSON or structured data for player props.
-- `result_time`: Time of result recording.
+4. **Compare Stat**:
+   - Compare `stat_value` with the bet condition:
+     - If `stat_value < 6.5`: Update `result='Win'`.
+     - Otherwise: Update `result='Loss'`.
 
 ---
 
-## **5. Data Validation**
+## Workflow
 
-### **5.1 Validation Rules**
-1. **Completeness**:
-   - Ensure key fields (e.g., event_id, odds, timestamp) are populated.
-2. **Consistency**:
-   - Verify that scraped odds align with known market types.
-3. **Staleness**:
-   - Remove odds entries older than 12 hours if they haven’t been validated.
+### 1. Daily Box Score Scraping
+- Scrape NBA box scores for the current date.
+- Extract:
+  - Team stats (e.g., "Total Points").
+  - Player stats (e.g., "Rebounds", "Points", etc.).
+- Save data to `nba_box_scores`.
 
-#### **Validation Script**
-```python
-def validate_data(df):
-    valid_data = df.dropna(subset=["event_id", "odds", "timestamp"])
-    fresh_data = valid_data[valid_data["timestamp"] > time.time() - 43200]  # Last 12 hours
-    return fresh_data
-```
-
----
-
-## **6. Monitoring and Maintenance**
-
-1. **Error Logging**:
-   - Log failed scrapes, invalid data, and API errors for review.
-2. **Performance Tracking**:
-   - Monitor script runtime and data quality metrics (e.g., completeness rate).
-3. **Alerting**:
-   - Notify for critical failures, such as webpage structure changes.
+### 2. Bet Result Resolution
+- Query unresolved bets (`result=''`) from `betting_data`.
+- Match bets to box scores based on `event_teams`, `description`, and `bet_type`.
+- Parse `description` to identify:
+  - Target player or stat (e.g., "Brandon Clarke", "Under 6.5").
+- Compare box score data to bet conditions.
+- Update `result` field in the `betting_data` table with `Win` or `Loss`.
 
 ---
 
-## **7. Success Metrics**
+## Challenges and Considerations
 
-1. **Data Collection**:
-   - Successfully scrape and store odds for at least 5,000 events during MVP.
-2. **Data Accuracy**:
-   - Achieve at least 95% accuracy in matching odds to game results.
-3. **System Uptime**:
-   - Ensure 99% uptime for scraping and data retrieval processes.
+### Standardizing Player Names
+- Handle variations like "B. Clarke" vs "Brandon Clarke".
+- Use a mapping function or fuzzy matching to align names.
 
----
+### Parsing Descriptions
+- Extract clear conditions (e.g., "Under 6.5") from varied bet descriptions.
 
-## **8. Scalability Considerations**
+### Handling Missing Data
+- If a player or team stat is unavailable, leave the result unresolved for manual review.
 
-1. **Expand Scope**:
-   - Add additional sports or markets as scraping logic matures.
-2. **Database Migration**:
-   - Transition from SQLite to a more scalable solution (e.g., PostgreSQL).
-3. **Real-Time Updates**:
-   - Implement WebSocket scraping for near-instant data updates.
+### Scaling for Other Sports
+- Design the pipeline to accommodate additional sports or leagues in the future.
 
 ---
 
-This approach ensures a robust, scalable pipeline for odds scraping and results retrieval while maintaining flexibility for future expansions. Let me know if you'd like to refine or expand any specific sections!
+## Tech Stack
+- **Python**:
+  - `requests` or `selenium` for web scraping.
+  - `sqlite3` for database operations.
+  - `re` for parsing descriptions.
+- **Database**:
+  - SQLite (`betting_data.db`).
+
+---
+
+## Next Steps
+1. Develop the scraper for NBA box scores and populate the `nba_box_scores` table.
+2. Implement a result-matching script to process unresolved bets.
+3. Test the system with sample data for accuracy.
+4. Add logging to monitor unmatched bets and identify edge cases.

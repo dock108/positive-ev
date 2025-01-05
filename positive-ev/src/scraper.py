@@ -50,7 +50,8 @@ def create_table():
             odds TEXT,
             sportsbook TEXT,
             bet_size TEXT,
-            win_probability TEXT
+            win_probability TEXT,
+           result TEXT DEFAULT ''
         )
     """)
     conn.commit()
@@ -100,13 +101,13 @@ def upsert_data(data):
             INSERT INTO betting_data (
                 bet_id, timestamp, ev_percent, event_time, event_teams,
                 sport_league, bet_type, description, odds, sportsbook,
-                bet_size, win_probability
+                bet_size, win_probability, result
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             row["bet_id"], row["timestamp"], row["EV Percent"], row["Event Time"],
             row["Event Teams"], row["Sport/League"], row["Bet Type"], row["Description"],
-            row["Odds"], row["Sportsbook"], row["Bet Size"], row["Win Probability"]
+            row["Odds"], row["Sportsbook"], row["Bet Size"], row["Win Probability"], ""
         ))
     conn.commit()
     conn.close()
@@ -126,6 +127,33 @@ def create_daily_backup():
     except Exception as e:
         logging.error(f"Error creating database backup: {e}", exc_info=True)
 
+# Helper function to fix Event Time
+def fix_event_time(event_time):
+    """Fix relative Event Time terms like 'Today at' and 'Tomorrow at' to absolute dates."""
+    try:
+        now = datetime.now()
+        if "Today at" in event_time:
+            event_time = event_time.replace("Today", now.strftime("%a, %b %-d"))
+        elif "Tomorrow at" in event_time:
+            tomorrow = now + timedelta(days=1)
+            event_time = event_time.replace("Tomorrow", tomorrow.strftime("%a, %b %-d"))
+        elif " at " in event_time:
+            day_name = event_time.split(" at")[0]
+            target_date = None
+            for i in range(7):
+                candidate_date = now + timedelta(days=i)
+                if candidate_date.strftime("%a") == day_name:
+                    target_date = candidate_date
+                    break
+            if target_date:
+                event_time = event_time.replace(
+                    f"{day_name} at", target_date.strftime("%a, %b %-d at")
+                )
+        return event_time
+    except Exception as e:
+        logging.warning(f"Failed to fix Event Time: {event_time} due to {e}")
+        return event_time
+
 # Parsing function
 def parse_cleaned_data(soup, timestamp):
     """Parse data grouped by bet blocks."""
@@ -143,7 +171,8 @@ def parse_cleaned_data(soup, timestamp):
                 row["EV Percent"] = ev_percent.text.strip() if ev_percent else "N/A"
 
                 event_time = block.select_one("div[data-testid='event-cell'] > p.text-xs")
-                row["Event Time"] = event_time.text.strip() if event_time else "N/A"
+                raw_event_time = event_time.text.strip() if event_time else "N/A"
+                row["Event Time"] = fix_event_time(raw_event_time)
 
                 event_teams = block.select_one("p.text-sm.font-semibold")
                 row["Event Teams"] = event_teams.text.strip() if event_teams else "N/A"
@@ -168,6 +197,8 @@ def parse_cleaned_data(soup, timestamp):
 
                 win_probability = block.select_one("p.text-sm.text-white")
                 row["Win Probability"] = win_probability.text.strip() if win_probability else "N/A"
+
+                row["Result"] = ""  # Default value
 
                 # Generate bet ID
                 row["bet_id"] = generate_bet_id(
