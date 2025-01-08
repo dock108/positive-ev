@@ -166,3 +166,4 @@ data/
 backups/
 .DS_Store
 betting_data.db
+*/eda/*.csv

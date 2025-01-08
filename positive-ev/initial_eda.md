@@ -13,7 +13,7 @@ The purpose of this analysis is to explore betting behavior trends, focusing on 
 ---
 
 ## Data Summary
-- **Dataset Source**: `oddsjam-bet-tracker.csv`
+- **Dataset Source**: [`oddsjam-bet-tracker.csv`](./data/oddsjam-bet-tracker.csv)
 - **Timeframe**: Last 3 days of data (`created_at` >= last 3 days).
 - **Excluded Sportsbooks**: Novig, Sporttrade, Prophet X.
 - **Columns Used**: 
@@ -50,10 +50,13 @@ The distribution of `minutes_to_event` across bets shows a concentration near th
 
 **Visualization:**
 
-![Minutes to Event Distribution](#)
+![Minutes to Event Distribution](./eda/minutes_to_event_distribution.png)
+
+---
 
 ### 2. Bet Value Scale Distribution
 The bell curve-style value scale effectively captures betting trends:
+
 | Bet Value Scale | Count of Bets |
 |------------------|---------------|
 | **5**           | High          |
@@ -64,9 +67,7 @@ The bell curve-style value scale effectively captures betting trends:
 
 This confirms that most bets are placed closer to the event.
 
-**Visualization:**
-
-![Bet Value Scale Distribution](#)
+---
 
 ### 3. Average Stake by Bet Value Scale
 The average stake varies across the value scale, peaking near **20–40 minutes** and tapering off for bets placed far in advance or very close to the event.
@@ -81,7 +82,9 @@ The average stake varies across the value scale, peaking near **20–40 minutes*
 
 **Visualization:**
 
-![Average Stake by Bet Value Scale](#)
+![Average Stake by Bet Value Scale](./eda/average_stake_by_value_scale.png)
+
+---
 
 ### 4. Correlation Analysis
 The correlation matrix reveals a **moderate negative correlation** between `minutes_to_event` and `stake`:
@@ -95,7 +98,7 @@ The correlation matrix reveals a **moderate negative correlation** between `minu
 
 **Visualization:**
 
-![Stake vs. Minutes to Event](#)
+![Stake vs. Minutes to Event](./eda/stake_vs_minutes_to_event.png)
 
 ---
 
@@ -123,4 +126,4 @@ The correlation matrix reveals a **moderate negative correlation** between `minu
 ## Conclusion
 This EDA demonstrates a clear relationship between bet timing and stake size, with the **20–40 minute range** offering the most value for focused betting strategies. These findings lay the groundwork for predictive modeling and further exploration of betting behavior trends.
 
-**EDA Completed.**
+**EDA Completed. All visualizations and outputs are saved in the `eda/` folder.**
