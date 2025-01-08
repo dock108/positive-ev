@@ -100,11 +100,11 @@ positive-ev/
 │
 ├── backups/             # Backup SQLite databases (excluded by .gitignore)
 │   ├── betting_data_MMDDYY.db    # Daily backups
-│   └── …                      # Older backups for archival purposes
+│   └── …                         # Older backups for archival purposes
 │
 ├── logs/                # Log files for monitoring and debugging (excluded by .gitignore)
 │   ├── scraping.log             # Log file for the scraper
-│   └── …                      # Additional logs as needed
+│   └── …                        # Additional logs as needed
 │
 ├── src/                 # Source code for the project
 │   ├── scraper.py              # Core script for scraping positive EV opportunities
