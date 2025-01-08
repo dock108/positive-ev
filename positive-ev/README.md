@@ -81,7 +81,7 @@ This project focuses on overcoming the challenges of sportsbook-imposed bet amou
 ## Supporting Documentation
 
 For initial project goals and exploratory data analysis, refer to:
-- ```[initial_eda.md](./docs/initial_eda.md)```: Supporting data and results.
+- [initial_eda.md](./initial_eda.md): Supporting data and results.
 
 ---
 
