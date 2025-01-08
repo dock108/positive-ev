@@ -162,6 +162,7 @@ cython_debug/
 #.idea/
 
 logs/
+data/
 backups/
 .DS_Store
 betting_data.db
