@@ -55,6 +55,7 @@ TRIPLETICKplaintext
 positive-ev/
 │
 ├── README.md            # This file
+├── .gitignore           # Git ignore file to exclude data
 ├── betting_data.db      # SQLite database storing bets and results
 ├── backups/             # Daily backups of the database
 ├── logs/                # Log files for monitoring
@@ -65,6 +66,31 @@ positive-ev/
 │   └── utils.py         # Helper functions (e.g., database operations)
 └── reports/             # Output reports for unresolved bets
 TRIPLETICK
+
+---
+
+## .gitignore Configuration
+
+To ensure that all data files are excluded from version control, we've set up a `.gitignore` file with the following content:
+
+TRIPLETICKplaintext
+# Ignore database files
+betting_data.db
+
+# Ignore backup files
+backups/
+
+# Ignore log files
+logs/
+
+# Ignore reports
+reports/
+
+# Ignore any other data files
+*.data
+TRIPLETICK
+
+This configuration ensures that all data files, including databases, backups, logs, and reports, are excluded from the repository. Users are expected to generate or collect their own data when using this project.
 
 ---
 
@@ -145,7 +171,7 @@ An initial observation is that betting limits often increase as the event approa
 
 ### Proof of Concept: AI/ML-Driven Bet Timing Alerts
 
-To capitalize on this, the first proof of concept (POC) will focus on developing an alert system that uses AI/ML to determine optimal bet timing. The system will:
+To capitalize on the observation that betting limits often increase as the event approaches, the first proof of concept (POC) will focus on developing an alert system that uses AI/ML to determine optimal bet timing. The system will:
 
 - **Analyze**:
   - Current time relative to game time.
