@@ -90,17 +90,32 @@ For initial project goals and exploratory data analysis, refer to:
 ```plaintext
 positive-ev/
 │
-├── README.md            # This file
-├── .gitignore           # Git ignore file to exclude data
-├── betting_data.db      # SQLite database storing bets and results
-├── backups/             # Daily backups of the database
-├── logs/                # Log files for monitoring
-├── scripts/             # Core Python scripts
-│   ├── scrape_ev.py     # Scrapes positive EV opportunities
-│   ├── scrape_boxscores.py # Scrapes NBA box scores
-│   ├── resolve_results.py  # Matches bets with results
-│   └── utils.py         # Helper functions (e.g., database operations)
-└── reports/             # Output reports for unresolved bets
+├── README.md            # Project overview and details
+├── initial_eda.md       # Initial exploratory data analysis details
+├── .gitignore           # Exclude sensitive or unnecessary files from version control
+│
+├── data/                # Stores input data files (excluded by .gitignore)
+│   ├── oddsjam-bet-tracker.csv   # Example data file
+│   └── other-data-files.csv      # Placeholder for additional data files
+│
+├── backups/             # Backup SQLite databases (excluded by .gitignore)
+│   ├── betting_data_MMDDYY.db    # Daily backups
+│   └── …                      # Older backups for archival purposes
+│
+├── logs/                # Log files for monitoring and debugging (excluded by .gitignore)
+│   ├── scraping.log             # Log file for the scraper
+│   └── …                      # Additional logs as needed
+│
+├── src/                 # Source code for the project
+│   ├── scraper.py              # Core script for scraping positive EV opportunities
+│   ├── bet_results_eda.py      # EDA script for bet results analysis
+│   ├── resolve_results.py      # Match bets with outcomes and update results
+│   ├── scrape_boxscores.py     # Scraper for NBA box scores
+│   └── utils.py                # Helper functions (e.g., database operations)
+│
+└── reports/             # Generated reports for analysis
+├── unresolved_bets.md     # Report on unresolved bets requiring manual review
+└── other_reports.md       # Placeholder for additional reports
 ```
 
 ---
