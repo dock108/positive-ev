@@ -198,3 +198,64 @@ To effectively assess and act upon betting opportunities as game time approaches
 This structured scale prioritizes bets as game time approaches, enabling bettors to capitalize on higher limits and more stable EV opportunities. Additionally, the time-based value scale provides a systematic approach to evaluating and ranking betting opportunities, aligning with the broader goal of long-term profitability.
 
 **Note**: This initial framework may be refined with further empirical data and machine learning models. The goal is to systematically exploit patterns in sportsbook behavior to maximize betting efficiency and returns.
+
+### Daily Strategy: Prioritizing Exchange Withdrawals and Manual Arbitrage for Cash Flow
+
+To maintain account longevity, sustain profitability, and enable larger bets on +EV opportunities, a strategic approach to withdrawals and manual arbitrage is essential. By combining disciplined withdrawal habits with the manual effort of arbitrage betting, bettors can achieve a more stable cash flow while avoiding unnecessary limitations from sportsbooks.
+
+---
+
+### Why This Matters:
+- **Sportsbook Monitoring**: Frequent or large withdrawals from major sportsbooks like **DraftKings** or **FanDuel** can raise red flags and result in account restrictions.
+- **Guaranteed Cash Flow**: Manual arbitrage betting ensures consistent profitability by locking in guaranteed returns across multiple books, enabling a reliable source of funds for further +EV bets.
+- **Exchanges Are Safer**: Betting exchanges are less likely to impose restrictions, making them ideal for withdrawals and larger transactions.
+
+---
+
+### Key Guidelines:
+
+#### **1. Focus on Scaling and Sustaining Accounts:**
+- Prioritize keeping funds in major sportsbooks like **DraftKings** and **FanDuel** to maintain their viability for high-limit bets.
+- Use these accounts to maximize opportunities for +EV betting without drawing attention to withdrawal behavior.
+
+#### **2. Use Exchanges for Withdrawals:**
+- Withdraw profits primarily from betting exchanges, where restrictions are less likely.
+- Reinvest these funds into other sportsbooks or accounts to maintain flexibility and liquidity.
+
+#### **3. Leverage Manual Arbitrage for Guaranteed Cash Flow:**
+- **Why Arbitrage?**
+  - Arbitrage (arb) betting locks in guaranteed profits by exploiting price discrepancies between sportsbooks and exchanges.
+  - While not as scalable as +EV betting, arbitrage can provide consistent cash flow to fund more significant opportunities.
+- **Challenges of Arbitrage:**
+  - Requires **patience** and **manual timing effort** to find and execute profitable opportunities.
+  - Involves quick decisions and simultaneous bets across multiple books.
+- **Benefit of Arbitrage:**
+  - Provides a steady, risk-free income stream that enables you to bet more aggressively on +EV opportunities.
+
+#### **4. Spread Action Across Accounts:**
+- Avoid concentrating large betting or withdrawal activity in a single sportsbook account.
+- Diversify betting activity across multiple sportsbooks to reduce the risk of account limitations.
+
+#### **5. Balance Between Arbitrage and +EV Bets:**
+- Allocate time and effort strategically between guaranteed arbitrage profits and long-term +EV betting strategies.
+- Arbitrage provides the cash flow foundation, while +EV bets generate larger potential profits over time.
+
+---
+
+### Managing Manual Effort:
+1. **Tools for Timing:**
+   - Use alerts and tracking systems to identify arbitrage opportunities efficiently.
+   - Maintain a detailed log of arb bets to track profits and time investment.
+
+2. **Patience is Key:**
+   - Manual arbitrage betting requires discipline and focus but can yield consistent returns.
+   - Commit to a dedicated schedule for spotting and executing arb bets, even when the process feels tedious.
+
+3. **Scaling with Cash Flow:**
+   - By generating steady cash flow from manual arbitrage, you can reinvest profits into higher-limit +EV opportunities.
+   - This approach creates a feedback loop that amplifies overall profitability while managing risks.
+
+---
+
+### Conclusion:
+Balancing the manual effort of arbitrage with disciplined withdrawal habits is critical for long-term success. While manual arbitrage requires patience and timing, it ensures consistent cash flow, allowing for more aggressive +EV betting. Prioritizing exchanges for withdrawals further protects sportsbook accounts, enabling sustainable scaling and profitability over time.
