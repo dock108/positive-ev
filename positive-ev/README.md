@@ -51,7 +51,7 @@ The **Positive-EV Betting Data Pipeline** automates the following:
 
 ## Folder Structure
 
-TRIPLETICKplaintext
+```plaintext
 positive-ev/
 │
 ├── README.md            # This file
@@ -65,7 +65,7 @@ positive-ev/
 │   ├── resolve_results.py  # Matches bets with results
 │   └── utils.py         # Helper functions (e.g., database operations)
 └── reports/             # Output reports for unresolved bets
-TRIPLETICK
+```
 
 ---
 
@@ -73,7 +73,7 @@ TRIPLETICK
 
 To ensure that all data files are excluded from version control, we've set up a `.gitignore` file with the following content:
 
-TRIPLETICKplaintext
+```plaintext
 # Ignore database files
 betting_data.db
 
@@ -88,7 +88,7 @@ reports/
 
 # Ignore any other data files
 *.data
-TRIPLETICK
+```
 
 This configuration ensures that all data files, including databases, backups, logs, and reports, are excluded from the repository. Users are expected to generate or collect their own data when using this project.
 
@@ -132,24 +132,24 @@ This configuration ensures that all data files, including databases, backups, lo
 ### Prerequisites
 1. Python 3.9+ installed.
 2. Required Python libraries:
-   TRIPLETICKbash
+   ```bash
    pip install selenium beautifulsoup4 sqlite3 requests
-   TRIPLETICK
+   ```
 3. ChromeDriver installed for Selenium scraping.
 
 ### Running Scripts
 1. **Scrape Positive EV Bets**:
-   TRIPLETICKbash
+   ```bash
    python scripts/scrape_ev.py
-   TRIPLETICK
+   ```
 2. **Scrape NBA Box Scores** (for a specific date):
-   TRIPLETICKbash
+   ```bash
    python scripts/scrape_boxscores.py --date YYYY-MM-DD
-   TRIPLETICK
+   ```
 3. **Resolve Results**:
-   TRIPLETICKbash
+   ```bash
    python scripts/resolve_results.py
-   TRIPLETICK
+   ```
 
 ---
 
