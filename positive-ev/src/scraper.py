@@ -65,88 +65,7 @@ def generate_bet_id(event_time, event_teams, sport_league, bet_type, description
     unique_string = f"{event_time}|{event_teams}|{sport_league}|{bet_type}|{description}"
     return hashlib.md5(unique_string.encode()).hexdigest()
 
-# Function to clean up log file
-def cleanup_logs(log_file):
-    """Keep only the log entries from the past 2 hours."""
-    try:
-        if os.path.exists(log_file):
-            two_hours_ago = datetime.now() - timedelta(hours=2)
-            with open(log_file, "r") as file:
-                lines = file.readlines()
-
-            # Filter out entries older than 2 hours
-            recent_lines = []
-            for line in lines:
-                try:
-                    log_time_str = line.split(" - ")[0]
-                    log_time = datetime.strptime(log_time_str, "%Y-%m-%d %H:%M:%S,%f")
-                    if log_time >= two_hours_ago:
-                        recent_lines.append(line)
-                except Exception as e:
-                    logging.warning(f"Malformed log line ignored: {line.strip()} - Error: {e}")
-                    continue
-
-            # Overwrite the log file with recent entries
-            with open(log_file, "w") as file:
-                file.writelines(recent_lines)
-            logging.info("Log file cleaned up. Only recent entries retained.")
-    except Exception as e:
-        logging.error(f"Failed to clean up log file: {e}", exc_info=True)
-
-# Function to insert or update data
-def upsert_data(data):
-    conn = connect_db()
-    cursor = conn.cursor()
-
-    for row in data:
-        cursor.execute("""
-            INSERT INTO betting_data (
-                bet_id, timestamp, ev_percent, event_time, event_teams,
-                sport_league, bet_type, description, odds, sportsbook,
-                bet_size, win_probability, result
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            row["bet_id"], row["timestamp"], row["EV Percent"], row["Event Time"],
-            row["Event Teams"], row["Sport/League"], row["Bet Type"], row["Description"],
-            row["Odds"], row["Sportsbook"], row["Bet Size"], row["Win Probability"], ""
-        ))
-    conn.commit()
-    conn.close()
-
-# Function to create a daily backup of the SQLite database
-def create_daily_backup():
-    try:
-        yesterday = (datetime.now() - timedelta(days=1)).strftime("%m%d%y")
-        backup_file = os.path.join(backup_folder, f"betting_data_{yesterday}.db")
-        if not os.path.exists(backup_file):
-            shutil.copy(db_file, backup_file)
-            logging.info(f"Database backup created: {backup_file}")
-        else:
-            logging.info(f"Backup already exists for {yesterday}: {backup_file}")
-    except Exception as e:
-        logging.error(f"Error creating database backup: {e}", exc_info=True)
-
-# Function to clean up old backups
-def cleanup_old_backups():
-    """Delete backups older than 30 days."""
-    try:
-        cutoff_date = datetime.now() - timedelta(days=30)
-        for filename in os.listdir(backup_folder):
-            file_path = os.path.join(backup_folder, filename)
-            if os.path.isfile(file_path):
-                try:
-                    # Extract the date from the filename (assuming 'betting_data_MMDDYY.db' format)
-                    date_part = filename.split("_")[1].split(".")[0]
-                    file_date = datetime.strptime(date_part, "%m%d%y")
-                    if file_date < cutoff_date:
-                        os.remove(file_path)
-                        logging.info(f"Deleted old backup: {file_path}")
-                except (IndexError, ValueError) as e:
-                    logging.warning(f"Skipping non-standard backup file: {filename} - Error: {e}")
-    except Exception as e:
-        logging.error(f"Failed to clean up old backups: {e}", exc_info=True)
-
+# Helper function to fix event time
 def fix_event_time(event_time):
     """Fix relative Event Time terms like 'Today at' and 'Tomorrow at' to absolute dates."""
     try:
@@ -176,6 +95,71 @@ def fix_event_time(event_time):
     except Exception as e:
         logging.warning(f"Failed to fix Event Time: {event_time} due to {e}")
         return event_time
+
+# Function to clean up log file
+def cleanup_logs(log_file):
+    """Keep only the log entries from the past 2 hours."""
+    try:
+        if os.path.exists(log_file):
+            two_hours_ago = datetime.now() - timedelta(hours=2)
+            with open(log_file, "r") as file:
+                lines = file.readlines()
+
+            # Filter out entries older than 2 hours
+            recent_lines = []
+            for line in lines:
+                try:
+                    log_time_str = line.split(" - ")[0]
+                    log_time = datetime.strptime(log_time_str, "%Y-%m-%d %H:%M:%S,%f")
+                    if log_time >= two_hours_ago:
+                        recent_lines.append(line)
+                except Exception as e:
+                    logging.warning(f"Malformed log line ignored: {line.strip()} - Error: {e}")
+                    continue
+
+            # Overwrite the log file with recent entries
+            with open(log_file, "w") as file:
+                file.writelines(recent_lines)
+            logging.info("Log file cleaned up. Only recent entries retained.")
+    except Exception as e:
+        logging.error(f"Failed to clean up log file: {e}", exc_info=True)
+
+# Function to create a daily backup of the SQLite database
+def create_daily_backup():
+    try:
+        yesterday = (datetime.now() - timedelta(days=1)).strftime("%m%d%y")
+        backup_file = os.path.join(backup_folder, f"betting_data_{yesterday}.db")
+        if not os.path.exists(backup_file):
+            shutil.copy(db_file, backup_file)
+            logging.info(f"Database backup created: {backup_file}")
+        else:
+            logging.info(f"Backup already exists for {yesterday}: {backup_file}")
+    except Exception as e:
+        logging.error(f"Error creating database backup: {e}", exc_info=True)
+
+# Function to clean up old backups
+def cleanup_old_backups():
+    """Delete backups older than 10 days."""
+    try:
+        cutoff_date = datetime.now() - timedelta(days=10)
+        for filename in os.listdir(backup_folder):
+            file_path = os.path.join(backup_folder, filename)
+            if os.path.isfile(file_path):
+                # Ensure the filename follows the expected pattern
+                if filename.startswith("betting_data_") and filename.endswith(".db"):
+                    try:
+                        # Extract the date from the filename (assuming 'betting_data_MMDDYY.db' format)
+                        date_part = filename.replace("betting_data_", "").replace(".db", "")
+                        file_date = datetime.strptime(date_part, "%m%d%y")
+                        if file_date < cutoff_date:
+                            os.remove(file_path)
+                            logging.info(f"Deleted old backup: {file_path}")
+                    except ValueError as e:
+                        logging.warning(f"Skipping invalid backup file: {filename} - Error: {e}")
+                else:
+                    logging.warning(f"Skipping non-backup file: {filename}")
+    except Exception as e:
+        logging.error(f"Failed to clean up old backups: {e}", exc_info=True)
 
 # Parsing function
 def parse_cleaned_data(soup, timestamp):
@@ -240,6 +224,27 @@ def parse_cleaned_data(soup, timestamp):
     except Exception as e:
         logging.error(f"Error parsing data: {e}", exc_info=True)
         return []
+
+# Function to insert or update data
+def upsert_data(data):
+    conn = connect_db()
+    cursor = conn.cursor()
+
+    for row in data:
+        cursor.execute("""
+            INSERT INTO betting_data (
+                bet_id, timestamp, ev_percent, event_time, event_teams,
+                sport_league, bet_type, description, odds, sportsbook,
+                bet_size, win_probability, result
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            row["bet_id"], row["timestamp"], row["EV Percent"], row["Event Time"],
+            row["Event Teams"], row["Sport/League"], row["Bet Type"], row["Description"],
+            row["Odds"], row["Sportsbook"], row["Bet Size"], row["Win Probability"], ""
+        ))
+    conn.commit()
+    conn.close()
 
 # Main script logic
 try:
