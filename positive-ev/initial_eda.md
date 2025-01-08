@@ -13,7 +13,7 @@ The purpose of this analysis is to explore betting behavior trends, focusing on 
 ---
 
 ## Data Summary
-- **Dataset Source**: [`oddsjam-bet-tracker.csv`](../data/oddsjam-bet-tracker.csv)
+- **Dataset Source**: [`oddsjam-bet-tracker.csv`](./data/oddsjam-bet-tracker.csv)
 - **Timeframe**: Last 3 days of data (`created_at` >= last 3 days).
 - **Excluded Sportsbooks**: Novig, Sporttrade, Prophet X.
 - **Columns Used**: 
@@ -50,7 +50,7 @@ The distribution of `minutes_to_event` across bets shows a concentration near th
 
 **Visualization:**
 
-![Minutes to Event Distribution](../eda/minutes_to_event_distribution.png)
+![Minutes to Event Distribution](./eda/minutes_to_event_distribution.png)
 
 ---
 
@@ -67,8 +67,6 @@ The bell curve-style value scale effectively captures betting trends:
 
 This confirms that most bets are placed closer to the event.
 
-**CSV Report:** [`bet_value_scale_distribution.csv`](../eda/bet_value_scale_distribution.csv)
-
 ---
 
 ### 3. Average Stake by Bet Value Scale
@@ -84,7 +82,7 @@ The average stake varies across the value scale, peaking near **20–40 minutes*
 
 **Visualization:**
 
-![Average Stake by Bet Value Scale](../eda/average_stake_by_value_scale.png)
+![Average Stake by Bet Value Scale](./eda/average_stake_by_value_scale.png)
 
 ---
 
@@ -98,11 +96,9 @@ The correlation matrix reveals a **moderate negative correlation** between `minu
 
 **Key Insight**: As the event approaches (fewer `minutes_to_event`), stakes tend to increase. This supports the hypothesis that bettors place higher stakes closer to game time, possibly due to increased confidence or relaxed sportsbook limits.
 
-**CSV Report:** [`correlation_minutes_to_event_stake.csv`](../eda/correlation_minutes_to_event_stake.csv)
-
 **Visualization:**
 
-![Stake vs. Minutes to Event](../eda/stake_vs_minutes_to_event.png)
+![Stake vs. Minutes to Event](./eda/stake_vs_minutes_to_event.png)
 
 ---
 
