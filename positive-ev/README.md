@@ -81,13 +81,13 @@ This project focuses on overcoming the challenges of sportsbook-imposed bet amou
 ## Supporting Documentation
 
 For initial project goals and exploratory data analysis, refer to:
-- TRIPLETICK[initial_eda.md](./docs/initial_eda.md)TRIPLETICK: Supporting data and results.
+- ```[initial_eda.md](./docs/initial_eda.md)```: Supporting data and results.
 
 ---
 
 ## Folder Structure
 
-TRIPLETICKplaintext
+```plaintext
 positive-ev/
 │
 ├── README.md            # This file
@@ -101,7 +101,7 @@ positive-ev/
 │   ├── resolve_results.py  # Matches bets with results
 │   └── utils.py         # Helper functions (e.g., database operations)
 └── reports/             # Output reports for unresolved bets
-TRIPLETICK
+```
 
 ---
 
@@ -143,24 +143,24 @@ TRIPLETICK
 ### Prerequisites
 1. Python 3.9+ installed.
 2. Required Python libraries:
-   TRIPLETICKbash
+   ```bash
    pip install selenium beautifulsoup4 sqlite3 requests
-   TRIPLETICK
+   ```
 3. ChromeDriver installed for Selenium scraping.
 
 ### Running Scripts
 1. **Scrape Positive EV Bets**:
-   TRIPLETICKbash
+   ```bash
    python scripts/scrape_ev.py
-   TRIPLETICK
+   ```
 2. **Scrape NBA Box Scores** (for a specific date):
-   TRIPLETICKbash
+   ```bash
    python scripts/scrape_boxscores.py --date YYYY-MM-DD
-   TRIPLETICK
+   ```
 3. **Resolve Results**:
-   TRIPLETICKbash
+   ```bash
    python scripts/resolve_results.py
-   TRIPLETICK
+   ```
 
 ---
 
