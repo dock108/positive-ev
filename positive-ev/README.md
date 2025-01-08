@@ -171,21 +171,23 @@ An initial observation is that betting limits often increase as the event approa
 
 ### Proof of Concept: AI/ML-Driven Bet Timing Alerts
 
-To capitalize on the observation that betting limits often increase as the event approaches, the first proof of concept (POC) will focus on developing an alert system that uses AI/ML to determine optimal bet timing. The system will:
+This Proof of Concept (POC) builds on initial exploratory evidence gathered by analyzing bets placed over the last 30 days. The analysis revealed a strong correlation between bet amounts and proximity to game time. Specifically, sportsbooks appeared to allow larger wager amounts closer to the start of the game, likely due to increased betting volume and confidence in their odds.
+
+The POC will focus on leveraging this observation to enhance betting strategies by developing an alert system that uses AI/ML to determine optimal bet timing. The system will:
 
 - **Analyze**:
   - Current time relative to game time.
   - Current EV of the bet.
-  - Historical data on betting limits and volume.
+  - Historical data on betting limits and volume trends.
 
 - **Alert**:
-  - Notify when it's advantageous to place a bet, considering potential increases in betting limits and EV stability or improvement as game time approaches.
+  - Notify when it’s most advantageous to place a bet, factoring in potential increases in betting limits and the stability or improvement of EV as game time approaches.
 
-This approach aims to maximize the amount that can be wagered on positive EV opportunities, especially for accounts with betting limits, by strategically timing bets to coincide with higher permissible volumes closer to game time.
+By strategically timing bets, the system aims to optimize the amount wagered on positive EV opportunities, maximizing profitability while accounting for potential limitations from sportsbooks.
 
 ### Implementing a Time-Based Value Scale
 
-To effectively assess and act upon betting opportunities as game time approaches, we propose implementing a time-based value scale. This scale categorizes the proximity to game time into specific bands, each assigned a value from 1 to 5. The proposed bands are:
+To effectively assess and act upon betting opportunities as game time approaches, a time-based value scale will be implemented. This scale categorizes the proximity to game time into specific bands, each assigned a value from 1 to 5. The proposed bands are:
 
 - **Value 5**: Within 20 minutes of game time
 - **Value 4**: Within 40 minutes of game time
@@ -193,6 +195,6 @@ To effectively assess and act upon betting opportunities as game time approaches
 - **Value 2**: Within 480 minutes (8 hours) of game time
 - **Value 1**: More than 480 minutes before game time
 
-This scale allows for a structured approach to evaluating betting opportunities, considering the typical increase in betting limits as the event nears. By assigning values based on time proximity, bettors can prioritize wagers that are closer to game time, potentially taking advantage of higher limits and more accurate information.
+This structured scale prioritizes bets as game time approaches, enabling bettors to capitalize on higher limits and more stable EV opportunities. Additionally, the time-based value scale provides a systematic approach to evaluating and ranking betting opportunities, aligning with the broader goal of long-term profitability.
 
-**Note**: This time-based value scale is an initial framework and may be adjusted based on empirical data and further analysis. The goal is to create a systematic method for evaluating betting opportunities relative to game time, enhancing decision-making processes in the betting strategy.
+**Note**: This initial framework may be refined with further empirical data and machine learning models. The goal is to systematically exploit patterns in sportsbook behavior to maximize betting efficiency and returns.
