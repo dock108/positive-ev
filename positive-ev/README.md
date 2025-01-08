@@ -1,6 +1,6 @@
-# Positive-EV Betting Data Pipeline
+# Positive-EV Betting Data Pipeline: Mega Plan
 
-Welcome to the **Positive-EV** folder within the **Mega Plan** repository! This is the foundation of our automated pipeline for analyzing positive expected value (EV) betting opportunities. The goal is to collect, store, and process betting data, including results, in a structured way to identify long-term profitable strategies.
+Welcome to the **Positive-EV** folder within the **Mega Plan** repository! This initiative is designed to help build a sustainable, data-driven betting strategy. The ultimate goal? **Quit your day job** by leveraging disciplined betting techniques, maximizing +EV opportunities, and strategically managing limited sportsbook accounts (in bet amount, not the number of accounts).
 
 ---
 
@@ -17,6 +17,35 @@ The **Positive-EV Betting Data Pipeline** automates the following:
    - Flags unresolved bets as `PEND MANUAL` for further review.
 4. **Future Expansion**:
    - Scales to other sports, leagues, and advanced modeling strategies.
+
+---
+
+## Key Concepts: Quit Your Day Job Plan
+
+This project focuses on overcoming the challenges of sportsbook-imposed bet amount limits by strategically timing bets and leveraging pre-game volume boosts to place larger stakes. Key guidelines include:
+
+1. **Bet Timing and Limits**:
+   - **Initial Hypothesis**: Betting limits increase closer to game time, enabling larger wagers on +EV opportunities.
+   - Strategic timing can take advantage of sportsbooks’ higher limits near game time due to increased betting volume and confidence in their odds.
+
+2. **Value Scale**:
+   A bell curve value scale prioritizes bets closer to game time:
+   | Minutes to Event Range | Value |
+   |-------------------------|-------|
+   | **20–40 minutes**       | 5     |
+   | **40–120 minutes**      | 4     |
+   | **0–20 minutes**        | 3     |
+   | **120–480 minutes**     | 2     |
+   | **480+ minutes**        | 1     |
+
+3. **Manual Arbitrage**:
+   - While not scalable, manual arbitrage provides consistent, risk-free cash flow, allowing for more aggressive +EV bets over time.
+
+4. **Diversify Accounts**:
+   - Avoid concentrating activity in a single sportsbook. Spread action across multiple accounts to mitigate risk and maximize opportunities.
+
+5. **Sustainable Withdrawals**:
+   - Withdraw primarily from betting exchanges to preserve major accounts like **DraftKings** and **FanDuel** for larger +EV opportunities.
 
 ---
 
@@ -49,9 +78,16 @@ The **Positive-EV Betting Data Pipeline** automates the following:
 
 ---
 
+## Supporting Documentation
+
+For initial project goals and exploratory data analysis, refer to:
+- TRIPLETICK[initial_eda.md](./docs/initial_eda.md)TRIPLETICK: Supporting data and results.
+
+---
+
 ## Folder Structure
 
-```plaintext
+TRIPLETICKplaintext
 positive-ev/
 │
 ├── README.md            # This file
@@ -65,32 +101,7 @@ positive-ev/
 │   ├── resolve_results.py  # Matches bets with results
 │   └── utils.py         # Helper functions (e.g., database operations)
 └── reports/             # Output reports for unresolved bets
-```
-
----
-
-## .gitignore Configuration
-
-To ensure that all data files are excluded from version control, we've set up a `.gitignore` file with the following content:
-
-```plaintext
-# Ignore database files
-betting_data.db
-
-# Ignore backup files
-backups/
-
-# Ignore log files
-logs/
-
-# Ignore reports
-reports/
-
-# Ignore any other data files
-*.data
-```
-
-This configuration ensures that all data files, including databases, backups, logs, and reports, are excluded from the repository. Users are expected to generate or collect their own data when using this project.
+TRIPLETICK
 
 ---
 
@@ -132,130 +143,38 @@ This configuration ensures that all data files, including databases, backups, lo
 ### Prerequisites
 1. Python 3.9+ installed.
 2. Required Python libraries:
-   ```bash
+   TRIPLETICKbash
    pip install selenium beautifulsoup4 sqlite3 requests
-   ```
+   TRIPLETICK
 3. ChromeDriver installed for Selenium scraping.
 
 ### Running Scripts
 1. **Scrape Positive EV Bets**:
-   ```bash
+   TRIPLETICKbash
    python scripts/scrape_ev.py
-   ```
+   TRIPLETICK
 2. **Scrape NBA Box Scores** (for a specific date):
-   ```bash
+   TRIPLETICKbash
    python scripts/scrape_boxscores.py --date YYYY-MM-DD
-   ```
+   TRIPLETICK
 3. **Resolve Results**:
-   ```bash
+   TRIPLETICKbash
    python scripts/resolve_results.py
-   ```
+   TRIPLETICK
 
 ---
 
-## Key Limitations
-1. **Manual Review**:
-   - Bets with insufficient or missing data are flagged as `PEND MANUAL`.
-2. **Supported Sports**:
-   - Currently focused on NBA; additional sports require scraper expansion.
-3. **Scaling**:
-   - Scrapers may need optimization for larger datasets.
+## Next Steps
+
+1. **Model Development**:
+   - Build predictive models incorporating timing and EV patterns.
+2. **Integration**:
+   - Expand to new sports and implement ML-driven bet timing alerts.
+3. **Refinements**:
+   - Fine-tune scraping efficiency and add visualization dashboards.
 
 ---
 
-## Future Roadmap
+## License
 
-### Leveraging Betting Limits Near Game Time
-
-An initial observation is that betting limits often increase as the event approaches, allowing bettors to place larger wagers closer to game time. This is because sportsbooks adjust their limits based on the amount of information and confidence they have in their odds, which tends to increase as more bets are placed and the event nears. [Source](https://www.actionnetwork.com/education/limits)
-
-### Proof of Concept: AI/ML-Driven Bet Timing Alerts
-
-This Proof of Concept (POC) builds on initial exploratory evidence gathered by analyzing bets placed over the last 30 days. The analysis revealed a strong correlation between bet amounts and proximity to game time. Specifically, sportsbooks appeared to allow larger wager amounts closer to the start of the game, likely due to increased betting volume and confidence in their odds.
-
-The POC will focus on leveraging this observation to enhance betting strategies by developing an alert system that uses AI/ML to determine optimal bet timing. The system will:
-
-- **Analyze**:
-  - Current time relative to game time.
-  - Current EV of the bet.
-  - Historical data on betting limits and volume trends.
-
-- **Alert**:
-  - Notify when it’s most advantageous to place a bet, factoring in potential increases in betting limits and the stability or improvement of EV as game time approaches.
-
-By strategically timing bets, the system aims to optimize the amount wagered on positive EV opportunities, maximizing profitability while accounting for potential limitations from sportsbooks.
-
-### Implementing a Time-Based Value Scale
-
-To effectively assess and act upon betting opportunities as game time approaches, a time-based value scale will be implemented. This scale categorizes the proximity to game time into specific bands, each assigned a value from 1 to 5. The proposed bands are:
-
-- **Value 5**: Within 20 minutes of game time
-- **Value 4**: Within 40 minutes of game time
-- **Value 3**: Within 120 minutes (2 hours) of game time
-- **Value 2**: Within 480 minutes (8 hours) of game time
-- **Value 1**: More than 480 minutes before game time
-
-This structured scale prioritizes bets as game time approaches, enabling bettors to capitalize on higher limits and more stable EV opportunities. Additionally, the time-based value scale provides a systematic approach to evaluating and ranking betting opportunities, aligning with the broader goal of long-term profitability.
-
-**Note**: This initial framework may be refined with further empirical data and machine learning models. The goal is to systematically exploit patterns in sportsbook behavior to maximize betting efficiency and returns.
-
-### Daily Strategy: Prioritizing Exchange Withdrawals and Manual Arbitrage for Cash Flow
-
-To maintain account longevity, sustain profitability, and enable larger bets on +EV opportunities, a strategic approach to withdrawals and manual arbitrage is essential. By combining disciplined withdrawal habits with the manual effort of arbitrage betting, bettors can achieve a more stable cash flow while avoiding unnecessary limitations from sportsbooks.
-
----
-
-### Why This Matters:
-- **Sportsbook Monitoring**: Frequent or large withdrawals from major sportsbooks like **DraftKings** or **FanDuel** can raise red flags and result in account restrictions.
-- **Guaranteed Cash Flow**: Manual arbitrage betting ensures consistent profitability by locking in guaranteed returns across multiple books, enabling a reliable source of funds for further +EV bets.
-- **Exchanges Are Safer**: Betting exchanges are less likely to impose restrictions, making them ideal for withdrawals and larger transactions.
-
----
-
-### Key Guidelines:
-
-#### **1. Focus on Scaling and Sustaining Accounts:**
-- Prioritize keeping funds in major sportsbooks like **DraftKings** and **FanDuel** to maintain their viability for high-limit bets.
-- Use these accounts to maximize opportunities for +EV betting without drawing attention to withdrawal behavior.
-
-#### **2. Use Exchanges for Withdrawals:**
-- Withdraw profits primarily from betting exchanges, where restrictions are less likely.
-- Reinvest these funds into other sportsbooks or accounts to maintain flexibility and liquidity.
-
-#### **3. Leverage Manual Arbitrage for Guaranteed Cash Flow:**
-- **Why Arbitrage?**
-  - Arbitrage (arb) betting locks in guaranteed profits by exploiting price discrepancies between sportsbooks and exchanges.
-  - While not as scalable as +EV betting, arbitrage can provide consistent cash flow to fund more significant opportunities.
-- **Challenges of Arbitrage:**
-  - Requires **patience** and **manual timing effort** to find and execute profitable opportunities.
-  - Involves quick decisions and simultaneous bets across multiple books.
-- **Benefit of Arbitrage:**
-  - Provides a steady, risk-free income stream that enables you to bet more aggressively on +EV opportunities.
-
-#### **4. Spread Action Across Accounts:**
-- Avoid concentrating large betting or withdrawal activity in a single sportsbook account.
-- Diversify betting activity across multiple sportsbooks to reduce the risk of account limitations.
-
-#### **5. Balance Between Arbitrage and +EV Bets:**
-- Allocate time and effort strategically between guaranteed arbitrage profits and long-term +EV betting strategies.
-- Arbitrage provides the cash flow foundation, while +EV bets generate larger potential profits over time.
-
----
-
-### Managing Manual Effort:
-1. **Tools for Timing:**
-   - Use alerts and tracking systems to identify arbitrage opportunities efficiently.
-   - Maintain a detailed log of arb bets to track profits and time investment.
-
-2. **Patience is Key:**
-   - Manual arbitrage betting requires discipline and focus but can yield consistent returns.
-   - Commit to a dedicated schedule for spotting and executing arb bets, even when the process feels tedious.
-
-3. **Scaling with Cash Flow:**
-   - By generating steady cash flow from manual arbitrage, you can reinvest profits into higher-limit +EV opportunities.
-   - This approach creates a feedback loop that amplifies overall profitability while managing risks.
-
----
-
-### Conclusion:
-Balancing the manual effort of arbitrage with disciplined withdrawal habits is critical for long-term success. While manual arbitrage requires patience and timing, it ensures consistent cash flow, allowing for more aggressive +EV betting. Prioritizing exchanges for withdrawals further protects sportsbook accounts, enabling sustainable scaling and profitability over time.
+This project is licensed under the MIT License. See the LICENSE file for details.
