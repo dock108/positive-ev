@@ -1,4 +1,5 @@
 import os
+import time
 import logging
 import sqlite3
 from datetime import datetime, timedelta
@@ -58,65 +59,42 @@ def create_table():
     conn.commit()
     conn.close()
 
-# Function to create a daily backup of the SQLite database
-def create_daily_backup():
-    try:
-        yesterday = (datetime.now() - timedelta(days=1)).strftime("%m%d%y")
-        backup_file = os.path.join(backup_folder, f"betting_data_{yesterday}.db")
-        if not os.path.exists(backup_file):
-            shutil.copy(db_file, backup_file)
-            logging.info(f"Database backup created: {backup_file}")
-        else:
-            logging.info(f"Backup already exists for {yesterday}: {backup_file}")
-    except Exception as e:
-        logging.error(f"Error creating database backup: {e}", exc_info=True)
-
-# Function to clean up old backups
-def cleanup_old_backups():
-    """Delete backups older than 30 days."""
-    try:
-        cutoff_date = datetime.now() - timedelta(days=30)
-        for filename in os.listdir(backup_folder):
-            file_path = os.path.join(backup_folder, filename)
-            if os.path.isfile(file_path):
-                try:
-                    # Extract the date from the filename (assuming 'betting_data_MMDDYY.db' format)
-                    date_part = filename.split("_")[1].split(".")[0]
-                    file_date = datetime.strptime(date_part, "%m%d%y")
-                    if file_date < cutoff_date:
-                        os.remove(file_path)
-                        logging.info(f"Deleted old backup: {file_path}")
-                except (IndexError, ValueError) as e:
-                    logging.warning(f"Skipping non-standard backup file: {filename} - Error: {e}")
-    except Exception as e:
-        logging.error(f"Failed to clean up old backups: {e}", exc_info=True)
-
 # Helper function to generate a bet ID
 def generate_bet_id(event_time, event_teams, sport_league, bet_type, description):
     """Generate a hash-based bet ID."""
     unique_string = f"{event_time}|{event_teams}|{sport_league}|{bet_type}|{description}"
     return hashlib.md5(unique_string.encode()).hexdigest()
 
-# Function to insert or update data
-def upsert_data(data):
-    conn = connect_db()
-    cursor = conn.cursor()
-
-    for row in data:
-        cursor.execute("""
-            INSERT INTO betting_data (
-                bet_id, timestamp, ev_percent, event_time, event_teams,
-                sport_league, bet_type, description, odds, sportsbook,
-                bet_size, win_probability, result
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            row["bet_id"], row["timestamp"], row["EV Percent"], row["Event Time"],
-            row["Event Teams"], row["Sport/League"], row["Bet Type"], row["Description"],
-            row["Odds"], row["Sportsbook"], row["Bet Size"], row["Win Probability"], ""
-        ))
-    conn.commit()
-    conn.close()
+# Helper function to fix event time
+def fix_event_time(event_time):
+    """Fix relative Event Time terms like 'Today at' and 'Tomorrow at' to absolute dates."""
+    try:
+        now = datetime.now()
+        if "Today at" in event_time:
+            # Replace "Today" with the current date
+            event_time = event_time.replace("Today", now.strftime("%a, %b %-d"))
+        elif "Tomorrow at" in event_time:
+            # Replace "Tomorrow" with the next day's date
+            tomorrow = now + timedelta(days=1)
+            event_time = event_time.replace("Tomorrow", tomorrow.strftime("%a, %b %-d"))
+        elif " at " in event_time:
+            # Handle weekday-based references like "Sunday at"
+            day_name = event_time.split(" at")[0]
+            target_date = None
+            for i in range(7):
+                candidate_date = now + timedelta(days=i)
+                if candidate_date.strftime("%a") == day_name:
+                    target_date = candidate_date
+                    break
+            if target_date:
+                event_time = event_time.replace(
+                    f"{day_name} at", target_date.strftime("%a, %b %-d at")
+                )
+        # Return the fixed event time
+        return event_time
+    except Exception as e:
+        logging.warning(f"Failed to fix Event Time: {event_time} due to {e}")
+        return event_time
 
 # Function to clean up log file
 def cleanup_logs(log_file):
@@ -145,6 +123,128 @@ def cleanup_logs(log_file):
             logging.info("Log file cleaned up. Only recent entries retained.")
     except Exception as e:
         logging.error(f"Failed to clean up log file: {e}", exc_info=True)
+
+# Function to create a daily backup of the SQLite database
+def create_daily_backup():
+    try:
+        yesterday = (datetime.now() - timedelta(days=1)).strftime("%m%d%y")
+        backup_file = os.path.join(backup_folder, f"betting_data_{yesterday}.db")
+        if not os.path.exists(backup_file):
+            shutil.copy(db_file, backup_file)
+            logging.info(f"Database backup created: {backup_file}")
+        else:
+            logging.info(f"Backup already exists for {yesterday}: {backup_file}")
+    except Exception as e:
+        logging.error(f"Error creating database backup: {e}", exc_info=True)
+
+# Function to clean up old backups
+def cleanup_old_backups():
+    """Delete backups older than 10 days."""
+    try:
+        cutoff_date = datetime.now() - timedelta(days=10)
+        for filename in os.listdir(backup_folder):
+            file_path = os.path.join(backup_folder, filename)
+            if os.path.isfile(file_path):
+                # Ensure the filename follows the expected pattern
+                if filename.startswith("betting_data_") and filename.endswith(".db"):
+                    try:
+                        # Extract the date from the filename (assuming 'betting_data_MMDDYY.db' format)
+                        date_part = filename.replace("betting_data_", "").replace(".db", "")
+                        file_date = datetime.strptime(date_part, "%m%d%y")
+                        if file_date < cutoff_date:
+                            os.remove(file_path)
+                            logging.info(f"Deleted old backup: {file_path}")
+                    except ValueError as e:
+                        logging.warning(f"Skipping invalid backup file: {filename} - Error: {e}")
+                else:
+                    logging.warning(f"Skipping non-backup file: {filename}")
+    except Exception as e:
+        logging.error(f"Failed to clean up old backups: {e}", exc_info=True)
+
+# Parsing function
+def parse_cleaned_data(soup, timestamp):
+    """Parse data grouped by bet blocks."""
+    try:
+        # Select all bet blocks from the page
+        bet_blocks = soup.select("div#betting-tool-table-row")
+        logging.info(f"Selector 'div#betting-tool-table-row' found {len(bet_blocks)} bet blocks.")
+
+        data = []
+        for index, block in enumerate(bet_blocks):
+            logging.debug(f"Parsing Bet Block {index}")
+            row = {"timestamp": timestamp}
+
+            try:
+                # Extract data points
+                ev_percent = block.select_one("p#percent-cell")
+                row["EV Percent"] = ev_percent.text.strip('%') if ev_percent else "N/A"
+
+                event_time = block.select_one("div[data-testid='event-cell'] > p.text-xs")
+                raw_event_time = event_time.text.strip() if event_time else "N/A"
+                row["Event Time"] = fix_event_time(raw_event_time)
+
+                event_teams = block.select_one("p.text-sm.font-semibold")
+                row["Event Teams"] = event_teams.text.strip() if event_teams else "N/A"
+
+                sport_league = block.select_one("p.text-sm:not(.font-semibold)")
+                row["Sport/League"] = sport_league.text.strip() if sport_league else "N/A"
+
+                bet_type = block.select_one("p.text-sm.text-brand-purple")
+                row["Bet Type"] = bet_type.text.strip() if bet_type else "N/A"
+
+                description = block.select_one("div.tour__bet_and_books p.flex-1")
+                row["Description"] = description.text.strip() if description else "N/A"
+
+                odds = block.select_one("p.text-sm.font-bold")
+                row["Odds"] = odds.text.strip() if odds else "N/A"
+
+                sportsbook_logo = block.select_one("img[alt]")
+                row["Sportsbook"] = sportsbook_logo["alt"].strip() if sportsbook_logo else "N/A"
+
+                bet_size = block.select_one("p.text-sm.font-semibold.text-white")
+                row["Bet Size"] = bet_size.text.strip('$') if bet_size else "N/A"
+
+                win_probability = block.select_one("p.text-sm.text-white")
+                row["Win Probability"] = win_probability.text.strip('%') if win_probability else "N/A"
+
+                row["Result"] = ""  # Default value
+
+                # Generate bet ID
+                row["bet_id"] = generate_bet_id(
+                    row["Event Time"], row["Event Teams"],
+                    row["Sport/League"], row["Bet Type"], row["Description"]
+                )
+
+                logging.info(f"Extracted Row {index}: {row}")
+                data.append(row)
+            except Exception as e:
+                logging.warning(f"Bet Block {index}: Failed to parse due to {e}")
+
+        return data
+    except Exception as e:
+        logging.error(f"Error parsing data: {e}", exc_info=True)
+        return []
+
+# Function to insert or update data
+def upsert_data(data):
+    conn = connect_db()
+    cursor = conn.cursor()
+
+    for row in data:
+        cursor.execute("""
+            INSERT INTO betting_data (
+                bet_id, timestamp, ev_percent, event_time, event_teams,
+                sport_league, bet_type, description, odds, sportsbook,
+                bet_size, win_probability, result
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            row["bet_id"], row["timestamp"], row["EV Percent"], row["Event Time"],
+            row["Event Teams"], row["Sport/League"], row["Bet Type"], row["Description"],
+            row["Odds"], row["Sportsbook"], row["Bet Size"], row["Win Probability"], ""
+        ))
+    conn.commit()
+    conn.close()
 
 # Main script logic
 try:
@@ -182,9 +282,9 @@ try:
     page_source = driver.page_source
     soup = BeautifulSoup(page_source, "html.parser")
 
-    # Parse and upsert data (parse_cleaned_data function to be implemented)
+    # Parse data and save to SQLite
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    odds_data = []  # Replace with the result of parse_cleaned_data(soup, timestamp)
+    odds_data = parse_cleaned_data(soup, timestamp)
     if odds_data:
         logging.info(f"Extracted {len(odds_data)} rows of data.")
         upsert_data(odds_data)
