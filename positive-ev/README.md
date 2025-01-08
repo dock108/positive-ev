@@ -114,8 +114,8 @@ positive-ev/
 │   └── utils.py                # Helper functions (e.g., database operations)
 │
 └── reports/             # Generated reports for analysis
-├── unresolved_bets.md     # Report on unresolved bets requiring manual review
-└── other_reports.md       # Placeholder for additional reports
+    ├── unresolved_bets.md     # Report on unresolved bets requiring manual review
+    └── other_reports.md       # Placeholder for additional reports
 ```
 
 ---
