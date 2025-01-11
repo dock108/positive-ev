@@ -13,7 +13,6 @@ The purpose of this analysis is to explore betting behavior trends, focusing on 
 ---
 
 ## Data Summary
-- **Dataset Source**: [`oddsjam-bet-tracker.csv`](./data/oddsjam-bet-tracker.csv)
 - **Timeframe**: Last 3 days of data (`created_at` >= last 3 days).
 - **Excluded Sportsbooks**: Novig, Sporttrade, Prophet X.
 - **Columns Used**: 
@@ -54,22 +53,7 @@ The distribution of `minutes_to_event` across bets shows a concentration near th
 
 ---
 
-### 2. Bet Value Scale Distribution
-The bell curve-style value scale effectively captures betting trends:
-
-| Bet Value Scale | Count of Bets |
-|------------------|---------------|
-| **5**           | High          |
-| **4**           | Moderate      |
-| **3**           | Low           |
-| **2**           | Low           |
-| **1**           | Minimal       |
-
-This confirms that most bets are placed closer to the event.
-
----
-
-### 3. Average Stake by Bet Value Scale
+### 2. Average Stake by Bet Value Scale
 The average stake varies across the value scale, peaking near **20–40 minutes** and tapering off for bets placed far in advance or very close to the event.
 
 | Bet Value Scale | Average Stake ($) |
@@ -86,7 +70,7 @@ The average stake varies across the value scale, peaking near **20–40 minutes*
 
 ---
 
-### 4. Correlation Analysis
+### 3. Correlation Analysis
 The correlation matrix reveals a **moderate negative correlation** between `minutes_to_event` and `stake`:
 
 | Metric              | `minutes_to_event` | `stake`   |
