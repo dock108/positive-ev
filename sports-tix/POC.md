@@ -7,6 +7,7 @@ The goal is to build a machine learning model that predicts ticket prices for ba
 - Focus on ticket prices for a specific baseball team or subset of teams as the initial target.
 - Analyze pricing trends on platforms like StubHub, SeatGeek, and others.
 - Evaluate market behavior near game days, accounting for factors like demand, team performance, and weather.
+- Ensure profitability accounts for high buy and sell fees, targeting at least a 15-20% profit margin.
 
 ---
 
@@ -34,6 +35,7 @@ The goal is to build a machine learning model that predicts ticket prices for ba
 1. Analyze historical ticket prices:
    - Price trends as game day approaches.
    - Impact of team performance, rivalry games, and weather conditions.
+   - Identify opportunities where price fluctuations could offer a 15-20% profit margin after fees.
 2. Visualize data to identify patterns:
    - Use tools like `matplotlib` and `seaborn`.
 3. Identify key features for modeling.
@@ -57,6 +59,7 @@ The goal is to build a machine learning model that predicts ticket prices for ba
 4. **Performance Metrics**
    - Evaluate using RMSE, MAE, and R².
    - Prioritize interpretability for actionable insights.
+   - Include analysis on how predicted profits align with the 15-20% target margin after fees.
 
 ---
 
@@ -67,7 +70,7 @@ The goal is to build a machine learning model that predicts ticket prices for ba
    - Output: predicted ticket price range and potential profit margin.
 
 2. **Automated Alerts**
-   - Set up notifications for significant pricing discrepancies.
+   - Set up notifications for significant pricing discrepancies that meet profit margin criteria.
 
 3. **Scalability**
    - Deploy on cloud platforms like AWS, GCP, or Azure.
@@ -77,15 +80,17 @@ The goal is to build a machine learning model that predicts ticket prices for ba
 
 ### **Phase 5: Testing and Iteration**
 1. Backtest the model using historical data to measure profitability.
-2. Fine-tune the model based on real-world performance.
-3. Incorporate feedback loops for continuous learning.
+2. Focus on filtering results for opportunities that offer 15-20% profit after fees.
+3. Fine-tune the model based on real-world performance.
+4. Incorporate feedback loops for continuous learning.
 
 ---
 
 ## Potential Challenges
-1. Limited availability of historical ticket pricing data.
-2. Dynamic market changes (e.g., unexpected demand spikes).
-3. API rate limits or legal restrictions on data usage.
+1. **High Buy and Sell Fees**: Difficulty finding opportunities with a 15-20% profit margin to counteract current fees.
+2. Limited availability of historical ticket pricing data.
+3. Dynamic market changes (e.g., unexpected demand spikes).
+4. API rate limits or legal restrictions on data usage.
 
 ---
 
@@ -101,6 +106,7 @@ The goal is to build a machine learning model that predicts ticket prices for ba
 1. Model predicts ticket prices with a high degree of accuracy.
 2. Identifies profitable buying or selling opportunities.
 3. Generates consistent profits when applied in real-world scenarios.
+4. Ensures all opportunities meet or exceed a 15-20% profit margin to counteract fees.
 
 ---
 
