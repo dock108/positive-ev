@@ -3,6 +3,40 @@ import sqlite3
 import logging
 from datetime import datetime, timedelta
 
+# Normalization dictionary for team names
+team_normalization_map = {
+    "Memphis Grizzlies": "Memphis",
+    "Golden State Warriors": "Golden State",
+    "Denver Nuggets": "Denver",
+    "San Antonio Spurs": "San Antonio",
+    "Utah Jazz": "Utah",
+    "Miami Heat": "Miami",
+    "New York Knicks": "New York",
+    "Chicago Bulls": "Chicago",
+    "Portland Trail Blazers": "Portland",
+    "Milwaukee Bucks": "Milwaukee",
+    "Minnesota Timberwolves": "Minnesota",
+    "Detroit Pistons": "Detroit",
+    "Phoenix Suns": "Phoenix",
+    "Indiana Pacers": "Indiana",
+    "Atlanta Hawks": "Atlanta",
+    "Los Angeles Clippers": "LA",
+    "Los Angeles Lakers": "Los Angeles",
+    "Sacramento Kings": "Sacramento",
+    "Houston Rockets": "Houston",
+    "Orlando Magic": "Orlando",
+    "New Orleans Pelicans": "New Orleans",
+    "Washington Wizards": "Washington",
+    "Boston Celtics": "Boston",
+    "Oklahoma City Thunder": "Oklahoma City",
+    "Charlotte Hornets": "Charlotte",
+    "Cleveland Cavaliers": "Cleveland",
+    "Philadelphia 76ers": "Philadelphia",
+    "Brooklyn Nets": "Brooklyn",
+    "Toronto Raptors": "Toronto",
+    "Dallas Mavericks": "Dallas"
+}
+
 # Database configuration
 db_file = "betting_data.db"
 logs_folder = "logs"
@@ -69,27 +103,28 @@ def fetch_player_stats(cursor, game_id, player_name):
     cursor.execute(query, (game_id, player_name))
     return cursor.fetchone()
 
+def normalize_team_name(team_name):
+    """
+    Normalize team names using the team normalization map.
+    """
+    return team_normalization_map.get(team_name.strip(), team_name.strip())
+
+def extract_and_normalize_teams(event_teams):
+    """
+    Extract and normalize team names from the event_teams string.
+    """
+    teams = [normalize_team_name(team.strip()) for team in event_teams.split("vs")]
+    logging.debug(f"Extracted and normalized teams: {teams}")
+    return teams if len(teams) == 2 else None
+
 def find_game_id(cursor, event_teams, event_time):
     """
-    Find the game ID in the database matching the event teams and event time using city names.
+    Find the game ID in the database matching the event teams and event time using normalized team names.
     """
     try:
-        # List of two-word cities in NBA
-        multi_word_cities = ["Los Angeles", "New Orleans", "New York", "Oklahoma City"]
-
-        # Extract cities from the event_teams string
-        teams = []
-        for team in event_teams.split("vs"):
-            team = team.strip()
-            # Check if the team starts with a multi-word city
-            for city in multi_word_cities:
-                if team.startswith(city):
-                    teams.append(city)
-                    break
-            else:
-                teams.append(team.split()[0])  # Default to the first word if not multi-word
-
-        if len(teams) != 2:
+        # Normalize team names
+        teams = extract_and_normalize_teams(event_teams)
+        if not teams:
             logging.warning(f"Invalid event_teams format: {event_teams}")
             return None
 
@@ -108,10 +143,9 @@ def find_game_id(cursor, event_teams, event_time):
             SELECT game_id
             FROM game_boxscores
             WHERE game_date = ?
-            AND ((team LIKE ? AND opponent LIKE ?) OR (team LIKE ? AND opponent LIKE ?))
+            AND ((team = ? AND opponent = ?) OR (team = ? AND opponent = ?))
         """
-        # Add wildcard for partial matching
-        cursor.execute(query, (event_date, f"{teams[0]}%", f"{teams[1]}%", f"{teams[1]}%", f"{teams[0]}%"))
+        cursor.execute(query, (event_date, teams[0], teams[1], teams[1], teams[0]))
         result = cursor.fetchone()
 
         if result:
@@ -152,11 +186,15 @@ def determine_result(player_stats, stat_types, condition, target_value):
         # Log inputs for transparency
         logging.debug(f"Player stats: {player_stats}, Stat types: {stat_types}, Condition: {condition}, Target: {target_value}")
 
-        # Handle Player Double Double
-        if "Double Double" in stat_types:
+        # Handle Player Double Double and Triple Double
+        if "Double Double" in stat_types or "Triple Double" in stat_types:
             double_stats = sum(1 for i, stat in enumerate(player_stats) if stat >= 10 and i < 6)  # First six columns are core stats
-            logging.debug(f"Double Double count: {double_stats}")
-            return "W" if double_stats >= 2 else "L"
+            logging.debug(f"Double/Triple Double count: {double_stats}")
+            
+            if "Triple Double" in stat_types:
+                return "W" if double_stats >= 3 else "L"
+            elif "Double Double" in stat_types:
+                return "W" if double_stats >= 2 else "L"
 
         # Calculate the combined stat value
         actual_value = sum(player_stats[stat_mapping[stat]] for stat in stat_types)
@@ -178,7 +216,7 @@ def determine_result(player_stats, stat_types, condition, target_value):
                 logging.debug(f"Condition 'Under' not met. Actual: {actual_value} >= Target: {target_value}. Result: L")
                 return "L"
         elif actual_value == target_value:
-            logging.debug(f"Actual value matches target value. Result: R")
+            logging.debug("Actual value matches target value. Result: R")
             return "R"  # Refund/Tie/Push
         else:
             # This fallback should rarely be triggered
@@ -195,15 +233,22 @@ def parse_bet_details(description, bet_type):
     try:
         # Split description into parts
         parts = description.split()
+
+        # Determine if the bet is for Double Double or Triple Double
+        is_double_or_triple = "Double Double" in bet_type or "Triple Double" in bet_type
         
-        # The last two parts are the condition (Over/Under) and the target value
-        condition = parts[-2] if "Double Double" not in bet_type else None
+        # The last two parts are the condition (Over/Under) and the target value, if not Double/Triple Double
+        condition = parts[-2] if not is_double_or_triple else None
         target_value = float(parts[-1]) if condition else None
-        
+
         # The remaining parts form the player's name
-        player_name = " ".join(parts[:-2]) if condition else description.replace("Player Double Double", "").strip()
-        
-        # Determine the stat type based on bet_type
+        if is_double_or_triple:
+            # Remove the stat type (e.g., "Player Double Double" or "Player Triple Double") from the description
+            player_name = description.replace("Player Double Double", "").replace("Player Triple Double", "").strip()
+        else:
+            player_name = " ".join(parts[:-2])  # Everything before the last two parts
+
+        # Determine the stat type(s)
         stat_types = []
         if "Points" in bet_type:
             stat_types.append("Points")
@@ -219,10 +264,12 @@ def parse_bet_details(description, bet_type):
             stat_types.append("Turnovers")
         if "Made Threes" in bet_type or "Three Pointers Made" in bet_type:
             stat_types.append("Made Threes")
-
-        # Special case for Double Double
+        
+        # Special case for Double Double and Triple Double
         if "Double Double" in bet_type:
             stat_types.append("Double Double")
+        if "Triple Double" in bet_type:
+            stat_types.append("Triple Double")
 
         if not stat_types:
             raise ValueError(f"Invalid or unrecognized stat type in bet_type: {bet_type}")
@@ -240,15 +287,19 @@ def update_bet_results():
     conn = connect_db()
     cursor = conn.cursor()
 
-    # Fetch unresolved bets
+    # Get the current date minus one
+    cutoff_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+
+    # Fetch unresolved bets prior to the current date
     query = """
         SELECT id, bet_id, event_teams, event_time, bet_type, description
         FROM betting_data
         WHERE result NOT IN ('W', 'L', 'R')
         AND sport_league LIKE '%NBA%'
         AND bet_type LIKE 'Player%'
+        AND DATE(event_time) < ?
     """
-    cursor.execute(query)
+    cursor.execute(query, (cutoff_date,))
     bets = cursor.fetchall()
 
     for bet in bets:
@@ -270,7 +321,11 @@ def update_bet_results():
         # Fetch player stats
         player_stats = fetch_player_stats(cursor, game_id, player_name)
         if player_stats is None:
-            logging.warning(f"Stats not found for player: {player_name} in game: {game_id}")
+            # Player stats not found; refund the bet
+            logging.debug(f"Stats not found for player: {player_name} in game: {game_id}")
+            cursor.execute("UPDATE betting_data SET result = ? WHERE bet_id = ?", ("R", bet_id))
+            conn.commit()
+            logging.info(f"Updated result for bet: {bet_id} to R (Refunded)")
             continue
 
         logging.debug(f"Fetched player stats for {player_name} in game {game_id}: {player_stats}")
