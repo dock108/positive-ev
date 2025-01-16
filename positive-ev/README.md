@@ -109,17 +109,13 @@ positive-ev/
 │   ├── scraping.log             # Log file for the scraper
 │   └── …                        # Additional logs as needed
 │
-├── src/                 # Source code for the project
-│   ├── scraper.py              # Core script for scraping positive EV opportunities
-│   ├── bet_results_eda.py      # EDA script for bet results analysis
-│   ├── resolve_results.py      # Match bets with outcomes and update results
-│   ├── scrape_boxscores.py     # Scraper for NBA box scores
-│   ├── trend_analysis.py       # Tracks line movements and trends
-│   └── utils.py                # Helper functions (e.g., database operations)
-│
-└── reports/             # Generated reports for analysis
-    ├── unresolved_bets.md     # Report on unresolved bets requiring manual review
-    └── other_reports.md       # Placeholder for additional reports
+└── src/                 # Source code for the project
+    ├── scraper.py              # Core script for scraping positive EV opportunities
+    ├── bet_results_eda.py      # EDA script for bet results analysis
+    ├── update_results.py      # Match bets with outcomes and update results
+    ├── scrape_boxscores.py     # Scraper for NBA box scores
+    ├── trend_analysis.py       # Tracks line movements and trends
+    └── utils.py                # Helper functions (e.g., database operations)
 ```
 
 ---
