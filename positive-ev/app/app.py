@@ -1,12 +1,14 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template
+import os
 import sqlite3
 import pandas as pd
 import plotly.express as px
-from datetime import datetime
 
 app = Flask(__name__)
 
-DATABASE = 'betting_data.db'
+# Define folder structure
+base_dir = "/Users/michaelfuscoletti/Desktop/mega-plan/positive-ev/app"
+DATABASE = os.path.join(base_dir, "betting_data.db")
 
 def query_db(query, args=(), one=False):
     """Helper function to query the SQLite database."""
@@ -24,7 +26,7 @@ def index():
     unresolved_bets = query_db("""
         SELECT * FROM betting_data
         WHERE result NOT IN ('W', 'L', 'R')
-        ORDER BY event_time ASC
+        ORDER BY timestamp DESC
         LIMIT 10
     """)
     return render_template('index.html', unresolved_bets=unresolved_bets)
@@ -44,12 +46,17 @@ def results():
 def rankings():
     """Ranked Opportunities Page."""
     ranked_bets = query_db("""
+        WITH LatestTimestamp AS (
+            SELECT MAX(timestamp) AS latest_timestamp
+            FROM betting_data
+        )
         SELECT *, 
-            (ev_percent * win_probability) AS weighted_ev
+            ROUND((ev_percent * win_probability) / 100, 2) AS weighted_ev,
+            ROUND((JULIANDAY(event_time) - JULIANDAY('now')) * 24 * 60, 2) AS time_to_event_minutes
         FROM betting_data
         WHERE result NOT IN ('W', 'L', 'R')
+        AND timestamp = (SELECT latest_timestamp FROM LatestTimestamp)
         ORDER BY weighted_ev DESC
-        LIMIT 20
     """)
     return render_template('rankings.html', ranked_bets=ranked_bets)
 

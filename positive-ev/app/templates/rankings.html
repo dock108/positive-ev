@@ -9,7 +9,10 @@
     <table>
         <tr>
             <th>Timestamp</th>
+            <th>Game Time</th>
             <th>Event</th>
+            <th>Bet</th>
+            <th>Description</th>
             <th>EV%</th>
             <th>Win Probability</th>
             <th>Weighted EV</th>
@@ -17,7 +20,10 @@
         {% for bet in ranked_bets %}
         <tr>
             <td>{{ bet['timestamp'] }}</td>
+            <td>{{ bet['event_time'] }}</td>
             <td>{{ bet['event_teams'] }}</td>
+            <td>{{ bet['bet_type'] }}</td>
+            <td>{{ bet['description'] }}</td>
             <td>{{ bet['ev_percent'] }}</td>
             <td>{{ bet['win_probability'] }}</td>
             <td>{{ bet['weighted_ev'] }}</td>
