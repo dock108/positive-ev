@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Positive EV Dashboard</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <h1>Recent Bets</h1>
+    <table>
+        <tr>
+            <th>Timestamp</th>
+            <th>Event</th>
+            <th>EV%</th>
+            <th>Odds</th>
+            <th>Bet Type</th>
+            <th>Sportsbook</th>
+        </tr>
+        {% for bet in unresolved_bets %}
+        <tr>
+            <td>{{ bet['timestamp'] }}</td>
+            <td>{{ bet['event_teams'] }}</td>
+            <td>{{ bet['ev_percent'] }}</td>
+            <td>{{ bet['odds'] }}</td>
+            <td>{{ bet['bet_type'] }}</td>
+            <td>{{ bet['sportsbook'] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
