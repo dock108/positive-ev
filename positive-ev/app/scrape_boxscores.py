@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import requests
 
 # Define folder structure
-base_dir = "/Users/michaelfuscoletti/Desktop/mega-plan/positive-ev"
+base_dir = "/Users/michaelfuscoletti/Desktop/mega-plan/positive-ev/app"
 db_file = os.path.join(base_dir, "betting_data.db")
 logs_folder = os.path.join(base_dir, "logs")
 
