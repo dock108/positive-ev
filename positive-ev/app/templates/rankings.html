@@ -218,9 +218,6 @@
             const trueDecimalOdds = 1 / combinedProbability;
             const trueAmericanOdds = americanOdds(trueDecimalOdds);
     
-            const bookmakerCombinedOdds = decimal1 * decimal2 * (decimal3 || 1);
-            const bookmakerCombinedAmericanOdds = americanOdds(bookmakerCombinedOdds);
-    
             const evValues = [ev1, ev2];
             const stakeValues = [stake1, stake2];
             if (ev3 !== null) {
@@ -245,15 +242,11 @@
                     <li>Leg 2: Odds = ${odds2}, EV% = ${ev2.toFixed(2)}, Bet Size = ${stake2.toFixed(2)}</li>
                     ${odds3 !== null ? `<li>Leg 3: Odds = ${odds3}, EV% = ${ev3.toFixed(2)}, Bet Size = ${stake3.toFixed(2)}</li>` : ''}
                 </ul>
-                <p><strong>True Odds:</strong> ${trueAmericanOdds}</p>
-                <p><strong>Bookmaker Combined Odds:</strong> ${bookmakerCombinedAmericanOdds}</p>
+                <p><strong>Implied Odds:</strong> ${trueAmericanOdds}</p>
                 <p><strong>Combined EV%:</strong> ${weightedEV.toFixed(2)}%</p>
                 <p><strong>Suggested Stake:</strong> ${suggestedStake}</p>
                 <p><strong>Potential Payout:</strong> ${payout}</p>
                 <p><strong>Potential Profit:</strong> ${profit}</p>
-                ${bookmakerCombinedOdds < trueDecimalOdds 
-                    ? '<p style="color: red;"><strong>Warning:</strong> Parlay is underpriced by the bookmaker!</p>' 
-                    : '<p style="color: green;"><strong>Good Value:</strong> Parlay is fairly priced!</p>'}
             `;
         }
     </script>
