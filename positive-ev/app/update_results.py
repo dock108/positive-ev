@@ -37,9 +37,10 @@ team_normalization_map = {
     "Dallas Mavericks": "Dallas"
 }
 
-# Database configuration
-db_file = "betting_data.db"
-logs_folder = "logs"
+# Define folder structure
+base_dir = "/Users/michaelfuscoletti/Desktop/mega-plan/positive-ev/app"
+db_file = os.path.join(base_dir, "betting_data.db")
+logs_folder = os.path.join(base_dir, "logs")
 log_file = f"{logs_folder}/results_update.log"
 
 # Create logs folder if it doesn't exist
@@ -287,19 +288,14 @@ def update_bet_results():
     conn = connect_db()
     cursor = conn.cursor()
 
-    # Get the current date minus one
-    cutoff_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-
-    # Fetch unresolved bets prior to the current date
     query = """
         SELECT id, bet_id, event_teams, event_time, bet_type, description
         FROM betting_data
         WHERE result NOT IN ('W', 'L', 'R')
         AND sport_league LIKE '%NBA%'
         AND bet_type LIKE 'Player%'
-        AND DATE(event_time) < ?
     """
-    cursor.execute(query, (cutoff_date,))
+    cursor.execute(query)
     bets = cursor.fetchall()
 
     for bet in bets:

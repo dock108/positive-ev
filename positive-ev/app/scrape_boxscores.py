@@ -4,8 +4,10 @@ import logging
 from datetime import datetime, timedelta
 import requests
 
-# Database file path
-db_file = "betting_data.db"
+# Define folder structure
+base_dir = "/Users/michaelfuscoletti/Desktop/mega-plan/positive-ev/app"
+db_file = os.path.join(base_dir, "betting_data.db")
+logs_folder = os.path.join(base_dir, "logs")
 
 # NBA Stats API Headers
 HEADERS = {

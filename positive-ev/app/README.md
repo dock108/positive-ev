@@ -14,8 +14,9 @@ The **Positive-EV Betting Data Pipeline** automates the following:
    - Organizes betting opportunities and box scores in a robust SQLite database.
 3. **Results Processing**:
    - Matches unresolved bets with NBA box scores to determine outcomes.
-   - Flags unresolved bets as `PEND MANUAL` for further review.
-4. **Future Expansion**:
+4. **Trend Analysis and Modeling**:
+   - Tracks line changes, trends, and weighted EV to enhance future betting decisions.
+5. **Future Expansion**:
    - Scales to other sports, leagues, and advanced modeling strategies.
 
 ---
@@ -38,11 +39,11 @@ This project focuses on overcoming the challenges of sportsbook-imposed bet amou
    | **120–480 minutes**     | 2     |
    | **480+ minutes**        | 1     |
 
-3. **Manual Arbitrage**:
-   - While not scalable, manual arbitrage provides consistent, risk-free cash flow, allowing for more aggressive +EV bets over time.
+3. **Weighted EV**:
+   - Combines bet size, EV percentage, win probability, odds, and time-to-event for smarter prioritization.
 
-4. **Diversify Accounts**:
-   - Avoid concentrating activity in a single sportsbook. Spread action across multiple accounts to mitigate risk and maximize opportunities.
+4. **Line Movement Tracking**:
+   - Identifies and adjusts for significant line changes on bets.
 
 5. **Sustainable Withdrawals**:
    - Withdraw primarily from betting exchanges to preserve major accounts like **DraftKings** and **FanDuel** for larger +EV opportunities.
@@ -69,19 +70,21 @@ This project focuses on overcoming the challenges of sportsbook-imposed bet amou
 
 ### 🛠 **Result Matching**
 - Matches unresolved bets to box scores.
-- Automatically updates results to `Win`, `Loss`, or `PEND MANUAL`.
+- Automatically updates results to `Win`, `Loss`, or `Refund`.
+
+### 📊 **Trend Analysis**
+- Tracks odds, bet sizes, and EV trends over time.
+- Identifies shifts in lines or betting opportunities.
+
+### 📈 **Predictive Modeling**
+- Uses features like EV percentage, time-to-event, and line trends to:
+  - Predict ROI for bets.
+  - Rank opportunities for daily betting.
 
 ### 📊 **Scalability**
 - Built with scalability in mind for:
   - Adding new sports or leagues.
   - Enhancing with predictive modeling (e.g., Random Forest, Bayesian models).
-
----
-
-## Supporting Documentation
-
-For initial project goals and exploratory data analysis, refer to:
-- [initial_eda.md](./initial_eda.md): Supporting data and results.
 
 ---
 
@@ -111,6 +114,7 @@ positive-ev/
 │   ├── bet_results_eda.py      # EDA script for bet results analysis
 │   ├── resolve_results.py      # Match bets with outcomes and update results
 │   ├── scrape_boxscores.py     # Scraper for NBA box scores
+│   ├── trend_analysis.py       # Tracks line movements and trends
 │   └── utils.py                # Helper functions (e.g., database operations)
 │
 └── reports/             # Generated reports for analysis
@@ -128,17 +132,17 @@ positive-ev/
 | `id`             | INTEGER | Primary key                               |
 | `bet_id`         | TEXT    | Unique identifier for the bet             |
 | `timestamp`      | TEXT    | When the bet was recorded                 |
-| `ev_percent`     | TEXT    | Expected Value percentage                 |
+| `ev_percent`     | REAL    | Expected Value percentage                 |
 | `event_time`     | TEXT    | Scheduled time of the event               |
 | `event_teams`    | TEXT    | Teams involved in the event               |
 | `sport_league`   | TEXT    | Sport and league                          |
 | `bet_type`       | TEXT    | Type of bet (e.g., Player Points)         |
 | `description`    | TEXT    | Detailed description of the bet           |
-| `odds`           | TEXT    | American odds                             |
+| `odds`           | REAL    | American odds                             |
 | `sportsbook`     | TEXT    | Sportsbook offering the odds              |
-| `bet_size`       | TEXT    | Suggested bet size                        |
-| `win_probability`| TEXT    | Implied win probability                   |
-| `result`         | TEXT    | Outcome: `Win`, `Loss`, or `PEND MANUAL`  |
+| `bet_size`       | REAL    | Suggested bet size                        |
+| `win_probability`| REAL    | Implied win probability                   |
+| `result`         | TEXT    | Outcome: `Win`, `Loss`, or `Refund`       |
 
 ### NBA Box Scores Table: `nba_box_scores`
 | Field           | Type    | Description                               |
@@ -158,23 +162,27 @@ positive-ev/
 ### Prerequisites
 1. Python 3.9+ installed.
 2. Required Python libraries:
-   ```bash
-   pip install selenium beautifulsoup4 sqlite3 requests
+   ```
+   pip install selenium beautifulsoup4 sqlite3 requests pandas scikit-learn
    ```
 3. ChromeDriver installed for Selenium scraping.
 
 ### Running Scripts
 1. **Scrape Positive EV Bets**:
-   ```bash
+   ```
    python scripts/scrape_ev.py
    ```
 2. **Scrape NBA Box Scores** (for a specific date):
-   ```bash
+   ```
    python scripts/scrape_boxscores.py --date YYYY-MM-DD
    ```
 3. **Resolve Results**:
-   ```bash
+   ```
    python scripts/resolve_results.py
+   ```
+4. **Analyze Trends and Weighted EV**:
+   ```
+   python scripts/trend_analysis.py
    ```
 
 ---
