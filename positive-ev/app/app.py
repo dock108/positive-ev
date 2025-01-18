@@ -42,23 +42,39 @@ def results():
     """)
     return render_template('results.html', resolved_bets=resolved_bets)
 
-@app.route('/rankings')
+@app.route("/rankings")
 def rankings():
     """Ranked Opportunities Page."""
     ranked_bets = query_db("""
         WITH LatestTimestamp AS (
             SELECT MAX(timestamp) AS latest_timestamp
             FROM betting_data
+        ),
+        RankedBets AS (
+            SELECT *,
+                -- Odds Multiplier: Scale odds into a value for prioritization
+                CASE
+                    WHEN odds > 0 THEN (odds / 100.0) + 1 -- Positive odds: scale proportionally
+                    WHEN odds < 0 THEN (100.0 / ABS(odds)) + 1 -- Negative odds: scale inversely
+                    ELSE 1.0 -- Fallback for unexpected cases
+                END AS odds_multiplier,
+                
+                -- Priority Rank: Combines EV% and odds multiplier
+                ROUND(ev_percent * 
+                      (CASE
+                           WHEN odds > 0 THEN (odds / 100.0) + 1
+                           WHEN odds < 0 THEN (100.0 / ABS(odds)) + 1
+                           ELSE 1.0
+                       END), 2) AS priority_rank
+            FROM betting_data
+            WHERE result NOT IN ('W', 'L', 'R')
+              AND timestamp = (SELECT latest_timestamp FROM LatestTimestamp)
         )
-        SELECT *, 
-            ROUND((ev_percent * win_probability) / 100, 2) AS weighted_ev,
-            ROUND((JULIANDAY(event_time) - JULIANDAY('now')) * 24 * 60, 2) AS time_to_event_minutes
-        FROM betting_data
-        WHERE result NOT IN ('W', 'L', 'R')
-        AND timestamp = (SELECT latest_timestamp FROM LatestTimestamp)
-        ORDER BY weighted_ev DESC
+        SELECT *
+        FROM RankedBets
+        ORDER BY priority_rank DESC, ev_percent DESC, odds_multiplier DESC
     """)
-    return render_template('rankings.html', ranked_bets=ranked_bets)
+    return render_template("rankings.html", ranked_bets=ranked_bets)
 
 @app.route('/trends')
 def trends():

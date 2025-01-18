@@ -3,32 +3,255 @@
 <head>
     <title>Ranked Opportunities</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            background-color: #1E1E1E;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #FFD700;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 72%;
+            margin: 20px;
+            border-collapse: collapse;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            background-color: #222;
+            color: #FFF;
+        }
+
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #444;
+            font-size: 14px;
+        }
+
+        table th {
+            background-color: #333;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        table tr:nth-child(even) {
+            background-color: #2C2C2C;
+        }
+
+        table tr:hover {
+            background-color: #444;
+        }
+
+        .fixed-calculator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 20%; 
+            max-height: 90vh;
+            overflow-y: auto;
+            background-color: #282828;
+            border: 1px solid #444;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            font-size: 14px;
+            color: #FFF;
+        }
+
+        .fixed-calculator h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #FFD700;
+            text-align: center;
+        }
+
+        .fixed-calculator label {
+            font-size: 13px;
+            color: #FFF;
+            display: block;
+            margin-top: 10px;
+        }
+
+        .fixed-calculator input {
+            width: 100%;
+            padding: 6px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            border: 1px solid #666;
+            border-radius: 4px;
+            background-color: #333;
+            color: #FFF;
+        }
+
+        .fixed-calculator button {
+            width: 100%;
+            padding: 8px;
+            font-size: 14px;
+            color: white;
+            background-color: #FFD700;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .fixed-calculator button:hover {
+            background-color: #FFC107;
+        }
+
+        #parlay-results {
+            margin-top: 15px;
+            font-size: 13px;
+            color: #FFF;
+        }
+    </style>
 </head>
 <body>
-    <h1>Top Ranked Bets</h1>
-    <table>
-        <tr>
-            <th>Timestamp</th>
-            <th>Game Time</th>
-            <th>Event</th>
-            <th>Bet</th>
-            <th>Description</th>
-            <th>EV%</th>
-            <th>Win Probability</th>
-            <th>Weighted EV</th>
-        </tr>
-        {% for bet in ranked_bets %}
-        <tr>
-            <td>{{ bet['timestamp'] }}</td>
-            <td>{{ bet['event_time'] }}</td>
-            <td>{{ bet['event_teams'] }}</td>
-            <td>{{ bet['bet_type'] }}</td>
-            <td>{{ bet['description'] }}</td>
-            <td>{{ bet['ev_percent'] }}</td>
-            <td>{{ bet['win_probability'] }}</td>
-            <td>{{ bet['weighted_ev'] }}</td>
-        </tr>
-        {% endfor %}
-    </table>
+    <div class="content">
+        <h1>Top Ranked Bets</h1>
+        <table>
+            <tr>
+                <th>Timestamp</th>
+                <th>Game Time</th>
+                <th>Event</th>
+                <th>Bet</th>
+                <th>Description</th>
+                <th>Odds</th>
+                <th>Bet Size</th>
+                <th>Sportsbook</th>
+                <th>EV%</th>
+                <th>Win Probability</th>
+                <th>Priority Score</th>
+            </tr>
+            {% for bet in ranked_bets %}
+            <tr>
+                <td>{{ bet['timestamp'] }}</td>
+                <td>{{ bet['event_time'] }}</td>
+                <td>{{ bet['event_teams'] }}</td>
+                <td>{{ bet['bet_type'] }}</td>
+                <td>{{ bet['description'] }}</td>
+                <td>{{ "%.0f"|format(bet['odds']|float) }}</td>
+                <td>{{ "%.2f"|format(bet['bet_size']|float) }}</td>
+                <td>{{ bet['sportsbook'] }}</td>
+                <td>{{ "%.2f"|format(bet['ev_percent']|float) }}%</td>
+                <td>{{ "%.2f"|format(bet['win_probability']|float) }}%</td>
+                <td>{{ "%.2f"|format(bet['priority_rank']|float) }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="fixed-calculator">
+        <h2>Parlay Calculator</h2>
+        <form id="parlay-form">
+            <label for="odds1">Odds 1:</label>
+            <input type="number" id="odds1" name="odds1" step="0.01" required>
+            <label for="stake1">Bet Size 1:</label>
+            <input type="number" id="stake1" name="stake1" step="0.01" required>
+            <label for="ev1">EV% 1:</label>
+            <input type="number" id="ev1" name="ev1" step="0.01" required>
+
+            <label for="odds2">Odds 2:</label>
+            <input type="number" id="odds2" name="odds2" step="0.01" required>
+            <label for="stake2">Bet Size 2:</label>
+            <input type="number" id="stake2" name="stake2" step="0.01" required>
+            <label for="ev2">EV% 2:</label>
+            <input type="number" id="ev2" name="ev2" step="0.01" required>
+
+            <label for="odds3">Odds 3 (optional):</label>
+            <input type="number" id="odds3" name="odds3" step="0.01">
+            <label for="stake3">Bet Size 3 (optional):</label>
+            <input type="number" id="stake3" name="stake3" step="0.01">
+            <label for="ev3">EV% 3 (optional):</label>
+            <input type="number" id="ev3" name="ev3" step="0.01">
+
+            <button type="button" onclick="calculateParlay()">Calculate Parlay</button>
+        </form>
+        <div id="parlay-results"></div>
+    </div>
+
+    <script>
+        function calculateParlay() {
+            const odds1 = parseFloat(document.getElementById('odds1').value);
+            const stake1 = parseFloat(document.getElementById('stake1').value);
+            const ev1 = parseFloat(document.getElementById('ev1').value);
+    
+            const odds2 = parseFloat(document.getElementById('odds2').value);
+            const stake2 = parseFloat(document.getElementById('stake2').value);
+            const ev2 = parseFloat(document.getElementById('ev2').value);
+    
+            const odds3 = document.getElementById('odds3').value ? parseFloat(document.getElementById('odds3').value) : null;
+            const stake3 = document.getElementById('stake3').value ? parseFloat(document.getElementById('stake3').value) : null;
+            const ev3 = document.getElementById('ev3').value ? parseFloat(document.getElementById('ev3').value) : null;
+    
+            if (isNaN(odds1) || isNaN(stake1) || isNaN(ev1) || isNaN(odds2) || isNaN(stake2) || isNaN(ev2)) {
+                document.getElementById('parlay-results').innerText = 'Please fill in required fields correctly.';
+                return;
+            }
+    
+            const decimalOdds = (americanOdds) => {
+                return americanOdds > 0 ? (americanOdds / 100) + 1 : (100 / Math.abs(americanOdds)) + 1;
+            };
+    
+            const americanOdds = (decimalOdds) => {
+                return decimalOdds > 2 ? Math.round((decimalOdds - 1) * 100) : Math.round(-100 / (decimalOdds - 1));
+            };
+    
+            const decimal1 = decimalOdds(odds1);
+            const decimal2 = decimalOdds(odds2);
+            const decimal3 = odds3 !== null ? decimalOdds(odds3) : 1;
+    
+            const probability1 = 1 / decimal1;
+            const probability2 = 1 / decimal2;
+            const probability3 = odds3 !== null ? 1 / decimal3 : 1;
+    
+            const combinedProbability = probability1 * probability2 * probability3;
+            const trueDecimalOdds = 1 / combinedProbability;
+            const trueAmericanOdds = americanOdds(trueDecimalOdds);
+    
+            const bookmakerCombinedOdds = decimal1 * decimal2 * (decimal3 || 1);
+            const bookmakerCombinedAmericanOdds = americanOdds(bookmakerCombinedOdds);
+    
+            const evValues = [ev1, ev2];
+            const stakeValues = [stake1, stake2];
+            if (ev3 !== null) {
+                evValues.push(ev3);
+                stakeValues.push(stake3);
+            }
+    
+            // Weighted EV Calculation
+            const weightedEV = evValues.reduce((acc, ev, index) => acc + ev * (stakeValues[index] / stakeValues.reduce((a, b) => a + b, 0)), 0);
+    
+            // Suggested Stake Calculation
+            const avgStake = stakeValues.reduce((a, b) => a + b, 0) / stakeValues.length;
+            const suggestedStake = (avgStake / (trueDecimalOdds ** 0.5)).toFixed(2);
+    
+            const payout = (suggestedStake * bookmakerCombinedOdds).toFixed(2);
+            const profit = (payout - suggestedStake).toFixed(2);
+    
+            document.getElementById('parlay-results').innerHTML = `
+                <h3>Parlay Results</h3>
+                <ul>
+                    <li>Leg 1: Odds = ${odds1}, EV% = ${ev1.toFixed(2)}, Bet Size = ${stake1.toFixed(2)}</li>
+                    <li>Leg 2: Odds = ${odds2}, EV% = ${ev2.toFixed(2)}, Bet Size = ${stake2.toFixed(2)}</li>
+                    ${odds3 !== null ? `<li>Leg 3: Odds = ${odds3}, EV% = ${ev3.toFixed(2)}, Bet Size = ${stake3.toFixed(2)}</li>` : ''}
+                </ul>
+                <p><strong>Expected Odds:</strong> ${trueAmericanOdds}</p>
+                <p><strong>Combined EV%:</strong> ${weightedEV.toFixed(2)}%</p>
+                <p><strong>Suggested Stake:</strong> ${suggestedStake}</p>
+                <p><strong>Potential Payout:</strong> ${payout}</p>
+                <p><strong>Potential Profit:</strong> ${profit}</p>
+            `;
+        }
+    </script>
 </body>
 </html>
