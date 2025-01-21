@@ -16,7 +16,6 @@ HEADERS = {
 }
 
 # Logs folder and log file
-logs_folder = "logs"
 log_file = os.path.join(logs_folder, "nba_stats_scraping.log")
 
 # Create folders if they don't exist
@@ -28,6 +27,30 @@ logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
+
+def cleanup_logs(log_file, retention_hours=48):
+    """Keep only the log entries from the past specified hours."""
+    try:
+        if os.path.exists(log_file):
+            cutoff_time = datetime.now() - timedelta(hours=retention_hours)
+            with open(log_file, "r") as file:
+                lines = file.readlines()
+
+            recent_lines = []
+            for line in lines:
+                try:
+                    log_time_str = line.split(" - ")[0]
+                    log_time = datetime.strptime(log_time_str, "%Y-%m-%d %H:%M:%S,%f")
+                    if log_time >= cutoff_time:
+                        recent_lines.append(line)
+                except Exception as e:
+                    logging.warning(f"Malformed log line ignored: {line.strip()} - Error: {e}")
+
+            with open(log_file, "w") as file:
+                file.writelines(recent_lines)
+            logging.info("Log file cleaned up. Only recent entries retained.")
+    except Exception as e:
+        logging.error(f"Failed to clean up log file: {e}", exc_info=True)
 
 def connect_db():
     conn = sqlite3.connect(db_file)
@@ -224,6 +247,7 @@ def parse_and_save_boxscore(boxscore_data, summary_data):
         conn.close()
 
 def main(game_date):
+    cleanup_logs(log_file)
     create_tables()
     try:
         game_ids = fetch_game_ids(game_date)

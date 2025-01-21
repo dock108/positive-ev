@@ -28,6 +28,8 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
             background-color: #222;
             color: #FFF;
+            position: relative;
+            z-index: 1; /* Ensures table stays below calculator */
         }
 
         table th, table td {
@@ -39,6 +41,7 @@
 
         table th {
             background-color: #333;
+            color: #FFD700; /* Changed header font color */
             position: sticky;
             top: 0;
             z-index: 2;
@@ -56,7 +59,7 @@
             position: fixed;
             top: 20px;
             right: 20px;
-            width: 20%; 
+            width: 20%;
             max-height: 90vh;
             overflow-y: auto;
             background-color: #282828;
@@ -66,6 +69,7 @@
             padding: 15px;
             font-size: 14px;
             color: #FFF;
+            z-index: 3; /* Keeps the calculator above the table */
         }
 
         .fixed-calculator h2 {
@@ -113,7 +117,34 @@
             font-size: 13px;
             color: #FFF;
         }
+
+        .filter-input {
+            width: 100%;
+            padding: 6px;
+            font-size: 12px;
+            border: 1px solid #666;
+            border-radius: 4px;
+            background-color: #333;
+            color: #FFF;
+            margin-top: 5px;
+            margin-bottom: 10px;
+        }
     </style>
+    <script>
+        function filterTable(columnIndex, inputId) {
+            const filter = document.getElementById(inputId).value.toLowerCase();
+            const table = document.querySelector("table");
+            const rows = table.getElementsByTagName("tr");
+
+            for (let i = 1; i < rows.length; i++) {
+                const cell = rows[i].getElementsByTagName("td")[columnIndex];
+                if (cell) {
+                    const textValue = cell.textContent || cell.innerText;
+                    rows[i].style.display = textValue.toLowerCase().indexOf(filter) > -1 ? "" : "none";
+                }
+            }
+        }
+    </script>
 </head>
 <body>
     <div class="content">
