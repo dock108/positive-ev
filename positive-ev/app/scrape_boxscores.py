@@ -24,11 +24,11 @@ os.makedirs(logs_folder, exist_ok=True)
 # Set up logging
 logging.basicConfig(
     filename=log_file,
-    level=logging.DEBUG,
+    level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-def cleanup_logs(log_file, retention_hours=48):
+def cleanup_logs(log_file, retention_hours=2):
     """Keep only the log entries from the past specified hours."""
     try:
         if os.path.exists(log_file):
@@ -198,6 +198,12 @@ def parse_and_save_boxscore(boxscore_data, summary_data):
             quarter_scores = [
                 row[quarter_headers.index(f"PTS_QTR{i}")] for i in range(1, 5)
             ]
+
+            # Check if game is still live
+            if any(score is None for score in quarter_scores):
+                logging.warning(f"Skipping game {game_id} as it is still in progress.")
+                continue
+
             first_half = sum(quarter_scores[:2])
             second_half = sum(quarter_scores[2:])
             total_score = row[quarter_headers.index("PTS")]

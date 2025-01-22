@@ -49,7 +49,7 @@ os.makedirs(logs_folder, exist_ok=True)
 # Set up logging
 logging.basicConfig(
     filename=log_file,
-    level=logging.DEBUG,
+    level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
@@ -64,7 +64,7 @@ stat_mapping = {
     "Made Threes": "made_threes"
 }
 
-def cleanup_logs(log_file, retention_hours=48):
+def cleanup_logs(log_file, retention_hours=2):
     """Keep only the log entries from the past specified hours."""
     try:
         if os.path.exists(log_file):
