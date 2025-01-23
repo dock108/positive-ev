@@ -200,7 +200,7 @@ def parse_and_save_boxscore(boxscore_data, summary_data):
             ]
 
             # Check if game is still live
-            if any(score is None for score in quarter_scores):
+            if any(score is None for score in quarter_scores) or any(score < 5 for score in quarter_scores):
                 logging.warning(f"Skipping game {game_id} as it is still in progress.")
                 continue
 
@@ -253,7 +253,6 @@ def parse_and_save_boxscore(boxscore_data, summary_data):
         conn.close()
 
 def main(game_date):
-    cleanup_logs(log_file)
     create_tables()
     try:
         game_ids = fetch_game_ids(game_date)
@@ -265,9 +264,19 @@ def main(game_date):
         logging.error(f"An error occurred: {e}", exc_info=True)
 
 if __name__ == "__main__":
+    cleanup_logs(log_file)
+    
+    # Get the latest date with a result from the database
     latest_date = get_latest_date_from_db()
+
+    # Set the start date to one day before the latest date in the database
     start_date = latest_date - timedelta(days=1)
-    end_date = datetime.now()
+
+    # Set the end date to today (not including today)
+    end_date = datetime.now() - timedelta(days=1)
+
+    # Log the date range
+    logging.info(f"Updating results from {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}.")
 
     current_date = start_date
     while current_date <= end_date:

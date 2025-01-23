@@ -291,12 +291,20 @@ def update_bet_results():
     conn = connect_db()
     cursor = conn.cursor()
 
-    query = """
+    # Get today's date
+    today = datetime.now()
+
+    # Format today's date to match the event_time format
+    today_formatted = today.strftime("%a, %b %d")
+
+    # SQL Query
+    query = f"""
         SELECT id, bet_id, event_teams, event_time, bet_type, description
         FROM betting_data
         WHERE result NOT IN ('W', 'L', 'R')
         AND sport_league LIKE '%NBA%'
         AND bet_type LIKE 'Player%'
+        AND DATE(event_time, 'unixepoch') < DATE('{today_formatted}')
     """
     cursor.execute(query)
     bets = cursor.fetchall()
@@ -324,7 +332,7 @@ def update_bet_results():
             logging.debug(f"Stats not found for player: {player_name} in game: {game_id}")
             cursor.execute("UPDATE betting_data SET result = ? WHERE bet_id = ?", ("R", bet_id))
             conn.commit()
-            logging.info(f"Updated result for bet: {bet_id} to R (Refunded)")
+            logging.info(f"Updated result for bet: {bet_id} to R")
             continue
 
         logging.debug(f"Fetched player stats for {player_name} in game {game_id}: {player_stats}")
