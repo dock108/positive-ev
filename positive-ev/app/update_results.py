@@ -197,6 +197,11 @@ def determine_result(player_stats, stat_types, condition, target_value):
             elif "Double Double" in stat_types:
                 return "W" if double_stats >= 2 else "L"
 
+        # Check for any missing stats (None) and refund the bet
+        if any(player_stats[stat_mapping[stat]] is None for stat in stat_types):
+            logging.debug("Player stats contain None values. Player likely did not play. Result: R")
+            return "R"  # Refund/Tie/Push
+        
         # Calculate the combined stat value
         actual_value = sum(player_stats[stat_mapping[stat]] for stat in stat_types)
         logging.debug(f"Calculated actual value for {stat_types}: {actual_value}")

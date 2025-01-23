@@ -265,7 +265,7 @@ def main(game_date):
 
 if __name__ == "__main__":
     latest_date = get_latest_date_from_db()
-    start_date = latest_date + timedelta(days=1)
+    start_date = latest_date - timedelta(days=5)
     end_date = datetime.now()
 
     current_date = start_date
