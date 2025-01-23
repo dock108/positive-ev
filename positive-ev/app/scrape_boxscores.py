@@ -202,6 +202,7 @@ def parse_and_save_boxscore(boxscore_data, summary_data):
             # Check if game is still live
             if any(score is None for score in quarter_scores) or any(score < 5 for score in quarter_scores):
                 logging.warning(f"Skipping game {game_id} as it is still in progress.")
+                logging.debug(f"Game Details: game_id={game_id}, quarter_scores={quarter_scores}, home_team_id={home_team_id}, visitor_team_id={visitor_team_id}, game_date={game_date}")
                 continue
 
             first_half = sum(quarter_scores[:2])
