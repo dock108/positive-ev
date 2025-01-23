@@ -260,12 +260,13 @@ def main(game_date):
         for game_id in game_ids:
             boxscore_data, summary_data = fetch_boxscore_with_quarters(game_id)
             parse_and_save_boxscore(boxscore_data, summary_data)
+        logging.info(f"Scraping completed for {game_date}")
     except Exception as e:
         logging.error(f"An error occurred: {e}", exc_info=True)
 
 if __name__ == "__main__":
     latest_date = get_latest_date_from_db()
-    start_date = latest_date - timedelta(days=5)
+    start_date = latest_date - timedelta(days=1)
     end_date = datetime.now()
 
     current_date = start_date

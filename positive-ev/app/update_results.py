@@ -153,7 +153,7 @@ def find_game_id(cursor, event_teams, event_time):
             logging.debug(f"Found game: Game ID {result[0]} for teams: {teams} on date: {event_date}")
             return result[0]
         else:
-            logging.warning(f"No game found for teams: {teams} on date: {event_date}")
+            logging.debug(f"No game found for teams: {teams} on date: {event_date}")
             return None
 
     except Exception as e:
@@ -288,8 +288,6 @@ def parse_bet_details(description, bet_type):
         return None, None, None, None
 
 def update_bet_results():
-    cleanup_logs(log_file)
-
     conn = connect_db()
     cursor = conn.cursor()
 
@@ -316,7 +314,7 @@ def update_bet_results():
         # Find game
         game_id = find_game_id(cursor, event_teams, event_time)
         if not game_id:
-            logging.warning(f"Game not found for bet: {bet_id}, Teams: {event_teams}, Time: {event_time}")
+            logging.debug(f"Game not found for bet: {bet_id}, Teams: {event_teams}, Time: {event_time}")
             continue
 
         # Fetch player stats
@@ -348,4 +346,5 @@ def update_bet_results():
     logging.info("Bet results update completed.")
 
 if __name__ == "__main__":
+    cleanup_logs(log_file)
     update_bet_results()
