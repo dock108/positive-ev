@@ -9,9 +9,9 @@ This guide provides the implementation plan for the Flask-based UI as part of th
 1. **Install Python**: Ensure Python 3.11+ is installed.
 2. **Dependencies**:
    Install the required libraries:
-   TRIPLETICK
+   ```
    pip install Flask==2.3.2 requests==2.28.1 plotly==5.14.1 pandas==1.5.2
-   TRIPLETICK
+   ```
 3. **SQLite Database**:
    - Set up `betting_data.db` with required schemas (`betting_data`, `nba_box_scores`, etc.).
 
@@ -19,7 +19,7 @@ This guide provides the implementation plan for the Flask-based UI as part of th
 
 ## Directory Structure
 
-TRIPLETICKplaintext
+```plaintext
 /app
 ├── app.py                    # Flask app for UI
 ├── scraper.py                # Bet scraping logic
@@ -36,13 +36,13 @@ TRIPLETICKplaintext
 ├── betting_data.db           # SQLite database
 ├── requirements.txt          # Python dependencies
 └── logs/                     # Log files
-TRIPLETICK
+```
 
 ---
 
 ## Flask App: `app.py`
 
-TRIPLETICKpython
+```python
 from flask import Flask, render_template, request
 import sqlite3
 import pandas as pd
@@ -108,7 +108,7 @@ def trends():
 
 if __name__ == '__main__':
     app.run(debug=True)
-TRIPLETICK
+```
 
 ---
 
@@ -116,7 +116,7 @@ TRIPLETICK
 
 ### `index.html`
 
-TRIPLETICKhtml
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -147,13 +147,13 @@ TRIPLETICKhtml
     </table>
 </body>
 </html>
-TRIPLETICK
+```
 
 ---
 
 ### `rankings.html`
 
-TRIPLETICKhtml
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -182,13 +182,13 @@ TRIPLETICKhtml
     </table>
 </body>
 </html>
-TRIPLETICK
+```
 
 ---
 
 ### `trends.html`
 
-TRIPLETICKhtml
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -202,7 +202,7 @@ TRIPLETICKhtml
     </div>
 </body>
 </html>
-TRIPLETICK
+```
 
 ---
 
@@ -265,9 +265,9 @@ While running locally provides flexibility during development, transitioning to 
 
 2. **Scalability**:
    - Use a lightweight web server like Gunicorn to handle production-level traffic:
-     TRIPLETICKbash
+     ```bash
      gunicorn -w 4 -b 0.0.0.0:5000 app:app
-     TRIPLETICK
+     ```
 
 3. **Logging**:
    - Implement robust logging and monitoring solutions (e.g., ELK stack, Fluentd).
