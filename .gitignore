@@ -169,3 +169,4 @@ backups/
 .DS_Store
 betting_data.db
 */eda/*.csv
+**/*_2025*.pkl

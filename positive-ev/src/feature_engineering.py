@@ -140,6 +140,9 @@ def generate_features(conn):
             win_probability REAL,
             result TEXT,
             time_to_event REAL,
+            market_implied_prob REAL,
+            clv_percent REAL,
+            bet_time_category TEXT,
             UNIQUE (bet_id, timestamp) ON CONFLICT REPLACE
         )
     """)
@@ -209,19 +212,25 @@ def generate_features(conn):
         bet_size = round(float(bet_size.replace('$', '')), 2)
         win_probability = round(float(win_probability.replace('%', '')), 2)
 
+        market_implied_prob = 1 / (1 + abs(final_odds) / 100) * 100 if final_odds != 0 else None
+        clv_percent = ((final_odds - first_odds) / abs(first_odds)) * 100 if first_odds != 0 else None
+        
+        hours_to_event = (event_dt - timestamp_dt).total_seconds() / 3600
+        bet_time_category = "Early" if hours_to_event >= 24 else "Mid" if hours_to_event >= 6 else "Late"
+        
         # Insert into model_work_table
         cursor.execute("""
             INSERT INTO model_work_table (
                 bet_id, timestamp, ev_percent, event_time, event_teams, sport_league, bet_type,
                 description, first_odds, final_odds, line_movement, sportsbook,
                 bet_size, win_probability, result,
-                time_to_event
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                time_to_event, market_implied_prob, clv_percent, bet_time_category
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             bet_id, timestamp, ev_percent, event_time, event_teams, sport_league, bet_type, description,
             first_odds, final_odds, line_movement, sportsbook,
             bet_size, win_probability, result,
-            time_to_event
+            time_to_event, market_implied_prob, clv_percent, bet_time_category
         ))
 
         processed_rows.append(bet_id)
