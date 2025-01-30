@@ -156,8 +156,6 @@ def cleanup_old_backups():
                             logging.info(f"Deleted old backup: {file_path}")
                     except ValueError as e:
                         logging.warning(f"Skipping invalid backup file: {filename} - Error: {e}")
-                else:
-                    logging.warning(f"Skipping non-backup file: {filename}")
     except Exception as e:
         logging.error(f"Failed to clean up old backups: {e}", exc_info=True)
 
