@@ -1,57 +1,114 @@
+import os
+import logging
+import time
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
-import os
-import logging
 
-# Set up logging
+# Ensure logs directory exists
 if not os.path.exists("logs"):
     os.makedirs("logs")
+
+# Set up logging
 logging.basicConfig(
-    filename="logs/login.log",
-    level=logging.INFO,
+    filename="logs/debug.log",
+    level=logging.DEBUG,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-try:
-    # Set up Chrome options with a dedicated user profile
-    options = Options()
-    options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_argument(f"user-data-dir={os.path.expanduser('~/Library/Application Support/Google/Chrome/ScraperProfile')}")  # Save profile
+def setup_driver():
+    """Initialize ChromeDriver with debugging options."""
+    try:
+        options = Options()
+        options.add_argument("--disable-blink-features=AutomationControlled")
+        options.add_argument("--start-maximized")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--disable-popup-blocking")
+        options.add_argument("--remote-debugging-port=9222")
 
-    # Initialize WebDriver
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        # Try using a saved profile (comment out if it causes crashes)
+        profile_path = os.path.expanduser("~/Library/Application Support/Google/Chrome/ScraperProfile")
+        options.add_argument(f"user-data-dir={profile_path}")
 
-    # Navigate to the OddsJam login page
-    login_url = "https://oddsjam.com/login"
-    driver.get(login_url)
-    logging.info("Navigated to OddsJam login page.")
+        # Set ChromeDriver logging
+        service = Service(ChromeDriverManager().install())
+        service.log_path = "logs/chromedriver.log"
+        service.start()
 
-    # Enter email
-    email_input = WebDriverWait(driver, 10).until(
-        lambda d: d.find_element(By.XPATH, "//input[@type='email']")
-    )
-    email_input.send_keys("mike.fuscoletti@gmail.com")  # Replace with your email
-    email_input.send_keys(Keys.RETURN)
-    logging.info("Entered email and submitted.")
+        driver = webdriver.Chrome(service=service, options=options)
+        logging.info("ChromeDriver initialized successfully.")
+        return driver
 
-    # Prompt user to finish entering the code manually
-    print("Enter the verification code manually in the browser and complete the login process.")
-    input("Once you're logged in, type 'y' and hit Enter to continue: ")  # Wait for user confirmation
+    except Exception as e:
+        logging.error(f"Failed to initialize ChromeDriver: {e}", exc_info=True)
+        raise
 
-    # Save a screenshot for verification
-    driver.save_screenshot("logs/login_success.png")
-    logging.info("Login complete. Profile saved for future use.")
+def check_driver_crash(driver):
+    """Check if ChromeDriver process is running."""
+    try:
+        driver.execute_script("return navigator.userAgent;")
+        logging.info("ChromeDriver is running fine.")
+    except Exception as e:
+        logging.critical("ChromeDriver seems to have crashed!", exc_info=True)
+        driver.save_screenshot("logs/chrome_crash.png")
+        raise
 
-except Exception as e:
-    logging.error(f"An error occurred during login: {e}", exc_info=True)
-    if 'driver' in locals():
+def login_to_oddsjam(driver):
+    """Automate login to OddsJam with debugging."""
+    try:
+        login_url = "https://oddsjam.com/login"
+        driver.get(login_url)
+        logging.info(f"Navigated to {login_url}")
+
+        # Check if login page loaded
+        time.sleep(2)
+        check_driver_crash(driver)
+
+        # Take a screenshot before attempting login
+        driver.save_screenshot("logs/login_page.png")
+
+        # Enter email
+        email_input = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//input[@type='email']"))
+        )
+        email_input.send_keys("mike.fuscoletti@gmail.com")
+        email_input.send_keys(Keys.RETURN)
+        logging.info("Entered email and submitted.")
+
+        # Check if the page transitioned to the verification step
+        time.sleep(2)
+        check_driver_crash(driver)
+
+        # Prompt user to manually enter verification code
+        print("Enter the verification code manually in the browser and complete the login process.")
+        input("Once you're logged in, type 'y' and hit Enter to continue: ")
+
+        # Final verification
+        driver.save_screenshot("logs/login_success.png")
+        logging.info("Login successful. Profile saved.")
+
+    except Exception as e:
+        logging.error(f"Login failed: {e}", exc_info=True)
         driver.save_screenshot("logs/login_error.png")
-finally:
-    if 'driver' in locals():
-        driver.quit()
-    logging.info("Browser closed.")
+        raise
+
+if __name__ == "__main__":
+    driver = None
+    try:
+        driver = setup_driver()
+        login_to_oddsjam(driver)
+
+    except Exception as e:
+        logging.critical(f"Fatal script error: {e}", exc_info=True)
+
+    finally:
+        if driver:
+            driver.quit()
+            logging.info("ChromeDriver closed.")

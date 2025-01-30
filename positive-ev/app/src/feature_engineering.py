@@ -116,53 +116,9 @@ def calculate_opportunity_value(bet_size, win_probability, ev_percent, time_wind
     
     return round(opportunity_value, 2)
 
-# def calculate_risk_level(bet_size, opportunity_value, win_probability, odds, bankroll=1000, debug=False):
-#     # Adjusted weights
-#     weight_bet_size = 1.0
-#     weight_opportunity_value = 0.7
-#     weight_win_probability = 0.8
-#     weight_odds_score = 0.5
-
-#     # Calculate components
-#     bet_size_component = min((bet_size / (bankroll * 0.05)) * weight_bet_size, 1.0)  # Cap at 5% of bankroll
-#     opportunity_value_component = min(opportunity_value * weight_opportunity_value, 1.0)  # Scaled opportunity value
-#     win_probability_component = (1 - win_probability) * weight_win_probability
-#     odds_score = calculate_odds_score(odds)  # Normalize odds to 0–1 scale
-#     odds_score_component = (1 - odds_score) * weight_odds_score
-
-#     # Total risk score
-#     risk_score = (
-#         bet_size_component +
-#         opportunity_value_component +
-#         win_probability_component +
-#         odds_score_component
-#     )
-
-#     # Debugging output
-#     if debug:
-#         print(f"Debugging Risk Level Calculation:")
-#         print(f"  Bet Size: {bet_size} | Component: {bet_size_component:.4f}")
-#         print(f"  Opportunity Value: {opportunity_value} | Component: {opportunity_value_component:.4f}")
-#         print(f"  Win Probability: {win_probability} | Component: {win_probability_component:.4f}")
-#         print(f"  Odds: {odds} | Odds Score: {odds_score:.4f} | Component: {odds_score_component:.4f}")
-#         print(f"  Total Risk Score: {risk_score:.4f}")
-
-#     # Risk thresholds
-#     if risk_score > 1.4:
-#         return "No Bet"
-#     elif risk_score > 1.0:
-#         return "High Risk"
-#     elif risk_score > 0.6:
-#         return "Moderate Risk"
-#     else:
-#         return "Low Risk"
-
 def generate_features(conn):
     """Generate features and save to model_work_table."""
     cursor = conn.cursor()
-
-    logging.info("Backing up existing model_work_table...")
-    backup_work_table(conn)
 
     logging.info("Dropping and recreating model_work_table...")
     cursor.execute("DROP TABLE IF EXISTS model_work_table")
@@ -176,16 +132,14 @@ def generate_features(conn):
             sport_league TEXT,
             bet_type TEXT,
             description TEXT,
-            odds REAL,
+            first_odds INTEGER,
+            final_odds INTEGER,
+            line_movement INTEGER,
             sportsbook TEXT,
             bet_size REAL,
             win_probability REAL,
             result TEXT,
             time_to_event REAL,
-            time_window_score REAL,
-            odds_score REAL,
-            opportunity_value REAL,
-            risk_level TEXT,
             UNIQUE (bet_id, timestamp) ON CONFLICT REPLACE
         )
     """)
@@ -196,79 +150,84 @@ def generate_features(conn):
                description, odds, sportsbook, bet_size, win_probability, result
         FROM betting_data
         WHERE result IN ('W', 'L')
+        ORDER BY bet_id, timestamp
     """).fetchall()
 
-    # Store processed rows for filtering the closest `time_to_event` per bet_id
-    processed_rows = []
-
-    for row in rows:
-        bet_id, timestamp, ev_percent, event_time, event_teams, sport_league, bet_type, description, odds, sportsbook, bet_size, win_probability, result = row
-
-        # Parse timestamp and event_time
-        timestamp_dt = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S')
-        event_dt = parse_event_time(event_time, timestamp_dt)
-
-        if not event_dt or not timestamp_dt:
-            logging.warning(f"Skipping invalid event_time or timestamp for bet_id {bet_id}.")
-            continue
-
-        # Calculate time_to_event
-        time_to_event = round((event_dt - timestamp_dt).total_seconds() / 60, 2)
-        if time_to_event < 0:
-            logging.debug(f"Skipping past event for bet_id {bet_id}.")
-            continue
-
-        # Add the calculated time_to_event back to the row
-        processed_rows.append((bet_id, timestamp, ev_percent, event_time, event_teams, sport_league, bet_type,
-                               description, odds, sportsbook, bet_size, win_probability, result, time_to_event))
-
-    # Filter rows to select the closest time_to_event to 30 (but not less than 20) for each bet_id
-    filtered_rows = []
+    # Group bets by bet_id
     bet_id_groups = {}
-    for row in processed_rows:
+    for row in rows:
         bet_id = row[0]
         if bet_id not in bet_id_groups:
             bet_id_groups[bet_id] = []
         bet_id_groups[bet_id].append(row)
 
+    processed_rows = []
+
     for bet_id, group in bet_id_groups.items():
-        # Sort rows by the absolute difference from 30, then select the closest one where time_to_event >= 20
-        valid_rows = [row for row in group if row[-1] >= 20]
-        if valid_rows:
-            closest_row = min(valid_rows, key=lambda x: abs(x[-1] - 30))
-            filtered_rows.append(closest_row)
+        valid_entries = []
 
-    # Insert filtered rows into the work table with derived features
-    for row in filtered_rows:
+        for row in group:
+            bet_id, timestamp, ev_percent, event_time, event_teams, sport_league, bet_type, description, odds, sportsbook, bet_size, win_probability, result = row
+            
+            # Parse timestamp and event time
+            timestamp_dt = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S')
+            event_dt = parse_event_time(event_time, timestamp_dt)
+
+            if not event_dt or not timestamp_dt:
+                logging.warning(f"Skipping invalid event_time or timestamp for bet_id {bet_id}.")
+                continue
+
+            # Calculate time_to_event
+            time_to_event = round((event_dt - timestamp_dt).total_seconds() / 60, 2)
+
+            # Keep only entries where time_to_event >= 20
+            if time_to_event >= 20:
+                valid_entries.append((row, time_to_event))
+
+        # If no valid entries remain, log and skip this bet
+        if not valid_entries:
+            logging.warning(f"Skipping bet_id {bet_id} because all entries were within 20 minutes.")
+            continue
+
+        # Sort valid entries by timestamp
+        valid_entries.sort(key=lambda x: x[0][1])
+
+        # First and final odds
+        first_odds = int(valid_entries[0][0][8])  # First seen valid odds
+        final_odds = int(valid_entries[-1][0][8])  # Last recorded valid odds
+
+        # Compute line movement
+        line_movement = final_odds - first_odds
+
+        # Get last valid row data
+        latest_entry, time_to_event = valid_entries[-1]
         (bet_id, timestamp, ev_percent, event_time, event_teams, sport_league, bet_type, description,
-         odds, sportsbook, bet_size, win_probability, result, time_to_event) = row
+         odds, sportsbook, bet_size, win_probability, result) = latest_entry
 
-        # Convert and calculate additional features
-        odds = int(odds)
-        win_probability = round(float(win_probability.replace('%', '')), 2)
+        # Format numbers
         ev_percent = round(float(ev_percent.replace('%', '')), 2)
         bet_size = round(float(bet_size.replace('$', '')), 2)
-
-        time_window_score = calculate_time_window_score(time_to_event)
-        odds_score = calculate_odds_score(odds)
-        opportunity_value = calculate_opportunity_value(bet_size, win_probability, ev_percent, time_window_score, odds_score)
-        # risk_level = calculate_risk_level(opportunity_value, odds_score, win_probability, odds)
+        win_probability = round(float(win_probability.replace('%', '')), 2)
 
         # Insert into model_work_table
         cursor.execute("""
             INSERT INTO model_work_table (
                 bet_id, timestamp, ev_percent, event_time, event_teams, sport_league, bet_type,
-                description, odds, sportsbook, bet_size, win_probability, result,
-                time_to_event, time_window_score, odds_score, opportunity_value
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                description, first_odds, final_odds, line_movement, sportsbook,
+                bet_size, win_probability, result,
+                time_to_event
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             bet_id, timestamp, ev_percent, event_time, event_teams, sport_league, bet_type, description,
-            odds, sportsbook, bet_size, win_probability, result,
-            time_to_event, time_window_score, odds_score, opportunity_value
+            first_odds, final_odds, line_movement, sportsbook,
+            bet_size, win_probability, result,
+            time_to_event
         ))
 
+        processed_rows.append(bet_id)
+
     conn.commit()
-    logging.info(f"Processed {len(filtered_rows)} rows into model_work_table.")
+    logging.info(f"Processed {len(processed_rows)} rows into model_work_table.")
 
 if __name__ == "__main__":
     cleanup_logs(LOG_FOLDER)
