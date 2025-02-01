@@ -134,4 +134,4 @@ if __name__ == "__main__":
     model, X_val, y_val = train_model(df)
     logging.info("Evaluating Logistic Regression model")
     evaluate_model(model, X_val, y_val)
-    logging.info("Script execution complete.") 
+    logging.info("Script execution complete.")
