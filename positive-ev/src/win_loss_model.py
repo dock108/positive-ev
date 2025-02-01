@@ -1,30 +1,31 @@
-import sqlite3
-import pandas as pd
-import numpy as np
 import os
-import logging
 import glob
+import logging
+import sqlite3
 from datetime import datetime, timedelta
-from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.preprocessing import StandardScaler
+
+import joblib
+import numpy as np
+import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, log_loss, precision_score, recall_score
-import joblib
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 
 # Paths
 DB_PATH = "/Users/michaelfuscoletti/Desktop/mega-plan/positive-ev/app/betting_data.db"
 MODEL_DIR = "/Users/michaelfuscoletti/Desktop/mega-plan/positive-ev/app/models/"
 LOG_DIR = "/Users/michaelfuscoletti/Desktop/mega-plan/logs/"
-LOG_FILE = os.path.join(LOG_DIR, "log_win_loss_model.log")
+LOG_FILE = os.path.join(LOG_DIR, "win_loss_model.log")
 
 # Ensure directories exist
 os.makedirs(MODEL_DIR, exist_ok=True)
 os.makedirs(LOG_DIR, exist_ok=True)
 
 # Configure logging
-logging.basicConfig(filename=LOG_FILE, level=logging.INFO, 
+logging.basicConfig(filename=LOG_FILE, level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
-logging.info("Starting log_win_loss_model.py")
+logging.info("Starting win_loss_model.py")
 
 # Clean up old logs (retain logs for 7 days)
 def clean_logs():
@@ -69,16 +70,7 @@ def load_data():
         logging.error(f"Error loading or processing data: {e}")
         raise
 
-# Feature Selection
-def select_features(model, X):
-    feature_importance = np.abs(model.coef_[0])
-    features = X.columns.tolist()
-    importance_dict = dict(zip(features, feature_importance))
-    sorted_features = sorted(importance_dict.items(), key=lambda x: x[1], reverse=True)
-    logging.info(f"Feature Importance:\n{sorted_features}")
-    return sorted_features
-
-# Train model with Grid Search and Polynomial Features
+# Train model
 def train_model(df):
     features = ['ev_percent', 'final_odds', 'bet_size', 'time_to_event', 'clv_percent', 'bet_time_category', 'diff_market_vs_model', 'adjusted_ev_size', 'clv_weighted_bet']
     X = df[features]
@@ -99,36 +91,26 @@ def train_model(df):
     
     logging.info(f"Training Set Size: {len(X_train)}, Validation Set Size: {len(X_val)}, Test Set Size: {len(X_test)}")
     
-    # Grid Search for best hyperparameters
-    param_grid = {
-        'C': [0.001, 0.01, 0.1, 1, 10],  
-        'solver': ['liblinear', 'lbfgs', 'saga'],
-        'class_weight': [None, 'balanced']
-    }
+    # Train Logistic Regression with L1 Regularization
+    logging.info("Training Logistic Regression with L1 Regularization...")
+    logistic_model = LogisticRegression(penalty='l1', solver='saga', max_iter=1000, random_state=42, verbose=1)
+    logistic_model.fit(X_train, y_train)
+    logging.info("Logistic Regression model training complete.")
     
-    grid_search = GridSearchCV(LogisticRegression(), param_grid, cv=5, scoring='neg_log_loss', verbose=1)
-    grid_search.fit(X_train, y_train)
-    best_params = grid_search.best_params_
-    logging.info(f"Best parameters found: {best_params}")
-    
-    # Train model with best hyperparameters
-    model = LogisticRegression(**best_params)
-    model.fit(X_train, y_train)
-    
-    # Feature Selection Analysis
-    select_features(model, pd.DataFrame(X_train, columns=features))
-    
+    # Save the logistic regression model
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    model_path = os.path.join(MODEL_DIR, f'logistic_regression_{timestamp}.pkl')
-    latest_model_path = os.path.join(MODEL_DIR, 'logistic_regression_latest.pkl')
-    joblib.dump(model, model_path)
-    joblib.dump(model, latest_model_path)  # Save latest model for easy access
-    
-    logging.info(f"Logistic Regression model trained and saved: {model_path}")
-    return model, X_val, y_val
+    logistic_model_path = os.path.join(MODEL_DIR, f'logistic_model_{timestamp}.pkl')
+    joblib.dump(logistic_model, logistic_model_path)
+    logging.info(f"Logistic Regression model trained and saved: {logistic_model_path}")
+
+    # Evaluate Logistic Regression model
+    evaluate_model(logistic_model, X_val, y_val)
+
+    return logistic_model, X_val, y_val
 
 # Evaluate model
 def evaluate_model(model, X_val, y_val):
+    logging.info("Starting model evaluation...")
     y_pred = model.predict(X_val)
     y_prob = model.predict_proba(X_val)[:, 1]
     accuracy = accuracy_score(y_val, y_pred)
@@ -145,9 +127,11 @@ def evaluate_model(model, X_val, y_val):
     print(f"Precision: {precision:.4f} (Should be >0.5 for reliable predictions)")
     print(f"Recall: {recall:.4f} (Higher recall means fewer missed value bets)")
     print(f"Log Loss: {logloss:.4f} (Lower is better, <0.69 is a decent start)")
+    logging.info("Model evaluation complete.")
 
 if __name__ == "__main__":
     df = load_data()
     model, X_val, y_val = train_model(df)
+    logging.info("Evaluating Logistic Regression model")
     evaluate_model(model, X_val, y_val)
-    logging.info("Script execution complete.")
+    logging.info("Script execution complete.") 
