@@ -76,15 +76,27 @@ def prepare_features(df):
     df['line_movement_direction'] = np.sign(df['line_movement'])
     df['large_line_move'] = (abs(df['line_movement']) > df['line_movement'].std()).astype(int)
     
+    # Add more complex interactions
+    df['ev_by_clv_by_time'] = df['ev_percent'] * df['clv_percent'] * df['time_to_event']
+    df['market_prob_by_ev'] = df['market_implied_prob'] * df['ev_percent']
+    
+    # Add rolling averages if timestamps available
+    if 'event_time' in df.columns:
+        df = df.sort_values('event_time')
+        df['rolling_win_rate'] = df['result_binary'].rolling(10, min_periods=1).mean()
+        df['rolling_ev'] = df['ev_percent'].rolling(10, min_periods=1).mean()
+    
     # Combine all features
     feature_cols = base_features + [
         'ev_by_time', 'clv_by_ev', 'ev_squared', 'time_log',
-        'line_movement_direction', 'large_line_move'
+        'line_movement_direction', 'large_line_move',
+        'ev_by_clv_by_time', 'market_prob_by_ev',
+        'rolling_win_rate', 'rolling_ev'
     ]
     
     # Add player stat columns if they exist
-    stat_cols = [col for col in df.columns if any(x in col for x in 
-        ['_avg', '_std', '_trend', '_consistency', 'health_score'])]
+    stat_cols = [col for col in df.columns if any(x in col for x in [
+        '_avg', '_std', '_trend', '_consistency', 'health_score'])]
     feature_cols.extend(stat_cols)
     
     # Remove any null values
@@ -97,14 +109,14 @@ def select_best_features(X, y, feature_names):
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
     
-    # Fit LassoCV
-    lasso = LassoCV(cv=5, random_state=42)
+    # Fit LassoCV with less aggressive regularization
+    lasso = LassoCV(cv=5, random_state=42, eps=1e-4, n_alphas=100)
     lasso.fit(X_scaled, y)
     
-    # Get selected features
+    # Get selected features with a more lenient threshold
     selected_features = []
     for idx, (name, coef) in enumerate(zip(feature_names, lasso.coef_)):
-        if abs(coef) > 0:
+        if abs(coef) > 0.0001:  # Reduced threshold
             selected_features.append((name, coef))
     
     # Sort by absolute coefficient value
@@ -245,7 +257,6 @@ def evaluate_model_viability(y_true, y_pred, y_pred_proba, cv_accuracy):
     
     # Calculate ROI assuming equal bet sizes
     true_wins = (y_true == 1).sum()
-    pred_wins = (y_pred == 1).sum()
     true_win_rate = true_wins / len(y_true)
     
     print("\nKey Metrics:")
