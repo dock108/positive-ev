@@ -1,0 +1,11 @@
+Model Work Table Analysis Summary
+================================
+
+Total Bets Analyzed: 4513
+Overall Win Rate: 50.28%
+Average EV%: 5.97%
+Average CLV%: -7.84%
+
+Win Rate by Timing Category:
+Late: 49.64%
+Mid: 51.88%
