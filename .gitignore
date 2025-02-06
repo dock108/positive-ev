@@ -161,20 +161,6 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-*.sh
-*.png
-analysis/
-eda/
-sql/
-logs/
-models/
-data/
-backups/
-.DS_Store
-betting_data.db
-*/eda/*.csv
-**/*_2025*.pkl
-
 # Python
 __pycache__/
 *.py[cod]
@@ -193,8 +179,54 @@ venv.bak/
 dist/
 build/
 
+# Models and data
+models/
+data/
+*.pkl
+**/*_2025*.pkl
+*.h5
+*.pt
+*.pth
+*.onnx
+*.joblib
+*.model
+*checkpoint*
+saved_models/
+model_outputs/
+
+# Analysis, EDA, and Outputs
+# Keep analysis code, ignore outputs
+analysis/**/outputs/
+analysis/**/*.png
+analysis/**/*.csv
+analysis/**/*.xlsx
+analysis/**/*.pdf
+analysis/**/*.html
+analysis/**/temp/
+analysis/**/cache/
+# But don't ignore analysis code
+!analysis/**/*.py
+!analysis/**/*.sql
+!analysis/**/README.md
+eda/
+*/eda/**
+sql/
+notebooks/
+figures/
+plots/
+results/
+output/
+reports/
+*.png
+*.csv
+*.xlsx
+*.xls
+*.pdf
+*.sh
+
 # Logs
 logs/
+*/logs/**
 *.log
 *.log.*
 positive-ev/app/logs/
@@ -204,13 +236,14 @@ positive-ev/app/logs/
 *.sqlite
 *.sqlite3
 positive-ev/app/betting_data.db
+betting_data.db
 
 # Backups
 backups/
+*/backups/**
 *.bak
-positive-ev/app/backups/
 
-# IDE
+# IDE and System
 .idea/
 .vscode/
 *.swp
@@ -221,14 +254,19 @@ positive-ev/app/backups/
 .ipynb_checkpoints
 *.ipynb
 
-# Analysis outputs
-positive-ev/analysis/*.png
-positive-ev/analysis/visualizations/*.png
-positive-ev/analysis/outputs/
-*.csv
-*.xlsx
-*.xls
-*.pdf
+# Data files
+*.txt
+*.json
+*.parquet
+*.feather
+*.hdf5
+*.hdf
+*.h5
+*.dat
+data/
+datasets/
+raw_data/
+processed_data/
 
 # Credentials or sensitive info
 *.env
