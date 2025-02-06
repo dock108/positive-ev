@@ -162,11 +162,88 @@ cython_debug/
 #.idea/
 
 *.sh
+*.png
+analysis/
+eda/
 sql/
 logs/
+models/
 data/
 backups/
 .DS_Store
 betting_data.db
 */eda/*.csv
 **/*_2025*.pkl
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.python-version
+*.egg-info/
+dist/
+build/
+
+# Logs
+logs/
+*.log
+*.log.*
+positive-ev/app/logs/
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+positive-ev/app/betting_data.db
+
+# Backups
+backups/
+*.bak
+positive-ev/app/backups/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# Analysis outputs
+positive-ev/analysis/*.png
+positive-ev/analysis/visualizations/*.png
+positive-ev/analysis/outputs/
+*.csv
+*.xlsx
+*.xls
+*.pdf
+
+# Credentials or sensitive info
+*.env
+*.pem
+*.key
+config.ini
+credentials.json
+secrets.yaml
+
+# Temp files
+*.tmp
+*.temp
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+coverage.xml
+*.cover
