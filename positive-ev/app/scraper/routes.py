@@ -1,7 +1,9 @@
 from flask import Blueprint, jsonify
 from app.scraper.services import ScraperService
 from app.db_utils import get_db_connection
+import logging
 
+logging.basicConfig(level=logging.ERROR)
 bp = Blueprint('scraper', __name__)
 
 @bp.route('/scrape')
@@ -16,9 +18,10 @@ def scrape():
             'message': f'Successfully scraped {len(new_bets)} new bets'
         })
     except Exception as e:
+        logging.error("Exception occurred", exc_info=True)
         return jsonify({
             'status': 'error',
-            'message': str(e)
+            'message': 'An internal error has occurred!'
         }), 500
 
 @bp.route('/cleanup')
@@ -33,9 +36,10 @@ def cleanup():
             'message': f'Successfully archived {archived_count} old bets'
         })
     except Exception as e:
+        logging.error("Exception occurred", exc_info=True)
         return jsonify({
             'status': 'error',
-            'message': str(e)
+            'message': 'An internal error has occurred!'
         }), 500
 
 @bp.route('/stats')
@@ -72,7 +76,8 @@ def stats():
                 }
             })
     except Exception as e:
+        logging.error("Exception occurred", exc_info=True)
         return jsonify({
             'status': 'error',
-            'message': str(e)
+            'message': 'An internal error has occurred!'
         }), 500 
