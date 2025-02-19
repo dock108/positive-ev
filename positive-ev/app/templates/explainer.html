@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}The Math Behind the Money - Sports Betting Dashboard{% endblock %}
+
+{% block head %}
+<!-- Add MathJax support -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  }
+};
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Overview -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+        <div class="px-4 py-5 sm:px-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">🍻 Welcome to the Betting Brain</h3>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                Where sports, beer, and a sprinkle of tech magic come together. Let's break down the numbers so you can focus on the game.
+            </p>
+        </div>
+        <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+            <div class="prose max-w-none">
+                <h4>TL;DR for the Impatient</h4>
+                <p>This isn't your buddy's half-baked betting advice. We're using some serious tech to find the best bets. Think of us as your sober friend who actually knows what they're doing.</p>
+                
+                <h4 class="mt-8">Core Metrics (The Good Stuff)</h4>
+                <div class="grid grid-cols-1 gap-6 mt-4">
+                    <div>
+                        <h5 class="font-medium">Expected Value (EV%) - Your Money Multiplier</h5>
+                        <p class="text-sm text-gray-600">EV% is like your betting GPS, guiding you to the best returns. Trust it like you trust your favorite bartender.</p>
+                        <div class="mt-2 flex gap-2">
+                            <span class="px-2 py-1 text-sm font-semibold rounded-full bg-green-200 text-green-900">God Tier: ≥10%</span>
+                            <span class="px-2 py-1 text-sm font-semibold rounded-full bg-lime-200 text-lime-900">Elite: 5-10%</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h5 class="font-medium">Edge - Where the Magic Happens</h5>
+                        <p class="text-sm text-gray-600">Our AI's win probability minus the market's guess. When they don't match, we cash in. It's like finding a $20 bill in your old jeans.</p>
+                        <div class="mt-2 flex gap-2">
+                            <span class="px-2 py-1 text-sm font-semibold rounded-full bg-violet-200 text-violet-900">Crushing It: ≥5%</span>
+                            <span class="px-2 py-1 text-sm font-semibold rounded-full bg-fuchsia-200 text-fuchsia-900">Solid Edge: 2.5-5%</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h5 class="font-medium">Kelly Criterion - The Bankroll Optimizer</h5>
+                        <p class="text-sm text-gray-600">We use Quarter Kelly (0.25x) because we're smart, not reckless. It's like pacing yourself at the bar—keeps you in the game longer.</p>
+                    </div>
+
+                    <div>
+                        <h5 class="font-medium">Time Categories - Because Timing is Everything</h5>
+                        <p class="text-sm text-gray-600">Our fancy way of saying when to bet. Early bird gets the worm, or in this case, the best odds.</p>
+                        <div class="mt-2 flex gap-2">
+                            <span class="px-2 py-1 text-sm font-semibold rounded-full bg-lime-100 text-lime-800">Early Bird: >24h</span>
+                            <span class="px-2 py-1 text-sm font-semibold rounded-full bg-amber-100 text-amber-800">Prime Time: 6-24h</span>
+                            <span class="px-2 py-1 text-sm font-semibold rounded-full bg-rose-100 text-rose-800">Last Call: <6h</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h5 class="font-medium">The Grading Algorithm - Not Your High School Report Card</h5>
+                        <p class="text-sm text-gray-600">We grade bets like a tough coach. Only the best make the cut. A's are the MVPs, F's are benched.</p>
+                        <div class="mt-4 space-y-2">
+                            <div class="flex items-center">
+                                <span class="px-2 py-1 text-sm font-semibold rounded-full bg-green-200 text-green-900 w-8 text-center mr-2">A</span>
+                                <span class="text-sm text-gray-600">Elite Value (90+ Composite Score) - These are the gems 💎</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="px-2 py-1 text-sm font-semibold rounded-full bg-blue-200 text-blue-900 w-8 text-center mr-2">B</span>
+                                <span class="text-sm text-gray-600">Strong Value (80-89 Composite Score) - Solid statistical edge</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="px-2 py-1 text-sm font-semibold rounded-full bg-purple-200 text-purple-900 w-8 text-center mr-2">C</span>
+                                <span class="text-sm text-gray-600">Decent Value (70-79 Composite Score) - Worth considering if aggressive</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="px-2 py-1 text-sm font-semibold rounded-full bg-orange-200 text-orange-900 w-8 text-center mr-2">D</span>
+                                <span class="text-sm text-gray-600">Low Value (60-69 Composite Score) - The math is meh</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="px-2 py-1 text-sm font-semibold rounded-full bg-gray-200 text-gray-900 w-8 text-center mr-2">F</span>
+                                <span class="text-sm text-gray-600">No Value (<60 Composite Score) - The algorithms are crying</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h4 class="mt-8">The Math Behind the Magic</h4>
+                <div class="mt-4 space-y-4">
+                    <div>
+                        <h5 class="font-medium">Kelly Criterion - The Optimal Betting Formula</h5>
+                        <p class="text-sm text-gray-600">The mathematical sweet spot: 
+                        $$K = \frac{p(b-1) - (1-p)}{b-1}$$ 
+                        where $p$ is win probability and $b$ is decimal odds. We use Quarter Kelly (0.25K) because we respect variance and want to sleep at night. Fun fact: this formula was originally used to optimize data transmission over noisy phone lines! 📞</p>
+                    </div>
+
+                    <div>
+                        <h5 class="font-medium">Market Implied Probability - Reading the Market's Mind</h5>
+                        <p class="text-sm text-gray-600">Converting odds to probabilities using some slick math:
+                        <br>For positive odds: $$P_{implied} = \frac{100}{odds + 100}$$
+                        <br>For negative odds: $$P_{implied} = \frac{|odds|}{|odds| + 100}$$
+                        <br>When these differ from our models, that's where we strike.</p>
+                    </div>
+
+                    <div>
+                        <h5 class="font-medium">The Composite Score Formula</h5>
+                        <p class="text-sm text-gray-600">Our proprietary scoring system combines multiple normalized metrics (0-100 scale):</p>
+                        <div class="mt-2 bg-gray-50 p-4 rounded-lg">
+                            <p class="text-sm font-mono">$$Score = 0.60 \times EV_{score} + 0.30 \times Edge_{score} + 0.05 \times Time_{score} + 0.05 \times Kelly_{score}$$</p>
+                            <ul class="mt-4 text-sm text-gray-600 space-y-2">
+                                <li>$EV_{score}$: Normalized EV% on 0-100 scale $$EV_{score} = (EV\% + 10) \times 5$$</li>
+                                <li>$Edge_{score}$: Normalized edge on 0-100 scale $$Edge_{score} = (Edge\% + 10) \times 5$$</li>
+                                <li>$Time_{score}$: 100 for >24h, linear decrease to 0 at event time</li>
+                                <li>$Kelly_{score}$: Normalized Kelly criterion $$Kelly_{score} = (Kelly + 0.1) \times 500$$</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <h4 class="mt-8">Pro Tips</h4>
+                <ul class="mt-4 list-disc pl-5 space-y-2 text-sm text-gray-600">
+                    <li>We use Quarter Kelly because we're playing the long game. Marathon > Sprint.</li>
+                    <li>Fresh data every 5 minutes - the algorithms never sleep.</li>
+                    <li>Early bets = more time for line shopping = more edge. Basic arbitrage, folks.</li>
+                    <li>Hidden gems in the "Show All" section - sometimes the algorithms find value in unexpected places.</li>
+                    <li>Remember: Even A-grade bets can lose. That's why they call it gambling. Trust the process, not individual outcomes.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

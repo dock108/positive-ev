@@ -107,10 +107,9 @@ def create_tables():
         )
     """)
 
-    # Table for player boxscores
+    # Table for player boxscores with composite primary key
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS player_boxscores (
-            player_id INTEGER PRIMARY KEY AUTOINCREMENT,
             game_id TEXT,
             player_name TEXT,
             points INTEGER,
@@ -120,6 +119,7 @@ def create_tables():
             blocks INTEGER,
             turnovers INTEGER,
             made_threes INTEGER,
+            PRIMARY KEY (game_id, player_name),
             FOREIGN KEY (game_id) REFERENCES game_boxscores (game_id)
         )
     """)
@@ -168,10 +168,12 @@ def get_latest_date_from_db(table_name, date_column):
             logging.info(f"Latest date in {table_name}: {latest_date.strftime('%Y-%m-%d')}")
             return latest_date
         else:
-            logging.info(f"No dates found in {table_name}. Defaulting to start date.")
-            return datetime(2025, 1, 1)  # Default start date
+            default_date = datetime(2024, 10, 1)  # Start of 2024-25 NBA season
+            logging.info(f"No dates found in {table_name}. Using season start date: {default_date.strftime('%Y-%m-%d')}")
+            return default_date
     except Exception as e:
         logging.error(f"Error fetching latest date from {table_name}: {e}", exc_info=True)
-        return datetime(2025, 1, 1)  # Default start date
+        default_date = datetime(2024, 10, 1)  # Start of 2024-25 NBA season
+        return default_date
     finally:
         conn.close() 

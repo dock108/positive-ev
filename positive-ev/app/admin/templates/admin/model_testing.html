@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-8">Model Testing</h1>
+    
+    <!-- Backtest Configuration -->
+    <div class="bg-white rounded-lg shadow p-6 mb-8">
+        <h2 class="text-xl font-bold mb-4">Backtest Configuration</h2>
+        <form id="backtestForm" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Start Date</label>
+                    <input type="date" id="startDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">End Date</label>
+                    <input type="date" id="endDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Initial Bankroll</label>
+                    <input type="number" id="initialBankroll" value="10000" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Bet Size Strategy</label>
+                    <select id="betSizeStrategy" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        <option value="fixed">Fixed Amount</option>
+                        <option value="kelly">Kelly Criterion</option>
+                        <option value="fractional_kelly">Fractional Kelly (1/4)</option>
+                        <option value="percentage">Percentage of Bankroll</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Minimum EV%</label>
+                    <input type="number" id="minEv" value="2" step="0.1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Max Concurrent Bets</label>
+                    <input type="number" id="maxConcurrentBets" value="10" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-4">
+                <button type="button" onclick="resetForm()" class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                    Reset
+                </button>
+                <button type="submit" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                    Run Backtest
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Results -->
+    <div id="results" class="space-y-8" style="display: none;">
+        <!-- Summary Stats -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-bold mb-4">Backtest Results</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="p-4 bg-gray-50 rounded-lg">
+                    <h3 class="text-sm font-medium text-gray-500">Total Bets</h3>
+                    <p id="totalBets" class="mt-1 text-2xl font-semibold text-gray-900">0</p>
+                </div>
+                <div class="p-4 bg-gray-50 rounded-lg">
+                    <h3 class="text-sm font-medium text-gray-500">Win Rate</h3>
+                    <p id="winRate" class="mt-1 text-2xl font-semibold text-gray-900">0%</p>
+                </div>
+                <div class="p-4 bg-gray-50 rounded-lg">
+                    <h3 class="text-sm font-medium text-gray-500">Total Profit</h3>
+                    <p id="totalProfit" class="mt-1 text-2xl font-semibold text-gray-900">$0</p>
+                </div>
+                <div class="p-4 bg-gray-50 rounded-lg">
+                    <h3 class="text-sm font-medium text-gray-500">ROI</h3>
+                    <p id="roi" class="mt-1 text-2xl font-semibold text-gray-900">0%</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Performance Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-bold mb-4">Equity Curve</h2>
+                <div id="equityCurve" class="w-full h-80"></div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-bold mb-4">Drawdown Analysis</h2>
+                <div id="drawdownChart" class="w-full h-80"></div>
+            </div>
+        </div>
+        
+        <!-- Detailed Stats -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-bold mb-4">Detailed Statistics</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Win/Loss Distribution</h3>
+                    <div id="winLossDistribution" class="w-full h-60"></div>
+                </div>
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Monthly Performance</h3>
+                    <div id="monthlyPerformance" class="w-full h-60"></div>
+                </div>
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Sport Performance</h3>
+                    <div id="sportPerformance" class="w-full h-60"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+document.getElementById('backtestForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    runBacktest();
+});
+
+function runBacktest() {
+    const params = {
+        start_date: document.getElementById('startDate').value,
+        end_date: document.getElementById('endDate').value,
+        initial_bankroll: parseFloat(document.getElementById('initialBankroll').value),
+        bet_size_strategy: document.getElementById('betSizeStrategy').value,
+        min_ev: parseFloat(document.getElementById('minEv').value),
+        max_concurrent_bets: parseInt(document.getElementById('maxConcurrentBets').value)
+    };
+    
+    fetch('/admin/api/backtest', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(params)
+    })
+    .then(response => response.json())
+    .then(results => {
+        document.getElementById('results').style.display = 'block';
+        updateResults(results);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error running backtest');
+    });
+}
+
+function updateResults(results) {
+    // Update summary stats
+    document.getElementById('totalBets').textContent = results.total_bets;
+    document.getElementById('winRate').textContent = results.win_rate.toFixed(1) + '%';
+    document.getElementById('totalProfit').textContent = '$' + results.total_profit.toFixed(2);
+    document.getElementById('roi').textContent = results.roi.toFixed(1) + '%';
+    
+    // Update equity curve
+    const equityTrace = {
+        x: results.daily_results.map(d => d.date),
+        y: results.daily_results.map(d => d.equity),
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Equity'
+    };
+    Plotly.newPlot('equityCurve', [equityTrace]);
+    
+    // Update drawdown chart
+    const drawdownTrace = {
+        x: results.daily_results.map(d => d.date),
+        y: results.daily_results.map(d => d.drawdown),
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Drawdown',
+        fill: 'tonexty'
+    };
+    Plotly.newPlot('drawdownChart', [drawdownTrace]);
+    
+    // Update win/loss distribution
+    const winLossTrace = {
+        values: [results.winning_bets, results.total_bets - results.winning_bets],
+        labels: ['Wins', 'Losses'],
+        type: 'pie'
+    };
+    Plotly.newPlot('winLossDistribution', [winLossTrace]);
+    
+    // Update monthly performance
+    const monthlyTrace = {
+        x: Object.keys(results.monthly_performance),
+        y: Object.values(results.monthly_performance),
+        type: 'bar'
+    };
+    Plotly.newPlot('monthlyPerformance', [monthlyTrace]);
+    
+    // Update sport performance
+    const sportTrace = {
+        x: Object.keys(results.sport_performance),
+        y: Object.values(results.sport_performance).map(s => s.roi),
+        type: 'bar'
+    };
+    Plotly.newPlot('sportPerformance', [sportTrace]);
+}
+
+function resetForm() {
+    document.getElementById('backtestForm').reset();
+    document.getElementById('results').style.display = 'none';
+}
+</script>
+{% endblock %} 

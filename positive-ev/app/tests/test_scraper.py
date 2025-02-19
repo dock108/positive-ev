@@ -3,6 +3,8 @@ from unittest.mock import Mock, patch
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 from selenium.webdriver.chrome.options import Options
+from app.scraper.services import ScraperService
+from app.models import Bet, BetResult
 
 # Import the modules to test
 from scraper import (
@@ -38,6 +40,29 @@ def mock_db():
         mock_cursor = Mock()
         mock_connect.return_value.cursor.return_value = mock_cursor
         yield mock_cursor
+
+@pytest.fixture
+def scraper_service(app):
+    """Create a scraper service instance with app context."""
+    return ScraperService()
+
+@pytest.fixture
+def sample_bet_block():
+    """Create a sample bet block HTML for testing."""
+    return """
+    <div class="bet-block">
+        <span class="ev-percent">5.2%</span>
+        <span class="event-time">2024-02-15 20:00:00</span>
+        <span class="teams">Lakers vs Warriors</span>
+        <span class="sport">NBA</span>
+        <span class="bet-type">Moneyline</span>
+        <span class="description">Lakers to win</span>
+        <span class="odds">+150</span>
+        <img class="sportsbook-logo" alt="DraftKings" src="logo.png"/>
+        <span class="bet-size">$100</span>
+        <span class="win-prob">55%</span>
+    </div>
+    """
 
 def test_parse_cleaned_data(sample_soup):
     timestamp = "2024-02-05 14:30:00"
@@ -138,4 +163,90 @@ def test_upsert_data_empty(mock_db):
 def test_upsert_data_invalid_data(mock_db):
     with pytest.raises(Exception):
         upsert_data([{"invalid": "data"}])
+
+def test_parse_bet_block(scraper_service, sample_bet_block):
+    """Test parsing of individual bet blocks."""
+    soup = BeautifulSoup(sample_bet_block, 'html.parser')
+    timestamp = datetime.utcnow()
+    
+    result = scraper_service.parse_bet_block(soup, timestamp, 0)
+    
+    assert result is not None
+    assert result['ev_percent'] == '5.2'
+    assert result['event_teams'] == 'Lakers vs Warriors'
+    assert result['sport_league'] == 'NBA'
+    assert result['bet_type'] == 'Moneyline'
+    assert result['description'] == 'Lakers to win'
+    assert result['odds'] == '+150'
+    assert result['sportsbook'] == 'DraftKings'
+    assert result['bet_size'] == '100'
+    assert result['win_probability'] == '55'
+
+def test_generate_bet_id(scraper_service):
+    """Test bet ID generation."""
+    row = {
+        'event_time': '2024-02-15 20:00:00',
+        'event_teams': 'Lakers vs Warriors',
+        'sport_league': 'NBA',
+        'bet_type': 'Moneyline',
+        'description': 'Lakers to win'
+    }
+    
+    bet_id = scraper_service.generate_bet_id(row)
+    expected_id = '2024-02-15 20:00:00_Lakers vs Warriors_NBA_Moneyline_Lakers to win'
+    
+    assert bet_id == expected_id
+
+def test_save_betting_data(scraper_service, app, db):
+    """Test saving betting data to database."""
+    data = [{
+        'bet_id': 'test_bet_1',
+        'timestamp': datetime.utcnow(),
+        'ev_percent': '5.2',
+        'event_time': '2024-02-15 20:00:00',
+        'event_teams': 'Lakers vs Warriors',
+        'sport_league': 'NBA',
+        'bet_type': 'Moneyline',
+        'description': 'Lakers to win',
+        'odds': '+150',
+        'sportsbook': 'DraftKings',
+        'bet_size': '100',
+        'win_probability': '55'
+    }]
+    
+    with app.app_context():
+        new_bets = scraper_service.save_betting_data(data)
+        
+        assert len(new_bets) == 1
+        saved_bet = Bet.query.filter_by(bet_id='test_bet_1').first()
+        assert saved_bet is not None
+        assert saved_bet.ev_percent == 5.2
+        assert saved_bet.sport_league == 'NBA'
+
+def test_cleanup_old_data(scraper_service, app, db):
+    """Test cleanup of old data."""
+    # Create some test data
+    old_date = datetime.utcnow() - timedelta(days=40)
+    bet = Bet(
+        bet_id='old_bet_1',
+        timestamp=old_date,
+        ev_percent=5.2,
+        event_time=old_date,
+        event_teams='Lakers vs Warriors',
+        sport_league='NBA',
+        bet_type='Moneyline',
+        description='Lakers to win',
+        odds=150,
+        sportsbook='DraftKings',
+        result='W'
+    )
+    
+    with app.app_context():
+        db.session.add(bet)
+        db.session.commit()
+        
+        cleaned_count = scraper_service.cleanup_old_data()
+        
+        assert cleaned_count == 1
+        assert Bet.query.filter_by(bet_id='old_bet_1').first() is None
  

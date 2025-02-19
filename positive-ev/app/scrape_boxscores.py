@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import logging
+import argparse
 from datetime import datetime, timedelta
 import requests
 from config import (
@@ -156,7 +157,14 @@ def parse_and_save_boxscore(boxscore_data, summary_data):
     finally:
         conn.close()
 
-def main(game_date):
+def main(game_date, force_reload=False):
+    """
+    Main function to scrape and save NBA boxscores.
+    
+    Args:
+        game_date (str): Date to scrape in YYYY-MM-DD format
+        force_reload (bool): If True, ignore latest date and start from season beginning
+    """
     create_tables()
     try:
         game_ids = fetch_game_ids(game_date)
@@ -168,20 +176,30 @@ def main(game_date):
         logging.error(f"An error occurred: {e}", exc_info=True)
 
 if __name__ == "__main__":
+    # Set up argument parser
+    parser = argparse.ArgumentParser(description='Scrape NBA boxscores')
+    parser.add_argument('--reload', action='store_true', 
+                       help='Reload all data from the start of the season')
+    args = parser.parse_args()
+    
     cleanup_logs(NBA_STATS_LOG_FILE)
     
-    # Get the latest date with a result from the database
-    latest_date = get_latest_date_from_db("game_boxscores", "game_date")
-
-    # Set the start date to one day before the latest date in the database
-    start_date = latest_date - timedelta(days=1)
-
+    if args.reload:
+        # Start from beginning of season if reload flag is set
+        start_date = datetime(2024, 10, 1)
+        logging.info("Reload flag set - Starting from beginning of season")
+    else:
+        # Get the latest date with a result from the database
+        latest_date = get_latest_date_from_db("game_boxscores", "game_date")
+        # Set the start date to one day before the latest date in the database
+        start_date = latest_date - timedelta(days=1)
+    
     # Set the end date to today (not including today)
     end_date = datetime.now() - timedelta(days=1)
-
+    
     # Log the date range
     logging.info(f"Updating results from {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}.")
-
+    
     current_date = start_date
     while current_date <= end_date:
         main(current_date.strftime("%Y-%m-%d"))

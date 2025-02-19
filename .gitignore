@@ -285,3 +285,14 @@ htmlcov/
 .tox/
 coverage.xml
 *.cover
+
+# Flask specific
+*.db
+*.log
+instance/
+.flaskenv
+migrations/
+
+# Python cache
+__pycache__/
+*.pyc

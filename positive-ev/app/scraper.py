@@ -105,7 +105,23 @@ def parse_cleaned_data(soup, timestamp):
                 row["Sportsbook"] = sportsbook_logo["alt"].strip() if sportsbook_logo else "N/A"
 
                 bet_size = block.select_one(SELECTORS['bet_size'])
-                row["Bet Size"] = bet_size.text.strip('$') if bet_size else "N/A"
+                logging.debug(f"Raw bet_size element: {bet_size}")
+                if bet_size:
+                    logging.debug(f"Raw bet_size text: '{bet_size.text}'")
+                    stripped_text = bet_size.text.strip()
+                    logging.debug(f"Stripped bet_size: '{stripped_text}'")
+                    
+                    if stripped_text != 'N/A':
+                        # Remove currency symbol, commas, and whitespace, then convert to float
+                        cleaned_value = stripped_text.replace('$', '').replace(',', '').strip()
+                        logging.debug(f"Cleaned bet_size value: '{cleaned_value}'")
+                        row["Bet Size"] = cleaned_value if cleaned_value else "N/A"
+                    else:
+                        logging.debug("Bet size is 'N/A'")
+                        row["Bet Size"] = "N/A"
+                else:
+                    logging.debug("No bet_size element found")
+                    row["Bet Size"] = "N/A"
 
                 win_probability = block.select_one(SELECTORS['win_probability'])
                 row["Win Probability"] = win_probability.text.strip('%') if win_probability else "N/A"
