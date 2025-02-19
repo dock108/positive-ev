@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-8">Admin Dashboard</h1>
+    
+    <!-- Overview Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-gray-500 text-sm font-medium">Total Bets</h3>
+            <p class="text-3xl font-bold">{{ stats.total_bets }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-gray-500 text-sm font-medium">Active Bets</h3>
+            <p class="text-3xl font-bold">{{ stats.active_bets }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-gray-500 text-sm font-medium">Win Rate</h3>
+            <p class="text-3xl font-bold">{{ "%.1f"|format(stats.win_rate) }}%</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-gray-500 text-sm font-medium">Total Profit</h3>
+            <p class="text-3xl font-bold">${{ "%.2f"|format(stats.total_profit) }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-gray-500 text-sm font-medium">ROI</h3>
+            <p class="text-3xl font-bold">{{ "%.1f"|format(stats.roi) }}%</p>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <a href="{{ url_for('admin.data_explorer') }}" class="bg-blue-600 text-white rounded-lg p-4 text-center hover:bg-blue-700">
+            Data Explorer
+        </a>
+        <a href="{{ url_for('admin.model_testing') }}" class="bg-green-600 text-white rounded-lg p-4 text-center hover:bg-green-700">
+            Model Testing
+        </a>
+        <a href="{{ url_for('admin.simulation') }}" class="bg-purple-600 text-white rounded-lg p-4 text-center hover:bg-purple-700">
+            Run Simulation
+        </a>
+        <button onclick="refreshData()" class="bg-gray-600 text-white rounded-lg p-4 text-center hover:bg-gray-700">
+            Refresh Data
+        </button>
+    </div>
+    
+    <!-- Performance Graph -->
+    <div class="bg-white rounded-lg shadow p-6 mb-8">
+        <h2 class="text-xl font-bold mb-4">Performance Over Time</h2>
+        <div id="performanceGraph" class="w-full h-96"></div>
+    </div>
+    
+    <!-- Recent Activity -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-bold mb-4">Recent Activity</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead>
+                    <tr>
+                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Time
+                        </th>
+                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Event
+                        </th>
+                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Type
+                        </th>
+                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <!-- Add recent activity items here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+// Initialize performance graph
+const performanceData = {{ performance_graph|safe if performance_graph else 'null' }};
+if (performanceData) {
+    Plotly.newPlot('performanceGraph', JSON.parse(performanceData));
+}
+
+// Refresh data function
+function refreshData() {
+    fetch('/admin/api/refresh-data')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error refreshing data: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error refreshing data');
+        });
+}
+</script>
+{% endblock %} 

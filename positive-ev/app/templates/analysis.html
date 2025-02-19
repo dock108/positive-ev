@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis - Sports Betting Dashboard{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900">
+            Model Analysis
+        </h3>
+        <p class="mt-1 max-w-2xl text-sm text-gray-500">
+            Statistical insights and model predictions for betting opportunities.
+        </p>
+    </div>
+    
+    <!-- Summary Stats -->
+    <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+        <dl class="grid grid-cols-1 gap-5 sm:grid-cols-4">
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <dt class="text-sm font-medium text-gray-500 truncate">
+                        Total Opportunities
+                    </dt>
+                    <dd class="mt-1 text-3xl font-semibold text-gray-900">
+                        {{ metrics.total_opportunities }}
+                    </dd>
+                </div>
+            </div>
+            
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <dt class="text-sm font-medium text-gray-500 truncate">
+                        Average EV%
+                    </dt>
+                    <dd class="mt-1 text-3xl font-semibold text-gray-900">
+                        {{ "%.2f"|format(metrics.avg_ev) }}%
+                    </dd>
+                </div>
+            </div>
+            
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <dt class="text-sm font-medium text-gray-500 truncate">
+                        Median EV%
+                    </dt>
+                    <dd class="mt-1 text-3xl font-semibold text-gray-900">
+                        {{ "%.2f"|format(metrics.median_ev) }}%
+                    </dd>
+                </div>
+            </div>
+            
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <dt class="text-sm font-medium text-gray-500 truncate">
+                        EV% Standard Deviation
+                    </dt>
+                    <dd class="mt-1 text-3xl font-semibold text-gray-900">
+                        {{ "%.2f"|format(metrics.ev_std) }}%
+                    </dd>
+                </div>
+            </div>
+        </dl>
+    </div>
+    
+    <!-- Distribution Analysis -->
+    <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <!-- Sports Distribution -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h4 class="text-lg font-medium text-gray-900 mb-4">Sports Distribution</h4>
+                    <div class="h-96" id="sports-distribution-chart"></div>
+                </div>
+            </div>
+            
+            <!-- Bet Types Distribution -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h4 class="text-lg font-medium text-gray-900 mb-4">Bet Types Distribution</h4>
+                    <div class="h-96" id="bet-types-chart"></div>
+                </div>
+            </div>
+            
+            <!-- EV Distribution -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h4 class="text-lg font-medium text-gray-900 mb-4">EV% Distribution</h4>
+                    <div class="h-96" id="ev-distribution-chart"></div>
+                </div>
+            </div>
+            
+            <!-- Odds vs Probability -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h4 class="text-lg font-medium text-gray-900 mb-4">Odds vs Win Probability</h4>
+                    <div class="h-96" id="odds-prob-chart"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Plotly.js -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+    // Sports Distribution Chart
+    const sportsData = {{ metrics.sports_distribution | tojson }};
+    Plotly.newPlot('sports-distribution-chart', [{
+        x: Object.keys(sportsData),
+        y: Object.values(sportsData),
+        type: 'bar',
+        marker: {
+            color: '#3B82F6'
+        }
+    }], {
+        margin: { t: 10, r: 10, b: 40, l: 60 },
+        xaxis: {
+            tickangle: 45
+        }
+    });
+    
+    // Bet Types Distribution Chart
+    const betTypesData = {{ metrics.bet_types_distribution | tojson }};
+    Plotly.newPlot('bet-types-chart', [{
+        labels: Object.keys(betTypesData),
+        values: Object.values(betTypesData),
+        type: 'pie',
+        marker: {
+            colors: ['#3B82F6', '#059669', '#DC2626', '#D97706', '#7C3AED']
+        }
+    }], {
+        margin: { t: 10, r: 10, b: 10, l: 10 }
+    });
+    
+    // EV Distribution Chart
+    const evData = {{ charts.ev_distribution | tojson }};
+    Plotly.newPlot('ev-distribution-chart', [{
+        x: evData.values,
+        type: 'histogram',
+        marker: {
+            color: '#3B82F6'
+        }
+    }], {
+        margin: { t: 10, r: 10, b: 40, l: 60 },
+        xaxis: {
+            title: 'EV%'
+        }
+    });
+    
+    // Odds vs Probability Chart
+    const oddsVsProbData = {{ charts.odds_vs_prob | tojson }};
+    Plotly.newPlot('odds-prob-chart', [{
+        x: oddsVsProbData.odds,
+        y: oddsVsProbData.probabilities,
+        mode: 'markers',
+        type: 'scatter',
+        marker: {
+            color: '#3B82F6',
+            size: 8
+        }
+    }], {
+        margin: { t: 10, r: 10, b: 40, l: 60 },
+        xaxis: {
+            title: 'Odds'
+        },
+        yaxis: {
+            title: 'Win Probability (%)',
+            range: [0, 100]
+        }
+    });
+</script>
+{% endblock %} 

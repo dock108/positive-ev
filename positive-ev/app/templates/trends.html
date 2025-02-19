@@ -1,13 +1,169 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>Betting Trends</title>
-    <link rel="stylesheet" href="/static/styles.css">
-</head>
-<body>
-    <h1>EV Trends</h1>
-    <div>
-        {{ trends_html | safe }}
+{% extends "base.html" %}
+
+{% block title %}Trends - Sports Betting Dashboard{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900">
+            Performance Trends
+        </h3>
+        <p class="mt-1 max-w-2xl text-sm text-gray-500">
+            Visualizations and metrics of betting performance over time.
+        </p>
     </div>
-</body>
-</html>
+    
+    <!-- Summary Stats -->
+    <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+        <dl class="grid grid-cols-1 gap-5 sm:grid-cols-4">
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <dt class="text-sm font-medium text-gray-500 truncate">
+                        Total Bets
+                    </dt>
+                    <dd class="mt-1 text-3xl font-semibold text-gray-900">
+                        {{ stats.total_bets }}
+                    </dd>
+                </div>
+            </div>
+            
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <dt class="text-sm font-medium text-gray-500 truncate">
+                        Win Rate
+                    </dt>
+                    <dd class="mt-1 text-3xl font-semibold text-gray-900">
+                        {{ "%.1f"|format(stats.win_rate) }}%
+                    </dd>
+                </div>
+            </div>
+            
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <dt class="text-sm font-medium text-gray-500 truncate">
+                        Total Profit/Loss
+                    </dt>
+                    <dd class="mt-1 text-3xl font-semibold {% if stats.total_profit > 0 %}text-green-600{% elif stats.total_profit < 0 %}text-red-600{% else %}text-gray-900{% endif %}">
+                        ${{ "%.2f"|format(stats.total_profit) }}
+                    </dd>
+                </div>
+            </div>
+            
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <dt class="text-sm font-medium text-gray-500 truncate">
+                        Average CLV
+                    </dt>
+                    <dd class="mt-1 text-3xl font-semibold {% if stats.avg_clv > 0 %}text-green-600{% elif stats.avg_clv < 0 %}text-red-600{% else %}text-gray-900{% endif %}">
+                        {{ "%.2f"|format(stats.avg_clv) }}%
+                    </dd>
+                </div>
+            </div>
+        </dl>
+    </div>
+    
+    <!-- Charts -->
+    <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <!-- Cumulative P/L Chart -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h4 class="text-lg font-medium text-gray-900 mb-4">Cumulative Profit/Loss</h4>
+                    <div class="h-96" id="cumulative-pl-chart"></div>
+                </div>
+            </div>
+            
+            <!-- Win Rate by Sport Chart -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h4 class="text-lg font-medium text-gray-900 mb-4">Win Rate by Sport</h4>
+                    <div class="h-96" id="win-rate-by-sport-chart"></div>
+                </div>
+            </div>
+            
+            <!-- CLV Distribution Chart -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h4 class="text-lg font-medium text-gray-900 mb-4">CLV Distribution</h4>
+                    <div class="h-96" id="clv-distribution-chart"></div>
+                </div>
+            </div>
+            
+            <!-- Monthly Performance Chart -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h4 class="text-lg font-medium text-gray-900 mb-4">Monthly Performance</h4>
+                    <div class="h-96" id="monthly-performance-chart"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Plotly.js -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+    // Cumulative P/L Chart
+    const cumulativePlData = {{ charts.cumulative_pl | tojson }};
+    Plotly.newPlot('cumulative-pl-chart', [{
+        x: cumulativePlData.dates,
+        y: cumulativePlData.values,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Cumulative P/L',
+        line: {
+            color: cumulativePlData.values[cumulativePlData.values.length - 1] >= 0 ? '#059669' : '#DC2626'
+        }
+    }], {
+        margin: { t: 10, r: 10, b: 40, l: 60 }
+    });
+    
+    // Win Rate by Sport Chart
+    const winRateData = {{ charts.win_rate_by_sport | tojson }};
+    Plotly.newPlot('win-rate-by-sport-chart', [{
+        x: winRateData.sports,
+        y: winRateData.rates,
+        type: 'bar',
+        marker: {
+            color: winRateData.rates.map(rate => rate >= 50 ? '#059669' : '#DC2626')
+        }
+    }], {
+        margin: { t: 10, r: 10, b: 40, l: 60 },
+        yaxis: {
+            tickformat: ',.0%',
+            range: [0, 1]
+        }
+    });
+    
+    // CLV Distribution Chart
+    const clvData = {{ charts.clv_distribution | tojson }};
+    Plotly.newPlot('clv-distribution-chart', [{
+        x: clvData.values,
+        type: 'histogram',
+        marker: {
+            color: '#3B82F6'
+        }
+    }], {
+        margin: { t: 10, r: 10, b: 40, l: 60 },
+        xaxis: {
+            title: 'CLV %'
+        }
+    });
+    
+    // Monthly Performance Chart
+    const monthlyData = {{ charts.monthly_performance | tojson }};
+    Plotly.newPlot('monthly-performance-chart', [{
+        x: monthlyData.months,
+        y: monthlyData.profits,
+        type: 'bar',
+        marker: {
+            color: monthlyData.profits.map(profit => profit >= 0 ? '#059669' : '#DC2626')
+        }
+    }], {
+        margin: { t: 10, r: 10, b: 40, l: 60 },
+        yaxis: {
+            title: 'Profit/Loss ($)'
+        }
+    });
+</script>
+{% endblock %}

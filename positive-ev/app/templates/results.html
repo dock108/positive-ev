@@ -1,69 +1,95 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bet Results</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
-</head>
-<body>
-    <div class="container">
-        <header class="header">
-            <h1>Bet Results</h1>
-            <p class="subheading">View the most recent outcomes and statistics for your bets.</p>
-        </header>
+{% extends "base.html" %}
 
-        <main class="content">
-            <section class="rankings">
-                <h2>Top Opportunities</h2>
-                <table class="rankings-table">
-                    <thead>
-                        <tr>
-                            <th>Rank</th>
-                            <th>Event</th>
-                            <th>Bet Description</th>
-                            <th>Odds</th>
-                            <th>EV%</th>
-                            <th>Bet Size</th>
-                            <th>Win Probability</th>
-                            <th>Result</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Example Row -->
-                        <tr>
-                            <td>1</td>
-                            <td>Utah Jazz vs Miami Heat</td>
-                            <td>Tyler Herro Under 5.5 Assists</td>
-                            <td>+126</td>
-                            <td>4.93%</td>
-                            <td>$100</td>
-                            <td>46.4%</td>
-                            <td class="loss">L</td>
-                        </tr>
-                        <!-- Dynamic Content Will Go Here -->
-                    </tbody>
-                </table>
-            </section>
+{% block title %}Results - Sports Betting Dashboard{% endblock %}
 
-            <section class="visualizations">
-                <h2>Performance Visualizations</h2>
-                <div class="charts">
-                    <div id="chart-ev" class="chart">EV Over Time Chart Placeholder</div>
-                    <div id="chart-results" class="chart">Win/Loss Trends Chart Placeholder</div>
-                </div>
-            </section>
-        </main>
-
-        <footer class="footer">
-            <p>&copy; 2025 Mega-Plan Positive EV Utility</p>
-        </footer>
+{% block content %}
+<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900">
+            Betting Results
+        </h3>
+        <p class="mt-1 max-w-2xl text-sm text-gray-500">
+            Historical performance of resolved bets.
+        </p>
     </div>
-
-    <script>
-        // Add interactivity or chart library integration here
-        console.log("Charts and interactivity coming soon.");
-    </script>
-</body>
-</html>
+    <div class="border-t border-gray-200">
+        <div class="bg-white overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Date
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Event
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Sport/League
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Bet Type
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Result
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Odds
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Stake
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            P/L
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            CLV
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for bet in resolved_bets %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ bet.placed_at.strftime('%Y-%m-%d') }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {{ bet.event_teams }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ bet.sport_league }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ bet.bet_type }} - {{ bet.description }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                {% if bet.result == 'WIN' %}bg-green-100 text-green-800
+                                {% elif bet.result == 'LOSS' %}bg-red-100 text-red-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ bet.result }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ bet.odds }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${{ "%.2f"|format(bet.stake) }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="{% if bet.profit_loss > 0 %}text-green-600{% elif bet.profit_loss < 0 %}text-red-600{% else %}text-gray-500{% endif %}">
+                                ${{ "%.2f"|format(bet.profit_loss) }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="{% if bet.clv_percent > 0 %}text-green-600{% elif bet.clv_percent < 0 %}text-red-600{% else %}text-gray-500{% endif %}">
+                                {{ "%.2f"|format(bet.clv_percent) }}%
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

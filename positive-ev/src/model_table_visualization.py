@@ -2,9 +2,15 @@ import sqlite3
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from datetime import datetime
+import os
 
 # Database and table configuration
 DB_PATH = "/Users/michaelfuscoletti/Desktop/mega-plan/positive-ev/app/betting_data.db"
+OUTPUT_DIR = "/Users/michaelfuscoletti/Desktop/mega-plan/positive-ev/analysis/visualizations"
+
+# Create output directory if it doesn't exist
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
 def load_data_from_db():
@@ -16,6 +22,8 @@ def load_data_from_db():
         FROM model_work_table
         """
         df = pd.read_sql_query(query, conn)
+        df['timestamp'] = pd.to_datetime(df['timestamp'])
+        df['event_time'] = pd.to_datetime(df['event_time'])
         return df
     except Exception as e:
         print(f"Error loading data from the database: {e}")
@@ -25,128 +33,120 @@ def load_data_from_db():
 
 def visualize_ev_distribution(df):
     """Visualize EV Percent distribution."""
-    plt.figure(figsize=(10, 6))
-    sns.histplot(df['ev_percent'], kde=True, bins=20, color='blue')
-    plt.title("EV Percent Distribution", fontsize=16)
-    plt.xlabel("EV Percent", fontsize=12)
-    plt.ylabel("Frequency", fontsize=12)
-    plt.show()
-
-
-def visualize_time_to_event(df):
-    """Visualize time to event distribution."""
-    plt.figure(figsize=(10, 6))
-    sns.histplot(df['time_to_event'], kde=True, bins=20, color='green')
-    plt.title("Time to Event Distribution", fontsize=16)
-    plt.xlabel("Time to Event (minutes)", fontsize=12)
-    plt.ylabel("Frequency", fontsize=12)
-    plt.show()
-
-
-def visualize_bets_by_sport(df):
-    """Visualize the number of bets per sport league."""
     plt.figure(figsize=(12, 6))
-    sport_counts = df["sport_league"].value_counts()
-    sns.barplot(x=sport_counts.index, y=sport_counts.values, palette="muted")
-    plt.title("Bets by Sport League", fontsize=16)
-    plt.xlabel("Sport League", fontsize=12)
-    plt.ylabel("Count", fontsize=12)
-    plt.xticks(rotation=45, ha='right')
-    plt.show()
+    sns.histplot(data=df, x='ev_percent', hue='bet_time_category', multiple="stack", bins=30)
+    plt.title("EV Distribution by Bet Timing Category")
+    plt.xlabel("EV Percent")
+    plt.ylabel("Count")
+    plt.savefig(f"{OUTPUT_DIR}/ev_distribution.png")
+    plt.close()
 
 
-def visualize_odds_vs_opportunity(df):
-    """Scatter plot of odds vs opportunity value."""
+def visualize_player_stats(df):
+    """Visualize player stats correlations."""
+    # Get all player stat columns
+    stat_cols = [col for col in df.columns if any(x in col for x in ['_avg', '_std', '_trend', '_consistency'])]
+    if stat_cols:
+        plt.figure(figsize=(15, 12))
+        correlation_matrix = df[stat_cols].corr()
+        sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', center=0, fmt='.2f')
+        plt.title("Player Stats Correlation Matrix")
+        plt.xticks(rotation=45, ha='right')
+        plt.tight_layout()
+        plt.savefig(f"{OUTPUT_DIR}/player_stats_correlation.png")
+        plt.close()
+
+
+def visualize_win_rates(df):
+    """Visualize win rates across different dimensions."""
+    # Win rate by bet timing
     plt.figure(figsize=(10, 6))
-    sns.scatterplot(data=df, x="odds", y="opportunity_value", hue="sport_league", palette="deep")
-    plt.title("Odds vs Opportunity Value", fontsize=16)
-    plt.xlabel("Odds", fontsize=12)
-    plt.ylabel("Opportunity Value", fontsize=12)
-    plt.legend(title="Sport League")
-    plt.axvline(-100, color='red', linestyle='--', label='Skipped Range (-100 to 100)')
-    plt.axvline(100, color='red', linestyle='--')
-    plt.grid(True)
-    plt.show()
-
-
-def calculate_net_profit_loss(df):
-    """Calculate net profit/loss."""
-    df["net"] = 0.0
-
-    for index, row in df.iterrows():
-        bet_size = row["bet_size"]
-        odds = row["odds"]
-        result = row["result"]  # Assuming 'W' for win, 'L' for loss
-
-        # Calculate payout based on American odds
-        if odds > 0:  # Positive odds
-            payout = bet_size * (odds / 100)
-        else:  # Negative odds
-            payout = bet_size / abs(odds) * 100
-
-        # Calculate net profit/loss
-        if result == "W":
-            net = payout
-        elif result == "L":
-            net = -bet_size
-        else:
-            net = 0  # In case of unexpected result value
-        
-        df.at[index, "net"] = net
-
-    return df
-
-
-def visualize_net_profit_loss(df):
-    """Visualize net profit/loss by sport league."""
-    net_by_sport = df.groupby("sport_league")["net"].sum()
-
-    plt.figure(figsize=(10, 6))
-    net_by_sport.plot(kind="bar", color=["green" if x > 0 else "red" for x in net_by_sport], alpha=0.8)
-    plt.title("Net Profit/Loss by Sport League", fontsize=16)
-    plt.xlabel("Sport League", fontsize=12)
-    plt.ylabel("Net Profit/Loss", fontsize=12)
-    plt.axhline(0, color="black", linewidth=0.8, linestyle="--")
-    plt.grid(axis="y", linestyle="--", alpha=0.7)
-    plt.xticks(rotation=45)
-    plt.show()
-
-
-def visualize_results(df):
-    """Bar chart of wins/losses by sport league."""
-    plt.figure(figsize=(10, 6))
-    results = df.groupby(["sport_league", "result"]).size().unstack(fill_value=0)
-    results.plot(kind="bar", stacked=False, figsize=(10, 6), colormap="viridis")
+    win_rates = df.groupby('bet_time_category')['result'].apply(
+        lambda x: (x == 'W').mean()
+    ).sort_values(ascending=False)
     
-    plt.title("Wins and Losses by Sport League", fontsize=16)
-    plt.xlabel("Sport League", fontsize=12)
-    plt.ylabel("Count", fontsize=12)
-    plt.legend(title="Result")
-    plt.xticks(rotation=45)
-    plt.grid(axis="y", linestyle="--", alpha=0.7)
-    plt.show()
+    sns.barplot(x=win_rates.index, y=win_rates.values)
+    plt.title('Win Rate by Bet Timing Category')
+    plt.ylabel('Win Rate')
+    plt.savefig(f"{OUTPUT_DIR}/win_rates_timing.png")
+    plt.close()
+
+    # Win rate by EV bucket
+    plt.figure(figsize=(10, 6))
+    df['ev_bucket'] = pd.qcut(df['ev_percent'], q=5, labels=['Very Low', 'Low', 'Medium', 'High', 'Very High'])
+    win_rates_ev = df.groupby('ev_bucket')['result'].apply(lambda x: (x == 'W').mean())
+    
+    sns.barplot(x=win_rates_ev.index, y=win_rates_ev.values)
+    plt.title('Win Rate by EV Bucket')
+    plt.ylabel('Win Rate')
+    plt.savefig(f"{OUTPUT_DIR}/win_rates_ev.png")
+    plt.close()
+
+
+def visualize_clv_analysis(df):
+    """Visualize Closing Line Value analysis."""
+    plt.figure(figsize=(12, 6))
+    sns.boxplot(x='bet_time_category', y='clv_percent', data=df)
+    plt.title('CLV Distribution by Bet Timing')
+    plt.ylabel('CLV Percent')
+    plt.savefig(f"{OUTPUT_DIR}/clv_by_timing.png")
+    plt.close()
+
+    # CLV trend over time
+    plt.figure(figsize=(12, 6))
+    daily_clv = df.groupby(df['timestamp'].dt.date)['clv_percent'].mean()
+    daily_clv.plot(kind='line')
+    plt.title('Average Daily CLV%')
+    plt.xlabel('Date')
+    plt.ylabel('Average CLV%')
+    plt.grid(True)
+    plt.savefig(f"{OUTPUT_DIR}/clv_trend.png")
+    plt.close()
+
+
+def generate_summary_report(df):
+    """Generate a summary report of key metrics."""
+    with open(f"{OUTPUT_DIR}/summary_report.txt", 'w') as f:
+        f.write("Model Performance Summary\n")
+        f.write("=======================\n\n")
+        
+        # Overall metrics
+        f.write(f"Total Bets Analyzed: {len(df)}\n")
+        f.write(f"Overall Win Rate: {(df['result'] == 'W').mean():.2%}\n")
+        f.write(f"Average EV%: {df['ev_percent'].mean():.2f}%\n")
+        f.write(f"Average CLV%: {df['clv_percent'].mean():.2f}%\n\n")
+        
+        # Win rates by timing
+        f.write("Win Rates by Timing:\n")
+        timing_wins = df.groupby('bet_time_category')['result'].apply(
+            lambda x: f"{(x == 'W').mean():.2%}"
+        )
+        for category, rate in timing_wins.items():
+            f.write(f"{category}: {rate}\n")
+        
+        # Player stats summary
+        f.write("\nPlayer Stats Summary:\n")
+        stat_cols = [col for col in df.columns if '_avg' in col]
+        for col in stat_cols:
+            f.write(f"{col}: {df[col].mean():.2f}\n")
 
 
 def main():
-    """Main function to load data and create visualizations."""
-    # Load data
-    print("Loading data from the database...")
+    """Main function to generate all visualizations."""
+    print("Loading data from database...")
     df = load_data_from_db()
 
     if df is not None and not df.empty:
-        print(f"Data loaded successfully. Rows: {len(df)}, Columns: {len(df.columns)}")
-
-        # Calculate net profit/loss
-        df = calculate_net_profit_loss(df)
-
-        # Generate visualizations
-        print("Creating visualizations...")
+        print(f"Data loaded successfully. Found {len(df)} rows.")
+        
+        print("Generating visualizations...")
         visualize_ev_distribution(df)
-        visualize_time_to_event(df)
-        visualize_bets_by_sport(df)
-        visualize_odds_vs_opportunity(df)
-        visualize_results(df)
-        visualize_net_profit_loss(df)
+        visualize_player_stats(df)
+        visualize_win_rates(df)
+        visualize_clv_analysis(df)
+        generate_summary_report(df)
+        
+        print("Visualizations completed. Check the output directory for results.")
     else:
         print("No data found in the model_work_table.")
 

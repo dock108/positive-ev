@@ -161,12 +161,138 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-*.sh
-sql/
-logs/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.python-version
+*.egg-info/
+dist/
+build/
+
+# Models and data
+models/
 data/
-backups/
-.DS_Store
-betting_data.db
-*/eda/*.csv
+*.pkl
 **/*_2025*.pkl
+*.h5
+*.pt
+*.pth
+*.onnx
+*.joblib
+*.model
+*checkpoint*
+saved_models/
+model_outputs/
+
+# Analysis, EDA, and Outputs
+# Keep analysis code, ignore outputs
+analysis/**/outputs/
+analysis/**/*.png
+analysis/**/*.csv
+analysis/**/*.xlsx
+analysis/**/*.pdf
+analysis/**/*.html
+analysis/**/temp/
+analysis/**/cache/
+# But don't ignore analysis code
+!analysis/**/*.py
+!analysis/**/*.sql
+!analysis/**/README.md
+eda/
+*/eda/**
+sql/
+notebooks/
+figures/
+plots/
+results/
+output/
+reports/
+*.png
+*.csv
+*.xlsx
+*.xls
+*.pdf
+*.sh
+
+# Logs
+logs/
+*/logs/**
+*.log
+*.log.*
+positive-ev/app/logs/
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+positive-ev/app/betting_data.db
+betting_data.db
+
+# Backups
+backups/
+*/backups/**
+*.bak
+
+# IDE and System
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# Data files
+*.txt
+*.json
+*.parquet
+*.feather
+*.hdf5
+*.hdf
+*.h5
+*.dat
+data/
+datasets/
+raw_data/
+processed_data/
+
+# Credentials or sensitive info
+*.env
+*.pem
+*.key
+config.ini
+credentials.json
+secrets.yaml
+
+# Temp files
+*.tmp
+*.temp
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+coverage.xml
+*.cover
+
+# Flask specific
+*.db
+*.log
+instance/
+.flaskenv
+migrations/
+
+# Python cache
+__pycache__/
+*.pyc

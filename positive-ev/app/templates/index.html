@@ -1,30 +1,244 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>Positive EV Dashboard</title>
-    <link rel="stylesheet" href="/static/styles.css">
-</head>
-<body>
-    <h1>Recent Bets</h1>
-    <table>
-        <tr>
-            <th>Timestamp</th>
-            <th>Event</th>
-            <th>EV%</th>
-            <th>Odds</th>
-            <th>Bet Type</th>
-            <th>Sportsbook</th>
-        </tr>
-        {% for bet in unresolved_bets %}
-        <tr>
-            <td>{{ bet['timestamp'] }}</td>
-            <td>{{ bet['event_teams'] }}</td>
-            <td>{{ bet['ev_percent'] }}</td>
-            <td>{{ bet['odds'] }}</td>
-            <td>{{ bet['bet_type'] }}</td>
-            <td>{{ bet['sportsbook'] }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Home - Sports Betting Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header Section -->
+    <div class="bg-white shadow-sm rounded-lg p-4">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Betting Opportunities</h1>
+                <p class="text-sm text-gray-500">Last updated: {{ summary_stats.latest_timestamp if summary_stats.latest_timestamp else 'No data available' }}</p>
+                <p class="text-sm text-gray-500 mt-1">Data is refreshed every 5 minutes to keep you in the loop with the latest betting opportunities.</p>
+                <p class="text-sm text-gray-500 mt-1">This page provides a snapshot of current betting opportunities, highlighting key stats to help you make informed decisions.</p>
+            </div>
+            <div>
+                <span class="text-3xl">🎯</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-12 gap-6">
+        <!-- Left Column - Stats -->
+        <div class="col-span-12 lg:col-span-3 space-y-6">
+            <!-- Summary Stats Cards -->
+            <div class="bg-white shadow-sm rounded-lg p-6 space-y-6">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center">
+                            <span class="text-xl mr-2">📊</span>
+                            <dt class="text-sm font-medium text-gray-500">Current Opportunities</dt>
+                            <dd class="mt-1 text-2xl font-semibold text-gray-900">{{ summary_stats.total_bets }}</dd>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-xl mr-2">📈</span>
+                            <dt class="text-sm font-medium text-gray-500">Average EV%</dt>
+                            <dd class="mt-1 text-2xl font-semibold text-gray-900">{{ "%.1f"|format(summary_stats.avg_ev) }}%</dd>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-xl mr-2">🏆</span>
+                            <dt class="text-sm font-medium text-gray-500">Average Edge</dt>
+                            <dd class="mt-1 text-2xl font-semibold text-gray-900">{{ "%.1f"|format(summary_stats.avg_edge) }}%</dd>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Time Distribution</h3>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium text-gray-500">Early (>24h)</span>
+                            <span class="text-sm font-semibold text-gray-900">{{ summary_stats.time_distribution.Early }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium text-gray-500">Mid (6-24h)</span>
+                            <span class="text-sm font-semibold text-gray-900">{{ summary_stats.time_distribution.Mid }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium text-gray-500">Late (<6h)</span>
+                            <span class="text-sm font-semibold text-gray-900">{{ summary_stats.time_distribution.Late }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Sportsbook Distribution</h3>
+                    <div class="space-y-2">
+                        {% for sportsbook, count in summary_stats.sportsbook_distribution.items() %}
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium text-gray-500">{{ sportsbook }}</span>
+                            <span class="text-sm font-semibold text-gray-900">{{ count }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Grade Distribution</h3>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium text-gray-500">A (Must Bet)</span>
+                            <span class="text-sm font-semibold text-green-600">{{ summary_stats.grade_distribution.A }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium text-gray-500">B (Should Bet)</span>
+                            <span class="text-sm font-semibold text-blue-600">{{ summary_stats.grade_distribution.B }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium text-gray-500">C (Decent if Aggressive)</span>
+                            <span class="text-sm font-semibold text-purple-600">{{ summary_stats.grade_distribution.C }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium text-gray-500">D (Below Average)</span>
+                            <span class="text-sm font-semibold text-red-600">{{ summary_stats.grade_distribution.D }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium text-gray-500">F (Poor)</span>
+                            <span class="text-sm font-semibold text-gray-600">{{ summary_stats.grade_distribution.F }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Betting Opportunities -->
+        <div class="col-span-12 lg:col-span-9">
+            <div class="bg-white shadow-sm rounded-lg divide-y divide-gray-200">
+                {% for bet in current_bets %}
+                <div class="p-6 opportunity-row relative">
+                    
+                    <div class="flex flex-col sm:flex-row gap-6 already-bet-content">
+                        <!-- Left Side - Event Info -->
+                        <div class="w-1/4">
+                            <div class="flex items-center gap-3 mb-2">
+                                <div class="bg-gray-100 rounded-full w-16 h-16 flex flex-col items-center justify-center">
+                                    <div class="text-lg font-semibold text-gray-800">{{ bet.grade }}</div>
+                                    <div class="text-xs text-gray-500">Grade</div>
+                                </div>
+                                <div class="text-xs text-gray-500">
+                                    <div>Score: {{ bet.composite_score }}%</div>
+                                </div>
+                            </div>
+
+                            <h4 class="text-lg font-medium text-gray-900">{{ bet.event_teams }}</h4>
+                            <p class="text-sm text-gray-600">{{ bet.sport_league }}</p>
+                            <p class="text-sm text-gray-600">{{ bet.bet_type }} - {{ bet.description }}</p>
+                            
+                            <div class="flex gap-4 mt-3">
+                                <div title="Current odds in American format">
+                                    <dt class="text-xs font-medium text-gray-500">Odds</dt>
+                                    <dd class="text-sm font-medium text-gray-900">{{ '+' if bet.odds > 0 }}{{ bet.odds|int }}</dd>
+                                </div>
+                                <div title="The sportsbook offering these odds">
+                                    <dt class="text-xs font-medium text-gray-500">Sportsbook</dt>
+                                    <dd class="text-sm font-medium text-gray-900">{{ bet.sportsbook }}</dd>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Side - Metrics -->
+                        <div class="w-3/4 grid grid-cols-4 gap-4">
+                            <!-- Suggested Bet Size -->
+                            <div title="Recommended bet size from OddsJam">
+                                <dt class="text-sm font-medium text-gray-500">Suggested Bet</dt>
+                                <dd class="mt-1">
+                                    <span class="px-2 py-1 text-sm font-semibold rounded-full bg-purple-100 text-purple-800">
+                                        ${{ "%.0f"|format(bet.recommended_bet_size) if bet.recommended_bet_size else 0 }}
+                                    </span>
+                                </dd>
+                            </div>
+
+                            <!-- EV% -->
+                            <div title="Expected Value - The estimated percentage return on investment for this bet">
+                                <dt class="text-sm font-medium text-gray-500">EV%</dt>
+                                <dd class="mt-1">
+                                    <span class="px-2 py-1 text-sm font-semibold rounded-full
+                                        {% if bet.ev_percent >= 10 %}bg-green-200 text-green-900
+                                        {% elif bet.ev_percent >= 5 %}bg-lime-200 text-lime-900
+                                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {{ "%.2f"|format(bet.ev_percent) }}%
+                                    </span>
+                                </dd>
+                            </div>
+
+                            <!-- Edge -->
+                            <div title="Edge - The difference between our calculated win probability and the market implied probability">
+                                <dt class="text-sm font-medium text-gray-500">Edge</dt>
+                                <dd class="mt-1">
+                                    <span class="px-2 py-1 text-sm font-semibold rounded-full
+                                        {% if bet.edge >= 5 %}bg-violet-200 text-violet-900
+                                        {% elif bet.edge >= 2.5 %}bg-fuchsia-200 text-fuchsia-900
+                                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {{ "%.2f"|format(bet.edge) if bet.edge else 'N/A' }}%
+                                    </span>
+                                </dd>
+                            </div>
+
+                            <!-- Time -->
+                            <div title="Time until the event starts - Early: >24h, Mid: 6-24h, Late: <6h">
+                                <dt class="text-sm font-medium text-gray-500">Time to Event</dt>
+                                <dd class="mt-1">
+                                    <span class="px-2 py-1 text-sm font-semibold rounded-full
+                                        {% if bet.bet_time_category == 'Early' %}bg-lime-100 text-lime-800
+                                        {% elif bet.bet_time_category == 'Mid' %}bg-amber-100 text-amber-800
+                                        {% elif bet.bet_time_category == 'Late' %}bg-rose-100 text-rose-800
+                                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {{ bet.bet_time_category }}
+                                        {% if bet.time_to_event %}
+                                        <span class="ml-1 text-gray-500">({{ "%.1f"|format(bet.time_to_event) }}h)</span>
+                            {% endif %}
+                                    </span>
+                                </dd>
+                            </div>
+
+                            <!-- Probabilities -->
+                            <div class="col-span-2">
+                                <!-- Win Probability -->
+                                <div title="Our calculated probability that this bet will win">
+                                    <dt class="text-xs font-medium text-gray-500">Win Probability</dt>
+                                    <dd class="text-sm font-medium text-gray-900">{{ "%.1f"|format(bet.win_probability) }}%</dd>
+                                </div>
+
+                                <!-- Market Probability -->
+                                <div class="mt-2" title="The implied probability based on the current market odds">
+                                    <dt class="text-xs font-medium text-gray-500">Market Probability</dt>
+                                    <dd class="text-sm font-medium text-gray-900">{{ "%.1f"|format(bet.market_implied_prob) if bet.market_implied_prob else 'N/A' }}%</dd>
+                                </div>
+                            </div>
+
+                            <!-- Already Bet Checkbox -->
+                            <div class="col-span-4 flex justify-end mt-4">
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" class="already-bet-checkbox form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out" onchange="toggleAlreadyBet(this)">
+                                    <span class="ml-2 text-sm text-gray-600">Already Bet</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                    {% endfor %}
+        </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleAlreadyBet(checkbox) {
+    const betRow = checkbox.closest('.opportunity-row');
+    if (checkbox.checked) {
+        betRow.classList.add('opacity-50');
+    } else {
+        betRow.classList.remove('opacity-50');
+    }
+}
+</script>
+
+<style>
+.already-bet-content {
+    transition: opacity 0.2s ease-in-out;
+}
+</style>
+{% endblock %}

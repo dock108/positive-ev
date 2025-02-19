@@ -13,13 +13,13 @@ os.makedirs(eda_folder, exist_ok=True)
 file_path = "data/oddsjam-bet-tracker.csv"
 data = pd.read_csv(file_path)
 
-# Convert datetime columns
+# Update datetime handling
 data['created_at'] = pd.to_datetime(data['created_at'], errors='coerce')
-data['event_start_date'] = pd.to_datetime(data['event_start_date'], errors='coerce')
+data['event_time'] = pd.to_datetime(data['event_time'], format='%Y-%m-%d %H:%M', errors='coerce')
 
-# Ensure timezone consistency
+# Ensure timezone consistency (if needed)
 data['created_at'] = data['created_at'].dt.tz_convert('US/Eastern')
-data['event_start_date'] = data['event_start_date'].dt.tz_convert('US/Eastern')
+# Note: event_time is already in a standard format, no timezone conversion needed
 
 # Filter data to include only the last 3 days
 us_eastern = pytz.timezone('US/Eastern')
@@ -31,7 +31,7 @@ excluded_sportsbooks = ['Novig', 'Sporttrade', 'Prophet X']
 data = data[~data['sportsbook'].isin(excluded_sportsbooks)]
 
 # Compute minutes to event
-data['minutes_to_event'] = (data['event_start_date'] - data['created_at']).dt.total_seconds() / 60
+data['minutes_to_event'] = (data['event_time'] - data['created_at']).dt.total_seconds() / 60
 
 # Create a bell curve value scale based on minutes to event
 def assign_bet_value(minutes):

@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold">Bet Analysis</h1>
+        <a href="{{ url_for('admin.data_explorer') }}" class="text-blue-600 hover:text-blue-800">
+            Back to Data Explorer
+        </a>
+    </div>
+    
+    <!-- Bet Details -->
+    <div class="bg-white rounded-lg shadow p-6 mb-8">
+        <h2 class="text-xl font-bold mb-4">Bet Details</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div>
+                <h3 class="text-sm font-medium text-gray-500">Event</h3>
+                <p class="mt-1 text-lg">{{ bet.event_teams }}</p>
+            </div>
+            <div>
+                <h3 class="text-sm font-medium text-gray-500">Sport/League</h3>
+                <p class="mt-1 text-lg">{{ bet.sport_league }}</p>
+            </div>
+            <div>
+                <h3 class="text-sm font-medium text-gray-500">Bet Type</h3>
+                <p class="mt-1 text-lg">{{ bet.bet_type }}</p>
+            </div>
+            <div>
+                <h3 class="text-sm font-medium text-gray-500">Description</h3>
+                <p class="mt-1 text-lg">{{ bet.description }}</p>
+            </div>
+            <div>
+                <h3 class="text-sm font-medium text-gray-500">EV%</h3>
+                <p class="mt-1 text-lg font-semibold text-green-600">{{ "%.1f"|format(bet.ev_percent) }}%</p>
+            </div>
+            <div>
+                <h3 class="text-sm font-medium text-gray-500">Odds</h3>
+                <p class="mt-1 text-lg">{{ bet.formatted_odds }}</p>
+            </div>
+            <div>
+                <h3 class="text-sm font-medium text-gray-500">Win Probability</h3>
+                <p class="mt-1 text-lg">{{ "%.1f"|format(bet.win_probability) }}%</p>
+            </div>
+            <div>
+                <h3 class="text-sm font-medium text-gray-500">Sportsbook</h3>
+                <p class="mt-1 text-lg">{{ bet.sportsbook }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Metrics -->
+    {% if metrics %}
+    <div class="bg-white rounded-lg shadow p-6 mb-8">
+        <h2 class="text-xl font-bold mb-4">Key Metrics</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="p-4 bg-gray-50 rounded-lg">
+                <h3 class="text-sm font-medium text-gray-500">Historical Win Rate</h3>
+                <p class="mt-1 text-2xl font-semibold text-gray-900">
+                    {{ "%.1f"|format(metrics.historical_win_rate) }}%
+                </p>
+            </div>
+            <div class="p-4 bg-gray-50 rounded-lg">
+                <h3 class="text-sm font-medium text-gray-500">Average ROI</h3>
+                <p class="mt-1 text-2xl font-semibold text-gray-900">
+                    {{ "%.1f"|format(metrics.average_roi) }}%
+                </p>
+            </div>
+            <div class="p-4 bg-gray-50 rounded-lg">
+                <h3 class="text-sm font-medium text-gray-500">Kelly Criterion</h3>
+                <p class="mt-1 text-2xl font-semibold text-gray-900">
+                    {{ "%.1f"|format(metrics.kelly_criterion * 100) }}%
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Similar Bets -->
+    {% if similar_bets %}
+    <div class="bg-white rounded-lg shadow p-6 mb-8">
+        <h2 class="text-xl font-bold mb-4">Similar Historical Bets</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead>
+                    <tr>
+                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Date
+                        </th>
+                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Event
+                        </th>
+                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            EV%
+                        </th>
+                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Odds
+                        </th>
+                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Result
+                        </th>
+                        <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            ROI
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for similar_bet in similar_bets %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ similar_bet.event_time.strftime('%Y-%m-%d %H:%M') }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ similar_bet.event_teams }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ "%.1f"|format(similar_bet.ev_percent) }}%
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ similar_bet.formatted_odds }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                {% if similar_bet.result == 'W' %}
+                                    bg-green-100 text-green-800
+                                {% elif similar_bet.result == 'L' %}
+                                    bg-red-100 text-red-800
+                                {% else %}
+                                    bg-gray-100 text-gray-800
+                                {% endif %}">
+                                {{ similar_bet.result or 'Pending' }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {% if similar_bet.result_details %}
+                                {{ "%.1f"|format(similar_bet.result_details.roi) }}%
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Performance Analysis -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-bold mb-4">Historical Performance</h2>
+            <div id="historicalPerformance" class="w-full h-80"></div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-bold mb-4">Win Rate by EV Range</h2>
+            <div id="evWinRate" class="w-full h-80"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Historical Performance Chart
+    const historicalData = {
+        x: {{ similar_bets|map(attribute='event_time')|list|tojson }},
+        y: {{ similar_bets|map(attribute='result_details.roi')|list|tojson }},
+        type: 'scatter',
+        mode: 'lines+markers',
+        name: 'ROI'
+    };
+    Plotly.newPlot('historicalPerformance', [historicalData]);
+    
+    // EV Win Rate Chart
+    const evRanges = [0, 2, 4, 6, 8, 10];
+    const winRates = evRanges.map(ev => {
+        const betsInRange = {{ similar_bets|tojson }}.filter(bet => 
+            bet.ev_percent >= ev && bet.ev_percent < (ev + 2)
+        );
+        if (betsInRange.length === 0) return 0;
+        const wins = betsInRange.filter(bet => bet.result === 'W').length;
+        return (wins / betsInRange.length) * 100;
+    });
+    
+    const evWinRateData = {
+        x: evRanges.map(ev => `${ev}-${ev+2}%`),
+        y: winRates,
+        type: 'bar',
+        name: 'Win Rate'
+    };
+    Plotly.newPlot('evWinRate', [evWinRateData]);
+});
+</script>
+{% endblock %} 

@@ -1,145 +1,49 @@
 import os
 import sqlite3
 import logging
+import argparse
 from datetime import datetime, timedelta
 import requests
-
-# Define folder structure
-base_dir = "/Users/michaelfuscoletti/Desktop/mega-plan/positive-ev/app"
-db_file = os.path.join(base_dir, "betting_data.db")
-logs_folder = os.path.join(base_dir, "logs")
-
-# NBA Stats API Headers
-HEADERS = {
-    "User-Agent": "Mozilla/5.0",
-    "Referer": "https://www.nba.com"
-}
-
-# Logs folder and log file
-log_file = os.path.join(logs_folder, "nba_stats_scraping.log")
+from config import (
+    DB_FILE, LOGS_FOLDER, NBA_STATS_LOG_FILE,
+    NBA_HEADERS, NBA_STATS_URLS, LOG_RETENTION_HOURS
+)
+from utils import (
+    cleanup_logs, connect_db, create_tables,
+    get_latest_date_from_db
+)
 
 # Create folders if they don't exist
-os.makedirs(logs_folder, exist_ok=True)
+os.makedirs(LOGS_FOLDER, exist_ok=True)
 
 # Set up logging
 logging.basicConfig(
-    filename=log_file,
+    filename=NBA_STATS_LOG_FILE,
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-def cleanup_logs(log_file, retention_hours=2):
-    """Keep only the log entries from the past specified hours."""
-    try:
-        if os.path.exists(log_file):
-            cutoff_time = datetime.now() - timedelta(hours=retention_hours)
-            with open(log_file, "r") as file:
-                lines = file.readlines()
-
-            recent_lines = []
-            for line in lines:
-                try:
-                    log_time_str = line.split(" - ")[0]
-                    log_time = datetime.strptime(log_time_str, "%Y-%m-%d %H:%M:%S,%f")
-                    if log_time >= cutoff_time:
-                        recent_lines.append(line)
-                except Exception as e:
-                    logging.warning(f"Malformed log line ignored: {line.strip()} - Error: {e}")
-
-            with open(log_file, "w") as file:
-                file.writelines(recent_lines)
-            logging.info("Log file cleaned up. Only recent entries retained.")
-    except Exception as e:
-        logging.error(f"Failed to clean up log file: {e}", exc_info=True)
-
-def connect_db():
-    conn = sqlite3.connect(db_file)
-    return conn
-
-def get_latest_date_from_db():
-    """Fetch the latest game_date from the database."""
-    conn = connect_db()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("SELECT MAX(game_date) FROM game_boxscores")
-        result = cursor.fetchone()
-        if result and result[0]:
-            latest_date = datetime.strptime(result[0], "%Y-%m-%d")
-            logging.info(f"Latest date in database: {latest_date.strftime('%Y-%m-%d')}")
-            return latest_date
-        else:
-            logging.info("No dates found in database. Defaulting to start date.")
-            return datetime(2025, 1, 1)  # Default start date
-    except Exception as e:
-        logging.error(f"Error fetching latest date from database: {e}", exc_info=True)
-        return datetime(2025, 1, 1)  # Default start date
-    finally:
-        conn.close()
-
-def create_tables():
-    conn = connect_db()
-    cursor = conn.cursor()
-
-    # Table for game boxscores
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS game_boxscores (
-            game_id TEXT,
-            home_away TEXT,
-            game_date TEXT,
-            team TEXT,
-            opponent TEXT,
-            quarter_1 INTEGER,
-            quarter_2 INTEGER,
-            quarter_3 INTEGER,
-            quarter_4 INTEGER,
-            first_half INTEGER,
-            second_half INTEGER,
-            total_score INTEGER,
-            PRIMARY KEY (game_id, home_away)
-        )
-    """)
-
-    # Table for player boxscores
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS player_boxscores (
-            player_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            game_id TEXT,
-            player_name TEXT,
-            points INTEGER,
-            rebounds INTEGER,
-            assists INTEGER,
-            steals INTEGER,
-            blocks INTEGER,
-            turnovers INTEGER,
-            made_threes INTEGER,
-            FOREIGN KEY (game_id) REFERENCES game_boxscores (game_id)
-        )
-    """)
-
-    conn.commit()
-    conn.close()
-
 def fetch_game_ids(game_date):
-    url = "https://stats.nba.com/stats/scoreboardv2"
+    url = NBA_STATS_URLS["scoreboard"]
     params = {
         "GameDate": game_date,
         "LeagueID": "00",
         "DayOffset": 0
     }
-    response = requests.get(url, headers=HEADERS, params=params)
+    response = requests.get(url, headers=NBA_HEADERS, params=params)
     response.raise_for_status()
     data = response.json()
     return [game[2] for game in data["resultSets"][0]["rowSet"]]
 
 def fetch_boxscore_with_quarters(game_id):
-    summary_url = "https://stats.nba.com/stats/boxscoresummaryv2"
-    boxscore_url = "https://stats.nba.com/stats/boxscoretraditionalv2"
+    summary_url = NBA_STATS_URLS["summary"]
+    boxscore_url = NBA_STATS_URLS["boxscore"]
 
-    summary_response = requests.get(summary_url, headers=HEADERS, params={"GameID": game_id})
+    summary_response = requests.get(summary_url, headers=NBA_HEADERS, params={"GameID": game_id})
     summary_response.raise_for_status()
     summary_data = summary_response.json()
 
-    boxscore_response = requests.get(boxscore_url, headers=HEADERS, params={"GameID": game_id, "StartPeriod": 0, "EndPeriod": 0})
+    boxscore_response = requests.get(boxscore_url, headers=NBA_HEADERS, params={"GameID": game_id, "StartPeriod": 0, "EndPeriod": 0})
     boxscore_response.raise_for_status()
     boxscore_data = boxscore_response.json()
 
@@ -253,7 +157,14 @@ def parse_and_save_boxscore(boxscore_data, summary_data):
     finally:
         conn.close()
 
-def main(game_date):
+def main(game_date, force_reload=False):
+    """
+    Main function to scrape and save NBA boxscores.
+    
+    Args:
+        game_date (str): Date to scrape in YYYY-MM-DD format
+        force_reload (bool): If True, ignore latest date and start from season beginning
+    """
     create_tables()
     try:
         game_ids = fetch_game_ids(game_date)
@@ -265,20 +176,30 @@ def main(game_date):
         logging.error(f"An error occurred: {e}", exc_info=True)
 
 if __name__ == "__main__":
-    cleanup_logs(log_file)
+    # Set up argument parser
+    parser = argparse.ArgumentParser(description='Scrape NBA boxscores')
+    parser.add_argument('--reload', action='store_true', 
+                       help='Reload all data from the start of the season')
+    args = parser.parse_args()
     
-    # Get the latest date with a result from the database
-    latest_date = get_latest_date_from_db()
-
-    # Set the start date to one day before the latest date in the database
-    start_date = latest_date - timedelta(days=1)
-
+    cleanup_logs(NBA_STATS_LOG_FILE)
+    
+    if args.reload:
+        # Start from beginning of season if reload flag is set
+        start_date = datetime(2024, 10, 1)
+        logging.info("Reload flag set - Starting from beginning of season")
+    else:
+        # Get the latest date with a result from the database
+        latest_date = get_latest_date_from_db("game_boxscores", "game_date")
+        # Set the start date to one day before the latest date in the database
+        start_date = latest_date - timedelta(days=1)
+    
     # Set the end date to today (not including today)
     end_date = datetime.now() - timedelta(days=1)
-
+    
     # Log the date range
     logging.info(f"Updating results from {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}.")
-
+    
     current_date = start_date
     while current_date <= end_date:
         main(current_date.strftime("%Y-%m-%d"))
