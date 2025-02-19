@@ -416,7 +416,9 @@ def thirty_day_results():
         show_all_sports = request.args.get('show_all', '0') == '1'
         selected_sport = request.args.get('sport', None)
         sort_by = request.args.get('sort', 'timestamp')
-        sort_dir = request.args.get('dir', 'desc')
+        sort_dir = request.args.get('dir', 'desc').lower()
+        if sort_dir not in ['asc', 'desc']:
+            sort_dir = 'desc'
         
         # Build the base query for paginated results
         base_query = latest_bets_subquery
