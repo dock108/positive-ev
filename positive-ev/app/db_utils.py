@@ -110,6 +110,46 @@ def init_db():
                 )
             ''')
             
+            # Create already_bet table
+            logger.debug("Creating already_bet table...")
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS already_bet (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    bet_id TEXT NOT NULL UNIQUE,
+                    marked_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(bet_id) REFERENCES betting_data(bet_id)
+                )
+            ''')
+            
+            # Create odds_history table
+            logger.debug("Creating odds_history table...")
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS odds_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    bet_id TEXT NOT NULL,
+                    close_odds INTEGER,
+                    low_odds INTEGER,
+                    high_odds INTEGER,
+                    recorded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(bet_id) REFERENCES betting_data(bet_id)
+                )
+            ''')
+            
+            # Create odds_history_archive table
+            logger.debug("Creating odds_history_archive table...")
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS odds_history_archive (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    bet_id TEXT NOT NULL,
+                    close_odds INTEGER,
+                    low_odds INTEGER,
+                    high_odds INTEGER,
+                    recorded_at DATETIME NOT NULL,
+                    archived_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(bet_id) REFERENCES betting_data(bet_id)
+                )
+            ''')
+            
             conn.commit()
             logger.debug("Database tables committed successfully")
             
