@@ -3,6 +3,7 @@ import os
 import sqlite3
 import pandas as pd
 import plotly.express as px
+import logging
 from app.parlay_utils import ParlayUtils
 from collections import Counter
 from app import create_app
@@ -148,7 +149,8 @@ def calculate_parlay():
             'correlated_warning': parlay_result.correlated_warning
         })
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logging.error("Error calculating parlay: %s", str(e))
+        return jsonify({'error': 'An internal error has occurred!'}), 500
 
 @app.route('/api/sportsbook_bets/<sportsbook>')
 def get_sportsbook_bets(sportsbook):
