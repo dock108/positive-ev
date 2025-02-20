@@ -761,5 +761,5 @@ def calculate_parlay():
             'insights': insights
         })
     except Exception as e:
-        print(f"Error calculating parlay: {str(e)}")  # Add debug print
-        return jsonify({'error': str(e)}), 500 
+        logging.error(f"Error calculating parlay: {str(e)}")  # Log the error
+        return jsonify({'error': 'An internal error has occurred.'}), 500 
