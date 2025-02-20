@@ -3,6 +3,9 @@
 {% block title %}Home - Sports Betting Dashboard{% endblock %}
 
 {% block content %}
+<!-- Include the parlay popup template -->
+{% include 'parlay_popup.html' %}
+
 <div class="space-y-6">
     <!-- Header Section -->
     <div class="bg-white shadow-sm rounded-lg p-4">
@@ -210,7 +213,18 @@
                             </div>
 
                             <!-- Already Bet Checkbox -->
-                            <div class="col-span-4 flex justify-end mt-4">
+                            <div class="col-span-4 flex justify-between mt-4">
+                                {% if bet.grade not in ['D', 'F'] and 
+                                      sportsbook_counts.get(bet.sportsbook, {}).get('A', 0) + 
+                                      sportsbook_counts.get(bet.sportsbook, {}).get('B', 0) + 
+                                      sportsbook_counts.get(bet.sportsbook, {}).get('C', 0) > 1 %}
+                                <button 
+                                    onclick="loadParlayBets('{{ bet.sportsbook }}')"
+                                    class="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                >
+                                    View Parlay Options (Beta)
+                                </button>
+                                {% endif %}
                                 <label class="inline-flex items-center">
                                     <input type="checkbox" class="already-bet-checkbox form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out" onchange="toggleAlreadyBet(this)">
                                     <span class="ml-2 text-sm text-gray-600">Already Bet</span>

@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block title %}30 Day Betting History{% endblock %}
+
 {% block content %}
 <div class="space-y-6">
     <!-- Summary Stats Cards -->
@@ -13,22 +15,25 @@
         <div class="bg-gradient-to-br from-green-50 to-green-100 overflow-hidden shadow rounded-lg">
             <div class="px-4 py-5 sm:p-6">
                 <dt class="text-sm font-medium text-gray-700 truncate">Average EV</dt>
-                <dd class="mt-1 text-3xl font-semibold text-gray-900">{{ "%.1f"|format(summary_stats.avg_ev) }}%</dd>
+                <dd class="mt-1 text-3xl font-semibold text-gray-900">
+                    {{ "%.1f"|format(summary_stats.avg_ev) }}%
+                </dd>
             </div>
         </div>
         <div class="bg-gradient-to-br from-purple-50 to-purple-100 overflow-hidden shadow rounded-lg">
             <div class="px-4 py-5 sm:p-6">
                 <dt class="text-sm font-medium text-gray-700 truncate">Average Edge</dt>
-                <dd class="mt-1 text-3xl font-semibold text-gray-900">{{ "%.1f"|format(summary_stats.avg_edge) }}%</dd>
+                <dd class="mt-1 text-3xl font-semibold text-gray-900">
+                    {{ "%.1f"|format(summary_stats.avg_edge) }}%
+                </dd>
             </div>
         </div>
         <div class="bg-gradient-to-br from-amber-50 to-amber-100 overflow-hidden shadow rounded-lg">
             <div class="px-4 py-5 sm:p-6">
                 <dt class="text-sm font-medium text-gray-700 truncate">Grade A & B Bets</dt>
-                <dd class="mt-1 text-3xl font-semibold text-gray-900">{{ summary_stats.grade_distribution.A + summary_stats.grade_distribution.B }}</dd>
-                <div class="mt-1 text-sm text-gray-500">
-                    A: {{ summary_stats.grade_distribution.A }} | B: {{ summary_stats.grade_distribution.B }}
-                </div>
+                <dd class="mt-1 text-3xl font-semibold text-gray-900">
+                    {{ summary_stats.grade_a_b_count }}
+                </dd>
             </div>
         </div>
     </div>
@@ -39,95 +44,41 @@
             <h3 class="text-lg font-medium text-gray-900">Sport Distribution</h3>
             <div class="flex space-x-4">
                 <a href="{{ url_for('main.thirty_day_results', show_all='0') }}" 
-                   class="px-4 py-2 text-sm font-medium rounded-md {{ 'bg-blue-600 text-white' if not show_all_sports else 'bg-gray-100 text-gray-700' }}">
-                    Popular Sports (50+ bets)
+                   class="px-4 py-2 text-sm font-medium rounded-md {{ 'bg-blue-100 text-blue-800' if not show_all_sports else 'bg-gray-100 text-gray-800' }}">
+                    Active Sports
                 </a>
                 <a href="{{ url_for('main.thirty_day_results', show_all='1') }}"
-                   class="px-4 py-2 text-sm font-medium rounded-md {{ 'bg-blue-600 text-white' if show_all_sports else 'bg-gray-100 text-gray-700' }}">
-                    Show All Sports
+                   class="px-4 py-2 text-sm font-medium rounded-md {{ 'bg-blue-100 text-blue-800' if show_all_sports else 'bg-gray-100 text-gray-800' }}">
+                    All Sports
                 </a>
             </div>
         </div>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {% for sport, stats in qualifying_sports.items() %}
-            <a href="{{ url_for('main.thirty_day_results', sport=sport) }}"
-               class="bg-gradient-to-br from-gray-50 to-gray-100 rounded p-4 hover:from-gray-100 hover:to-gray-200 {{ 'ring-2 ring-blue-500' if selected_sport == sport }}">
-                <h4 class="text-sm font-medium text-gray-900">{{ sport }}</h4>
-                <div class="mt-2 space-y-1">
-                    <div class="flex justify-between">
-                        <span class="text-xs text-gray-600">Unique Bets:</span>
-                        <span class="text-xs font-medium text-gray-900">{{ stats.count }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-xs text-gray-600">Avg EV:</span>
-                        <span class="text-xs font-medium text-gray-900">{{ stats.avg_ev }}%</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-xs text-gray-600">Avg Edge:</span>
-                        <span class="text-xs font-medium text-gray-900">{{ stats.avg_edge }}%</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-xs text-gray-600">Grade A/B:</span>
-                        <span class="text-xs font-medium text-gray-900">{{ stats.grade_a_count + stats.grade_b_count }}</span>
-                    </div>
-                </div>
+            {% for sport in sports %}
+            <a href="{{ url_for('main.thirty_day_results', sport=sport.name) }}"
+               class="p-4 rounded-lg {{ 'bg-blue-50 border-2 border-blue-200' if sport.name == selected_sport else 'bg-gray-50' }}">
+                <div class="font-medium text-gray-900">{{ sport.name }}</div>
+                <div class="text-sm text-gray-500">{{ sport.count }} opportunities</div>
             </a>
             {% endfor %}
-            {% if show_all_sports %}
-                {% for sport, stats in other_sports.items() %}
-                <a href="{{ url_for('main.thirty_day_results', sport=sport) }}"
-                   class="bg-gradient-to-br from-gray-50 to-gray-100 rounded p-4 hover:from-gray-100 hover:to-gray-200 {{ 'ring-2 ring-blue-500' if selected_sport == sport }}">
-                    <h4 class="text-sm font-medium text-gray-900">{{ sport }}</h4>
-                    <div class="mt-2 space-y-1">
-                        <div class="flex justify-between">
-                            <span class="text-xs text-gray-600">Unique Bets:</span>
-                            <span class="text-xs font-medium text-gray-900">{{ stats.count }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-xs text-gray-600">Avg EV:</span>
-                            <span class="text-xs font-medium text-gray-900">{{ stats.avg_ev }}%</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-xs text-gray-600">Avg Edge:</span>
-                            <span class="text-xs font-medium text-gray-900">{{ stats.avg_edge }}%</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-xs text-gray-600">Grade A/B:</span>
-                            <span class="text-xs font-medium text-gray-900">{{ stats.grade_a_count + stats.grade_b_count }}</span>
-                        </div>
-                    </div>
-                </a>
-                {% endfor %}
-            {% endif %}
         </div>
     </div>
 
-    <!-- Historical Betting Opportunities Table -->
+    <!-- Betting History Table -->
     <div class="bg-white shadow rounded-lg overflow-hidden">
-        <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
-            <h3 class="text-lg font-medium text-gray-900">30 Day Opportunities</h3>
-            <div class="flex items-center space-x-4">
-                <span class="text-sm text-gray-500">
-                    Showing {{ (pagination.current_page - 1) * pagination.per_page + 1 }} 
-                    to {{ min(pagination.current_page * pagination.per_page, pagination.total_count) }}
-                    of {{ pagination.total_count }} opportunities
-                </span>
-                {% if selected_sport %}
-                <a href="{{ url_for('main.thirty_day_results', show_all=show_all_sports) }}" 
-                   class="text-sm text-blue-600 hover:text-blue-800">Clear Filter</a>
-                {% endif %}
-            </div>
+        <div class="p-6 border-b">
+            <h2 class="text-xl font-bold">Betting History</h2>
         </div>
         <div class="overflow-x-auto">
-            <table id="betsTable" class="min-w-full divide-y divide-gray-200">
+            <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="sortTable(0)">Timestamp ↕</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="sortTable(0)">Date</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="sortTable(1)">Sport</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="sortTable(3)">Grade</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="sortTable(4)">Odds</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="sortTable(5)">Win Prob</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Odds</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Win Prob</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="sortTable(6)">Edge%</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="sortTable(7)">EV%</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="sortTable(8)">Kelly%</th>
@@ -136,28 +87,58 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                     {% for bet in bets %}
                     <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ bet.timestamp }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ bet.sport_league }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ bet.description }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ 
-                                'bg-green-100 text-green-800' if bet.grade == 'A' else 
-                                'bg-blue-100 text-blue-800' if bet.grade == 'B' else 
-                                'bg-yellow-100 text-yellow-800' if bet.grade == 'C' else 
-                                'bg-red-100 text-red-800' if bet.grade == 'F' else 'bg-gray-100 text-gray-800' 
-                            }}">{{ bet.grade }}</span>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ bet.timestamp.strftime('%Y-%m-%d %H:%M') if bet.timestamp else 'N/A' }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ bet.odds }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ "%.1f"|format(bet.win_probability) }}%</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ "%.1f"|format(bet.edge) }}%</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ "%.1f"|format(bet.ev_percent) }}%</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ "%.2f"|format(bet.kelly_criterion) if bet.kelly_criterion else "N/A" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ bet.sport_league }}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900">
+                            {{ bet.description }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                {% if bet.grade == 'A' %}
+                                    bg-green-100 text-green-800
+                                {% elif bet.grade == 'B' %}
+                                    bg-blue-100 text-blue-800
+                                {% elif bet.grade == 'C' %}
+                                    bg-purple-100 text-purple-800
+                                {% elif bet.grade == 'D' %}
+                                    bg-yellow-100 text-yellow-800
+                                {% else %}
+                                    bg-red-100 text-red-800
+                                {% endif %}">
+                                {{ bet.grade }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ '+' + bet.odds|string if bet.odds > 0 else bet.odds|string }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ "%.1f"|format(bet.win_probability) }}%
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="text-{{ 'green' if bet.edge > 0 else 'red' }}-600">
+                                {{ "%.1f"|format(bet.edge) }}%
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="text-{{ 'green' if bet.ev_percent > 0 else 'red' }}-600">
+                                {{ "%.1f"|format(bet.ev_percent) }}%
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="text-{{ 'green' if bet.kelly_criterion > 0 else 'red' }}-600">
+                                {{ "%.2f"|format(bet.kelly_criterion) if bet.kelly_criterion else "N/A" }}%
+                            </span>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        
+
         <!-- Pagination Controls -->
         <div class="px-4 py-3 bg-gray-50 text-gray-500 sm:px-6">
             <div class="flex items-center justify-between">
@@ -196,14 +177,14 @@
                                 <span>«</span>
                             </a>
                             {% endif %}
-                            
+
                             {% for p in range(max(1, pagination.current_page - 2), min(pagination.total_pages + 1, pagination.current_page + 3)) %}
                             <a href="{{ url_for('main.thirty_day_results', page=p, sport=selected_sport, show_all=show_all_sports, sort=sort_by, dir=sort_dir) }}" 
                                class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium {{ 'text-blue-600 bg-blue-50' if p == pagination.current_page else 'text-gray-700 hover:bg-gray-50' }}">
                                 {{ p }}
                             </a>
                             {% endfor %}
-                            
+
                             {% if pagination.current_page < pagination.total_pages %}
                             <a href="{{ url_for('main.thirty_day_results', page=pagination.current_page+1, sport=selected_sport, show_all=show_all_sports, sort=sort_by, dir=sort_dir) }}" 
                                class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
@@ -254,4 +235,5 @@ function sortTable(columnIndex) {
 }
 </script>
 {% endblock %}
+
 {% endblock %} 

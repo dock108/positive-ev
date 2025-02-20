@@ -1,10 +1,14 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, jsonify, request
 import os
 import sqlite3
 import pandas as pd
 import plotly.express as px
+import logging
+from app.parlay_utils import ParlayUtils
+from collections import Counter
+from app import create_app
 
-app = Flask(__name__)
+app = create_app()
 
 # Define folder structure
 base_dir = "/Users/michaelfuscoletti/Desktop/mega-plan/positive-ev/app"
@@ -23,13 +27,44 @@ def query_db(query, args=(), one=False):
 @app.route('/')
 def index():
     """Home Dashboard: Summary of recent activity."""
+    # Get all unresolved bets
     unresolved_bets = query_db("""
         SELECT * FROM betting_data
         WHERE result NOT IN ('W', 'L', 'R')
         ORDER BY timestamp DESC
-        LIMIT 10
     """)
-    return render_template('index.html', unresolved_bets=unresolved_bets)
+    
+    # Count sportsbooks for parlay button visibility
+    sportsbook_counts = Counter(bet['sportsbook'] for bet in unresolved_bets) if unresolved_bets else Counter()
+    
+    # Get summary stats
+    summary_stats = {
+        'total_bets': len(unresolved_bets) if unresolved_bets else 0,
+        'avg_ev': sum(bet['ev_percent'] for bet in unresolved_bets) / len(unresolved_bets) if unresolved_bets else 0,
+        'avg_edge': sum(bet['edge'] for bet in unresolved_bets) / len(unresolved_bets) if unresolved_bets else 0,
+        'latest_timestamp': unresolved_bets[0]['timestamp'] if unresolved_bets else None,
+        'time_distribution': {'Early': 0, 'Mid': 0, 'Late': 0},
+        'sportsbook_distribution': dict(sportsbook_counts),
+        'grade_distribution': {'A': 0, 'B': 0, 'C': 0, 'D': 0, 'F': 0}
+    }
+    
+    # Calculate time and grade distributions
+    if unresolved_bets:
+        for bet in unresolved_bets:
+            if bet['bet_time_category']:
+                summary_stats['time_distribution'][bet['bet_time_category']] += 1
+            if bet['grade']:
+                summary_stats['grade_distribution'][bet['grade']] += 1
+    
+    # Convert to list of dicts for template
+    current_bets = [dict(bet) for bet in unresolved_bets]
+    
+    return render_template(
+        'index.html',
+        current_bets=current_bets,
+        sportsbook_counts=dict(sportsbook_counts),
+        summary_stats=summary_stats
+    )
 
 @app.route('/results')
 def results():
@@ -84,6 +119,50 @@ def trends():
     trends_html = trends_fig.to_html(full_html=False)
     return render_template('trends.html', trends_html=trends_html)
 
+@app.route('/api/calculate_parlay', methods=['POST'])
+def calculate_parlay():
+    """API endpoint to calculate parlay odds and metrics."""
+    data = request.get_json()
+    bet_ids = data.get('bet_ids', [])
+    
+    # Fetch bet data
+    bets = []
+    for bet_id in bet_ids:
+        bet = query_db("SELECT * FROM betting_data WHERE bet_id = ?", (bet_id,), one=True)
+        if bet:
+            bets.append(dict(bet))
+    
+    if not bets:
+        return jsonify({'error': 'No valid bets found'}), 400
+    
+    # Calculate parlay metrics
+    try:
+        parlay_result = ParlayUtils.compute_parlay_odds(bets)
+        return jsonify({
+            'decimal_odds': parlay_result.decimal_odds,
+            'american_odds': parlay_result.american_odds,
+            'implied_probability': parlay_result.implied_prob_from_odds,
+            'true_probability': parlay_result.true_win_prob,
+            'ev_percent': parlay_result.ev,
+            'kelly_fraction': parlay_result.kelly_fraction,
+            'total_edge': parlay_result.total_edge,
+            'correlated_warning': parlay_result.correlated_warning
+        })
+    except Exception as e:
+        logging.error("Error calculating parlay: %s", str(e))
+        return jsonify({'error': 'An internal error has occurred!'}), 500
+
+@app.route('/api/sportsbook_bets/<sportsbook>')
+def get_sportsbook_bets(sportsbook):
+    """Get all active bets for a specific sportsbook."""
+    bets = query_db("""
+        SELECT * FROM betting_data 
+        WHERE sportsbook = ? 
+        AND result NOT IN ('W', 'L', 'R')
+        ORDER BY timestamp DESC
+    """, (sportsbook,))
+    return jsonify([dict(bet) for bet in bets])
+
 if __name__ == '__main__':
-    debug_mode = os.getenv('FLASK_DEBUG', 'False').lower() in ['true', '1', 't']
+    debug_mode = app.config.get('DEBUG', False)
     app.run(debug=debug_mode)
