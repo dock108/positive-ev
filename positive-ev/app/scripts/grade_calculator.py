@@ -7,7 +7,7 @@ from datetime import datetime
 app_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, os.path.dirname(app_dir))
 
-from app.db_utils import get_db_connection
+from app.db_utils import get_db_connection  # noqa: E402
 
 def safe_float(value, strip_chars='%$'):
     """Safely convert string to float, handling N/A and other invalid values."""
@@ -129,11 +129,33 @@ def assign_grade(composite_score):
         return 'F'
 
 def calculate_grades():
-    """Calculate grades for all ungraded bets in chronological order."""
+    """Calculate grades for all ungraded bets."""
     logging.info("Starting grade calculation...")
     
     with get_db_connection() as conn:
         cursor = conn.cursor()
+        
+        # First, archive and clean up old data
+        cursor.execute("""
+            INSERT INTO odds_history_archive (bet_id, close_odds, low_odds, high_odds, recorded_at)
+            SELECT bet_id, close_odds, low_odds, high_odds, recorded_at
+            FROM odds_history
+            WHERE bet_id IN (
+                SELECT bet_id 
+                FROM betting_data 
+                WHERE timestamp < date('now', '-30 days')
+            )
+        """)
+        
+        cursor.execute("""
+            DELETE FROM odds_history
+            WHERE bet_id IN (
+                SELECT bet_id 
+                FROM betting_data 
+                WHERE timestamp < date('now', '-30 days')
+            )
+        """)
+        conn.commit()
         
         # First, get all timestamps for ungraded bets in order
         cursor.execute("""
@@ -181,6 +203,36 @@ def calculate_grades():
                         logging.warning(f"Skipping bet {bet_id} due to missing data")
                         continue
                     
+                    # Track odds in history
+                    if odds and odds != 'N/A':
+                        current_odds = int(float(odds))
+                        cursor.execute("""
+                            SELECT close_odds, low_odds, high_odds 
+                            FROM odds_history 
+                            WHERE bet_id = ?
+                            LIMIT 1
+                        """, (bet_id,))
+                        
+                        existing_odds = cursor.fetchone()
+                        
+                        if not existing_odds:
+                            # First time seeing this bet
+                            cursor.execute("""
+                                INSERT INTO odds_history (bet_id, close_odds, low_odds, high_odds, recorded_at)
+                                VALUES (?, ?, ?, ?, ?)
+                            """, (bet_id, current_odds, current_odds, current_odds, timestamp))
+                        else:
+                            # Update existing record
+                            close_odds = current_odds  # Always update close odds to current
+                            low_odds = min(current_odds, existing_odds['low_odds'] if existing_odds['low_odds'] is not None else current_odds)
+                            high_odds = max(current_odds, existing_odds['high_odds'] if existing_odds['high_odds'] is not None else current_odds)
+                            
+                            cursor.execute("""
+                                UPDATE odds_history 
+                                SET close_odds = ?, low_odds = ?, high_odds = ?, recorded_at = ?
+                                WHERE bet_id = ?
+                            """, (close_odds, low_odds, high_odds, timestamp, bet_id))
+                    
                     # Calculate individual scores
                     ev_score = calculate_ev_score(ev_percent)
                     timing_score = calculate_timing_score(event_time, timestamp)
@@ -188,7 +240,6 @@ def calculate_grades():
                     edge_score = calculate_edge_score(win_probability, odds)
                     
                     # Calculate composite score with weights
-                    # Weights: EV (60%), Edge (30%), Timing (5%), Kelly (5%)
                     composite_score = (
                         0.60 * ev_score +
                         0.30 * edge_score +

@@ -133,7 +133,16 @@
                             <div class="flex gap-4 mt-3">
                                 <div title="Current odds in American format">
                                     <dt class="text-xs font-medium text-gray-500">Odds</dt>
-                                    <dd class="text-sm font-medium text-gray-900">{{ '+' if bet.odds > 0 }}{{ bet.odds|int }}</dd>
+                                    <dd class="text-sm font-medium text-gray-900">
+                                        {{ '+' if bet.odds > 0 }}{{ bet.odds|int }}
+                                        {% if bet.lowest_odds and bet.highest_odds and bet.lowest_odds != bet.highest_odds %}
+                                        <span class="text-xs text-gray-500 ml-1">
+                                            [{{ '+' if bet.lowest_odds > 0 }}{{ bet.lowest_odds|int }} 
+                                            to 
+                                            {{ '+' if bet.highest_odds > 0 }}{{ bet.highest_odds|int }}]
+                                        </span>
+                                        {% endif %}
+                                    </dd>
                                 </div>
                                 <div title="The sportsbook offering these odds">
                                     <dt class="text-xs font-medium text-gray-500">Sportsbook</dt>
@@ -212,21 +221,28 @@
                                 </div>
                             </div>
 
-                            <!-- Already Bet Checkbox -->
-                            <div class="col-span-4 flex justify-between mt-4">
+                            <!-- Actions Row -->
+                            <div class="col-span-4 flex justify-end mt-4">
                                 {% if bet.grade not in ['D', 'F'] and 
                                       sportsbook_counts.get(bet.sportsbook, {}).get('A', 0) + 
                                       sportsbook_counts.get(bet.sportsbook, {}).get('B', 0) + 
                                       sportsbook_counts.get(bet.sportsbook, {}).get('C', 0) > 1 %}
-                                <button 
-                                    onclick="loadParlayBets('{{ bet.sportsbook }}')"
-                                    class="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                                >
-                                    View Parlay Options (Beta)
-                                </button>
+                                <div class="flex-grow">
+                                    <button 
+                                        onclick="loadParlayBets('{{ bet.sportsbook }}')"
+                                        class="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                    >
+                                        View Parlay Options (Beta)
+                                    </button>
+                                </div>
                                 {% endif %}
+                                
+                                <!-- Already Bet Checkbox -->
                                 <label class="inline-flex items-center">
-                                    <input type="checkbox" class="already-bet-checkbox form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out" onchange="toggleAlreadyBet(this)">
+                                    <input type="checkbox" 
+                                           class="form-checkbox h-4 w-4 text-blue-600 already-bet-checkbox"
+                                           data-bet-id="{{ bet.bet_id }}"
+                                           {% if bet.already_bet %}checked{% endif %}>
                                     <span class="ml-2 text-sm text-gray-600">Already Bet</span>
                                 </label>
                             </div>
@@ -240,14 +256,39 @@
 </div>
 
 <script>
-function toggleAlreadyBet(checkbox) {
-    const betRow = checkbox.closest('.opportunity-row');
-    if (checkbox.checked) {
-        betRow.classList.add('opacity-50');
-    } else {
-        betRow.classList.remove('opacity-50');
-    }
-}
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle already bet checkboxes
+    document.querySelectorAll('.already-bet-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const betId = this.dataset.betId;
+            const isChecked = this.checked;
+            
+            fetch('/api/mark_bet', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    bet_id: betId,
+                    is_already_bet: isChecked
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.error('Error:', data.error);
+                    // Revert checkbox state if there was an error
+                    this.checked = !isChecked;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Revert checkbox state if there was an error
+                this.checked = !isChecked;
+            });
+        });
+    });
+});
 </script>
 
 <style>
