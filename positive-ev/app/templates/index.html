@@ -31,21 +31,52 @@
                 <div>
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h3>
                     <div class="space-y-4">
-                        <div class="flex items-center">
-                            <span class="text-xl mr-2">📊</span>
-                            <dt class="text-sm font-medium text-gray-500">Current Opportunities</dt>
-                            <dd class="mt-1 text-2xl font-semibold text-gray-900">{{ summary_stats.total_bets }}</dd>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <span class="text-xl mr-2">📊</span>
+                                <dt class="text-sm font-medium text-gray-500">Current Opportunities</dt>
+                            </div>
+                            <dd class="text-lg font-semibold text-gray-900">{{ summary_stats.total_bets }}</dd>
                         </div>
-                        <div class="flex items-center">
-                            <span class="text-xl mr-2">📈</span>
-                            <dt class="text-sm font-medium text-gray-500">Average EV%</dt>
-                            <dd class="mt-1 text-2xl font-semibold text-gray-900">{{ "%.1f"|format(summary_stats.avg_ev) }}%</dd>
+
+                        <!-- Grade Distribution -->
+                        <div class="mt-4">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Grades Distribution</h3>
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm font-medium text-gray-500">A (Must Bet)</span>
+                                    <span class="text-sm font-semibold text-green-600">{{ summary_stats.grade_distribution.A }}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm font-medium text-gray-500">B (Should Bet)</span>
+                                    <span class="text-sm font-semibold text-blue-600">{{ summary_stats.grade_distribution.B }}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm font-medium text-gray-500">C (Decent if Aggressive)</span>
+                                    <span class="text-sm font-semibold text-purple-600">{{ summary_stats.grade_distribution.C }}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm font-medium text-gray-500">D (Below Average)</span>
+                                    <span class="text-sm font-semibold text-red-600">{{ summary_stats.grade_distribution.D }}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm font-medium text-gray-500">F (Poor)</span>
+                                    <span class="text-sm font-semibold text-gray-600">{{ summary_stats.grade_distribution.F }}</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="flex items-center">
-                            <span class="text-xl mr-2">🏆</span>
-                            <dt class="text-sm font-medium text-gray-500">Average Edge</dt>
-                            <dd class="mt-1 text-2xl font-semibold text-gray-900">{{ "%.1f"|format(summary_stats.avg_edge) }}%</dd>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Sportsbook Distribution</h3>
+                    <div class="space-y-2">
+                        {% for sportsbook, count in summary_stats.sportsbook_distribution.items()|sort(attribute='1', reverse=True) %}
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium text-gray-500">{{ sportsbook }}</span>
+                            <span class="text-sm font-semibold text-gray-900">{{ count }}</span>
                         </div>
+                        {% endfor %}
                     </div>
                 </div>
 
@@ -66,44 +97,6 @@
                         </div>
                     </div>
                 </div>
-
-                <div>
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Sportsbook Distribution</h3>
-                    <div class="space-y-2">
-                        {% for sportsbook, count in summary_stats.sportsbook_distribution.items() %}
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm font-medium text-gray-500">{{ sportsbook }}</span>
-                            <span class="text-sm font-semibold text-gray-900">{{ count }}</span>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <div>
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Grade Distribution</h3>
-                    <div class="space-y-2">
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm font-medium text-gray-500">A (Must Bet)</span>
-                            <span class="text-sm font-semibold text-green-600">{{ summary_stats.grade_distribution.A }}</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm font-medium text-gray-500">B (Should Bet)</span>
-                            <span class="text-sm font-semibold text-blue-600">{{ summary_stats.grade_distribution.B }}</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm font-medium text-gray-500">C (Decent if Aggressive)</span>
-                            <span class="text-sm font-semibold text-purple-600">{{ summary_stats.grade_distribution.C }}</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm font-medium text-gray-500">D (Below Average)</span>
-                            <span class="text-sm font-semibold text-red-600">{{ summary_stats.grade_distribution.D }}</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm font-medium text-gray-500">F (Poor)</span>
-                            <span class="text-sm font-semibold text-gray-600">{{ summary_stats.grade_distribution.F }}</span>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -117,8 +110,12 @@
                         <!-- Left Side - Event Info -->
                         <div class="w-1/4">
                             <div class="flex items-center gap-3 mb-2">
-                                <div class="bg-gray-100 rounded-full w-16 h-16 flex flex-col items-center justify-center">
-                                    <div class="text-lg font-semibold text-gray-800">{{ bet.grade }}</div>
+                                <div class="rounded-full w-16 h-16 flex flex-col items-center justify-center {% if bet.grade == 'A' %}bg-green-200
+                                    {% elif bet.grade == 'B' %}bg-blue-200
+                                    {% elif bet.grade == 'C' %}bg-purple-200
+                                    {% elif bet.grade == 'D' %}bg-orange-200
+                                    {% else %}bg-gray-200{% endif %}">
+                                    <div class="text-lg font-semibold text-gray-600">{{ bet.grade }}</div>
                                     <div class="text-xs text-gray-500">Grade</div>
                                 </div>
                                 <div class="text-xs text-gray-500">
@@ -147,6 +144,16 @@
                                 <div title="The sportsbook offering these odds">
                                     <dt class="text-xs font-medium text-gray-500">Sportsbook</dt>
                                     <dd class="text-sm font-medium text-gray-900">{{ bet.sportsbook }}</dd>
+                                </div>
+                                <div title="Time until event starts">
+                                    <dt class="text-xs font-medium text-gray-500">Event Time</dt>
+                                    <dd class="text-sm font-medium text-gray-900">
+                                        {% if bet.time_to_event %}
+                                            {{ "%.1f"|format(bet.time_to_event) }}h
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </dd>
                                 </div>
                             </div>
                         </div>
@@ -231,8 +238,14 @@
                                     <button 
                                         onclick="loadParlayBets('{{ bet.sportsbook }}')"
                                         class="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                        title="View other high-quality bets from {{ bet.sportsbook }} that could be parlayed with this bet"
                                     >
-                                        View Parlay Options (Beta)
+                                        <span class="mr-1">🎲</span> View Parlay Options
+                                        <span class="ml-1 text-xs bg-indigo-500 px-1.5 py-0.5 rounded-full">
+                                            {{ sportsbook_counts.get(bet.sportsbook, {}).get('A', 0) + 
+                                               sportsbook_counts.get(bet.sportsbook, {}).get('B', 0) + 
+                                               sportsbook_counts.get(bet.sportsbook, {}).get('C', 0) - 1 }}
+                                        </span>
                                     </button>
                                 </div>
                                 {% endif %}

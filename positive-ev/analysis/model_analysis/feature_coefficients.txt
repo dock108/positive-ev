@@ -1,0 +1,12 @@
+Feature Coefficients (sorted by absolute impact):
+rolling_win_rate: 0.6697
+ev_by_clv_by_time: -0.0892
+blocks_consistency: 0.0758
+time_log: 0.0740
+blocks_last_20_avg: -0.0689
+line_movement_direction: -0.0579
+made_threes_consistency: 0.0513
+steals_trend: 0.0485
+assists_last_20_std: -0.0465
+turnovers_last_10_std: -0.0346
+blocks_trend: 0.0314

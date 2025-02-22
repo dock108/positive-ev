@@ -2,7 +2,7 @@
 <div id="parlayPopup" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2>Parlay Analysis (Beta)</h2>
+            <h2 class="text-2xl font-bold text-gray-900">Parlay Builder</h2>
             <span class="close">&times;</span>
         </div>
         <div class="modal-body">
@@ -47,8 +47,8 @@
                 
                 <!-- Grade Display -->
                 <div class="flex items-center gap-3 mb-4">
-                    <div class="bg-gray-100 rounded-full w-16 h-16 flex flex-col items-center justify-center">
-                        <div id="parlayGrade" class="text-lg font-semibold text-gray-800"></div>
+                    <div class="rounded-full w-16 h-16 flex flex-col items-center justify-center" id="parlayGradeCircle">
+                        <div id="parlayGrade" class="text-lg font-semibold text-gray-600"></div>
                         <div class="text-xs text-gray-500">Grade</div>
                     </div>
                     <div class="text-sm text-gray-600">
@@ -58,54 +58,76 @@
                     </div>
                 </div>
                 
+                <!-- Parlay Legs -->
+                <div class="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <h4 class="font-semibold mb-2 text-gray-800">Parlay Legs</h4>
+                    <div id="parlayLegs" class="space-y-2">
+                        <!-- Legs will be populated here -->
+                    </div>
+                </div>
+                
                 <!-- Odds Comparison -->
-                <div class="mb-4 p-4 bg-blue-50 rounded-lg">
-                    <h4 class="font-semibold mb-2">Parlay Odds</h4>
-                    <div class="grid grid-cols-2 gap-4">
+                <div id="parlayValueAnalysis" class="mb-4 p-4 bg-green-50 rounded-lg border border-green-200" style="display: none;">
+                    <h4 class="font-semibold mb-2 text-green-800">Parlay Value Analysis</h4>
+                    <!-- Recommended Bet Size -->
+                    <div class="mb-4">
+                        <label class="text-sm text-green-700">Recommended Bet</label>
+                        <div id="parlayBetSize" class="text-xl font-bold text-green-700"></div>
+                    </div>
+                    <!-- Odds -->
+                    <div class="grid grid-cols-2 gap-4 bg-green-100 p-3 rounded-lg mb-4">
                         <div>
-                            <label class="text-sm text-gray-600 group relative cursor-help">
+                            <label class="text-sm text-green-700 group relative cursor-help">
                                 Calculated True Odds
                                 <span class="tooltip invisible group-hover:visible absolute left-0 top-6 w-48 p-2 bg-gray-900 text-white text-xs rounded shadow-lg z-10">
-                                    Our calculated fair odds based on true probabilities of each leg
+                                    Our calculated fair odds based on win probabilities and potential correlations between legs
                                 </span>
                             </label>
-                            <div id="parlayOdds" class="text-lg font-bold text-blue-700"></div>
+                            <div id="parlayOdds" class="text-lg font-bold text-green-700"></div>
                         </div>
                         <div>
-                            <label class="text-sm text-gray-600 group relative cursor-help">
+                            <label class="text-sm text-green-700 group relative cursor-help">
                                 Estimated Market Odds
                                 <span class="tooltip invisible group-hover:visible absolute left-0 top-6 w-48 p-2 bg-gray-900 text-white text-xs rounded shadow-lg z-10">
-                                    Expected sportsbook odds based on current market prices
+                                    Expected sportsbook odds based on current market prices and standard parlay pricing
                                 </span>
                             </label>
-                            <div id="theoreticalOdds" class="text-lg font-bold text-blue-700"></div>
+                            <div id="theoreticalOdds" class="text-lg font-bold text-green-700"></div>
                         </div>
                     </div>
-                    <p class="mt-3 text-sm text-blue-800 bg-blue-100 p-2 rounded">
-                        ⚠️ Verify your sportsbook offers odds greater than our calculated true odds before placing the bet
-                    </p>
-                </div>
-
-                <!-- Bet Sizing -->
-                <div class="p-4 bg-yellow-50 rounded-lg mb-4">
-                    <h4 class="font-semibold mb-2 group relative cursor-help">
-                        Recommended Bet Size
-                        <span class="tooltip invisible group-hover:visible absolute left-0 top-6 w-48 p-2 bg-gray-900 text-white text-xs rounded shadow-lg z-10">
-                            Suggested bet amount based on Kelly criterion and parlay risk factors
-                        </span>
-                    </h4>
-                    <div id="parlayBetSize" class="text-2xl font-bold text-yellow-700 text-center"></div>
+                    <!-- Returns -->
+                    <div class="grid grid-cols-2 gap-4 bg-green-100 p-3 rounded-lg">
+                        <div>
+                            <label class="text-sm text-green-700 group relative cursor-help">
+                                Return at True Odds
+                                <span class="tooltip invisible group-hover:visible absolute left-0 top-6 w-48 p-2 bg-gray-900 text-white text-xs rounded shadow-lg z-10">
+                                    Potential payout based on our calculated true probabilities and recommended bet size
+                                </span>
+                            </label>
+                            <div id="trueOddsPayout" class="text-lg font-bold text-green-700"></div>
+                        </div>
+                        <div>
+                            <label class="text-sm text-green-700 group relative cursor-help">
+                                Return at Market Odds
+                                <span class="tooltip invisible group-hover:visible absolute left-0 top-6 w-48 p-2 bg-gray-900 text-white text-xs rounded shadow-lg z-10">
+                                    Expected payout at typical market odds - look for sportsbooks offering this or better
+                                </span>
+                            </label>
+                            <div id="marketOddsPayout" class="text-lg font-bold text-green-700"></div>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-sm text-green-800 bg-green-100 p-2 rounded">
+                        ⭐ Place this parlay when your sportsbook offers odds equal to or better than our Estimated Market Odds to maximize value
+                    </div>
                 </div>
             </div>
         </div>
         <div class="modal-footer">
             <div class="flex flex-col items-center space-y-4">
                 <button id="calculateParlay" class="btn btn-primary" disabled>Calculate Parlay</button>
-                <div class="p-4 bg-amber-50 rounded-lg border border-amber-200 text-center w-full">
-                    <h4 class="font-semibold mb-2 text-amber-800">Beta Feature</h4>
+                <div class="p-3 bg-amber-50 rounded-lg border border-amber-200 text-center w-full">
                     <div class="text-sm text-amber-700">
-                        <p>Not all bets may be parlay-able with your sportsbook.</p>
-                        <p id="correlationWarning" class="mt-2" style="display: none;">Some of these bets may be correlated, affecting calculation accuracy.</p>
+                        <p>⚠️ Not all parlays may be available. Odds accuracy may be affected by <a href="https://en.wikipedia.org/wiki/Correlation" target="_blank" class="underline hover:text-amber-800">correlation</a> between bets.</p>
                     </div>
                 </div>
             </div>
@@ -156,24 +178,91 @@
 }
 
 .bet-item {
-    padding: 10px;
-    margin: 5px 0;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    margin: 4px 0;
     background-color: white;
     transition: background-color 0.2s;
 }
 
 .bet-item:hover {
-    background-color: #f5f5f5;
+    background-color: #f9fafb;
 }
 
 .bet-item.selected {
-    background-color: #e8f0fe;
-    border-color: #4285f4;
+    background-color: #f0f7ff;
+    border-color: #93c5fd;
+}
+
+.bet-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.bet-item-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a202c;
+}
+
+.bet-item-grade {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.bet-item-grade-A { background-color: #dcfce7; color: #166534; }
+.bet-item-grade-B { background-color: #dbeafe; color: #1e40af; }
+.bet-item-grade-C { background-color: #f3e8ff; color: #6b21a8; }
+
+.bet-item-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.bet-item-detail {
+    display: flex;
+    flex-direction: column;
+}
+
+.bet-item-detail-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-bottom: 2px;
+}
+
+.bet-item-detail-value {
+    font-size: 0.875rem;
+    color: #1a202c;
+    font-weight: 500;
+}
+
+.bet-item-meta {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.bet-item-meta-item {
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+    color: #64748b;
+}
+
+.bet-item-meta-item svg {
+    width: 16px;
+    height: 16px;
+    margin-right: 4px;
 }
 
 .result-grid {
@@ -322,6 +411,18 @@ document.addEventListener('DOMContentLoaded', function() {
         popup.style.display = 'none';
         parlayResults.style.display = 'none';
         errorState.classList.add('hidden');
+        // Reset all values
+        document.getElementById('parlayValueAnalysis').style.display = 'none';
+        document.getElementById('parlayGrade').textContent = '';
+        document.getElementById('gradeEv').textContent = '';
+        document.getElementById('gradeEdge').textContent = '';
+        document.getElementById('gradeWinProb').textContent = '';
+        document.getElementById('parlayOdds').textContent = '';
+        document.getElementById('theoreticalOdds').textContent = '';
+        document.getElementById('parlayBetSize').textContent = '';
+        document.getElementById('trueOddsPayout').textContent = '';
+        document.getElementById('marketOddsPayout').textContent = '';
+        document.getElementById('parlayLegs').innerHTML = '';
     }
     
     window.onclick = function(event) {
@@ -329,6 +430,18 @@ document.addEventListener('DOMContentLoaded', function() {
             popup.style.display = 'none';
             parlayResults.style.display = 'none';
             errorState.classList.add('hidden');
+            // Reset all values
+            document.getElementById('parlayValueAnalysis').style.display = 'none';
+            document.getElementById('parlayGrade').textContent = '';
+            document.getElementById('gradeEv').textContent = '';
+            document.getElementById('gradeEdge').textContent = '';
+            document.getElementById('gradeWinProb').textContent = '';
+            document.getElementById('parlayOdds').textContent = '';
+            document.getElementById('theoreticalOdds').textContent = '';
+            document.getElementById('parlayBetSize').textContent = '';
+            document.getElementById('trueOddsPayout').textContent = '';
+            document.getElementById('marketOddsPayout').textContent = '';
+            document.getElementById('parlayLegs').innerHTML = '';
         }
     }
     
@@ -336,12 +449,18 @@ document.addEventListener('DOMContentLoaded', function() {
     window.toggleAvailableBets = function() {
         const betsList = document.getElementById('availableBets');
         const toggle = document.getElementById('availableBetsToggle');
+        const betsHeader = document.getElementById('availableBetsHeader');
+        
+        if (!betsList || !toggle) return;
+        
         if (betsList.style.display === 'none') {
             betsList.style.display = 'block';
             toggle.textContent = '▼';
+            if (betsHeader) betsHeader.classList.add('active');
         } else {
-            betsList.style.display = 'none';
+            betsList.style.display = 'block';
             toggle.textContent = '▶';
+            if (betsHeader) betsHeader.classList.remove('active');
         }
     }
     
@@ -364,6 +483,21 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch(`/api/sportsbook_bets/${sportsbook}`);
             const data = await response.json();
             
+            // Debug log
+            console.log('Received bets:', data);
+            // Add detailed logging of first bet
+            if (data && data.length > 0) {
+                console.log('First bet complete data:', data[0]);
+                console.log('All bet properties:', Object.keys(data[0]).join(', '));
+                // Log all properties and their values
+                const firstBet = data[0];
+                const allProps = {};
+                for (const prop in firstBet) {
+                    allProps[prop] = firstBet[prop];
+                }
+                console.log('All properties and values:', allProps);
+            }
+            
             // Hide loading state
             loadingState.classList.add('hidden');
             
@@ -380,26 +514,16 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('availableBetsToggle').textContent = '▼';
             
             data.forEach(bet => {
+                console.log('Processing bet:', {
+                    id: bet.bet_id,
+                    teams: bet.event_teams,
+                    time: bet.time_to_event,
+                    timeType: typeof bet.time_to_event
+                });
+                
                 const betDiv = document.createElement('div');
                 betDiv.className = 'bet-item';
-                betDiv.innerHTML = `
-                    <div class="flex items-center space-x-3">
-                        <input type="checkbox" id="bet_${bet.bet_id}" data-bet-id="${bet.bet_id}" class="h-4 w-4">
-                        <div>
-                            <label for="bet_${bet.bet_id}" class="font-medium">${bet.description}</label>
-                            <div class="text-sm text-gray-500">
-                                <span class="font-medium ${bet.grade === 'A' ? 'text-green-600' : bet.grade === 'B' ? 'text-blue-600' : 'text-purple-600'}">
-                                    Grade ${bet.grade}
-                                </span>
-                                • Odds: ${bet.odds > 0 ? '+' + bet.odds : bet.odds}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <div class="font-medium">EV: ${bet.ev_percent.toFixed(2)}%</div>
-                        <div class="text-sm text-gray-500">Edge: ${bet.edge ? bet.edge.toFixed(2) + '%' : 'N/A'}</div>
-                    </div>
-                `;
+                betDiv.innerHTML = createBetItem(bet);
                 
                 const checkbox = betDiv.querySelector('input');
                 checkbox.addEventListener('change', function() {
@@ -412,8 +536,74 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     calculateBtn.disabled = selectedBets.size < 2;
                     
-                    // Hide results when selection changes
-                    parlayResults.style.display = 'none';
+                    // Clear parlay value analysis when selections change
+                    document.getElementById('parlayValueAnalysis').style.display = 'none';
+                    document.getElementById('parlayGrade').textContent = '';
+                    document.getElementById('gradeEv').textContent = '';
+                    document.getElementById('gradeEdge').textContent = '';
+                    document.getElementById('gradeWinProb').textContent = '';
+                    document.getElementById('parlayOdds').textContent = '';
+                    document.getElementById('theoreticalOdds').textContent = '';
+                    document.getElementById('parlayBetSize').textContent = '';
+                    document.getElementById('trueOddsPayout').textContent = '';
+                    document.getElementById('marketOddsPayout').textContent = '';
+                    
+                    // Update selected bets display
+                    const selectedBetsArray = Array.from(document.querySelectorAll('.bet-item.selected')).map(div => {
+                        const teams = div.querySelector('.text-gray-900').textContent;
+                        const betTypeAndDesc = div.querySelector('.text-gray-600').textContent.split(' - ');
+                        const betType = betTypeAndDesc[0];
+                        const description = betTypeAndDesc[1];
+                        const odds = div.querySelector('[title="American odds"]').textContent.split(': ')[1];
+                        const grade = div.querySelector('.rounded-full').textContent;
+                        const ev = div.querySelector('[title="Expected Value"]').textContent.split(': ')[1];
+                        return { 
+                            event_teams: teams, 
+                            bet_type: betType, 
+                            description: description, 
+                            odds, 
+                            grade, 
+                            ev_percent: ev.replace('%', '') 
+                        };
+                    });
+                    
+                    // Show parlay results section if we have selections
+                    if (selectedBetsArray.length > 0) {
+                        parlayResults.style.display = 'block';
+                        
+                        // Update parlay legs display
+                        const parlayLegsContainer = document.getElementById('parlayLegs');
+                        parlayLegsContainer.innerHTML = selectedBetsArray.map((bet, index) => `
+                            <div class="flex items-start gap-3 p-3 bg-white rounded-lg border border-gray-200">
+                                <div class="flex-shrink-0 w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center text-sm font-medium text-gray-600">
+                                    ${index + 1}
+                                </div>
+                                <div class="flex-grow">
+                                    <div class="flex items-start justify-between gap-2 mb-2">
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">${bet.event_teams}</div>
+                                            <div class="text-xs text-gray-600">${bet.bet_type} - ${bet.description}</div>
+                                        </div>
+                                        <div class="flex-shrink-0 text-xs font-medium px-2 py-1 rounded-full ${
+                                            bet.grade === 'A' ? 'bg-green-200 text-green-900' : 
+                                            bet.grade === 'B' ? 'bg-blue-200 text-blue-900' : 
+                                            bet.grade === 'C' ? 'bg-purple-200 text-purple-900' : 
+                                            bet.grade === 'D' ? 'bg-orange-200 text-orange-900' : 
+                                            'bg-gray-200 text-gray-900'
+                                        }">
+                                            ${bet.grade}
+                                        </div>
+                                    </div>
+                                    <div class="text-xs text-gray-600">
+                                        <span class="font-medium">Odds:</span> ${bet.odds}
+                                        <span class="ml-3 font-medium">EV:</span> ${bet.ev_percent}%
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        parlayResults.style.display = 'none';
+                    }
                 });
                 
                 betsList.appendChild(betDiv);
@@ -437,14 +627,58 @@ document.addEventListener('DOMContentLoaded', function() {
     // Calculate parlay
     calculateBtn.onclick = async function() {
         try {
-            loadingState.classList.remove('hidden');
-            parlayResults.style.display = 'none';
-            errorState.classList.add('hidden');
+            console.log('Starting parlay calculation...');
             
-            // Collapse available bets after calculation
-            document.getElementById('availableBets').style.display = 'none';
-            document.getElementById('availableBetsToggle').textContent = '▶';
+            // Debug log all relevant DOM elements
+            const elements = {
+                loadingState: document.getElementById('loadingState'),
+                parlayResults: document.querySelector('.parlay-results'),
+                errorState: document.getElementById('errorState'),
+                availableBets: document.getElementById('availableBets'),
+                availableBetsToggle: document.getElementById('availableBetsToggle'),
+                parlayGrade: document.getElementById('parlayGrade'),
+                gradeEv: document.getElementById('gradeEv'),
+                gradeEdge: document.getElementById('gradeEdge'),
+                gradeWinProb: document.getElementById('gradeWinProb'),
+                parlayOdds: document.getElementById('parlayOdds'),
+                theoreticalOdds: document.getElementById('theoreticalOdds'),
+                parlayBetSize: document.getElementById('parlayBetSize'),
+                correlationWarning: document.getElementById('correlationWarning'),
+                parlayValueAnalysis: document.getElementById('parlayValueAnalysis')
+            };
             
+            console.log('DOM Elements state:', Object.entries(elements).reduce((acc, [key, value]) => {
+                acc[key] = value ? 'found' : 'null';
+                return acc;
+            }, {}));
+
+            // Show loading state
+            if (elements.loadingState) {
+                elements.loadingState.classList.remove('hidden');
+                console.log('Loading state shown');
+            }
+            
+            if (elements.parlayResults) {
+                elements.parlayResults.style.display = 'none';
+                console.log('Parlay results hidden');
+            }
+            
+            if (elements.errorState) {
+                elements.errorState.classList.add('hidden');
+                console.log('Error state hidden');
+            }
+            
+            // Safely collapse available bets section
+            if (elements.availableBets) {
+                elements.availableBets.style.display = 'none';
+                console.log('Available bets collapsed');
+            }
+            if (elements.availableBetsToggle) {
+                elements.availableBetsToggle.textContent = '▶';
+                console.log('Toggle button updated');
+            }
+            
+            console.log('Making API call...');
             const response = await fetch('/api/calculate_parlay', {
                 method: 'POST',
                 headers: {
@@ -455,20 +689,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
             });
             
-            loadingState.classList.add('hidden');
+            if (elements.loadingState) {
+                elements.loadingState.classList.add('hidden');
+                console.log('Loading state hidden after API call');
+            }
+            
             const result = await response.json();
+            console.log('API Response:', result);
             
             if (result.error) {
                 throw new Error(result.error);
             }
-            
-            // Debug logging
-            console.log('Parlay calculation result:', {
-                parlay_metrics: result.parlay_metrics,
-                comparison: result.comparison,
-                ev_percent: result.parlay_metrics?.ev_percent,
-                true_probability: result.parlay_metrics?.true_probability
-            });
             
             // Helper function to safely format numbers
             const formatNumber = (value, decimals = 2) => {
@@ -476,49 +707,253 @@ document.addEventListener('DOMContentLoaded', function() {
                 return Number(value).toFixed(decimals);
             };
             
-            // Update grade display with proper styling
-            const gradeDiv = document.getElementById('parlayGrade');
-            const grade = result.parlay_metrics?.grade || 'F';
-            gradeDiv.textContent = grade;
-            gradeDiv.className = `text-lg font-semibold ${
-                grade === 'A' ? 'text-green-600' :
-                grade === 'B' ? 'text-blue-600' :
-                grade === 'C' ? 'text-purple-600' :
-                grade === 'D' ? 'text-red-600' :
-                'text-gray-600'
-            }`;
+            // Update UI elements safely
+            if (elements.parlayGrade) {
+                const grade = result.parlay_metrics?.grade || 'F';
+                elements.parlayGrade.textContent = grade;
+                const gradeCircle = document.getElementById('parlayGradeCircle');
+                gradeCircle.className = `rounded-full w-16 h-16 flex flex-col items-center justify-center ${
+                    grade === 'A' ? 'bg-green-200' :
+                    grade === 'B' ? 'bg-blue-200' :
+                    grade === 'C' ? 'bg-purple-200' :
+                    grade === 'D' ? 'bg-orange-200' :
+                    'bg-gray-200'
+                }`;
+                console.log('Grade updated:', grade);
+            }
 
-            // Update grade metrics
-            document.getElementById('gradeEv').textContent = 
-                `${formatNumber(result.parlay_metrics?.ev_percent)}%`;
-            document.getElementById('gradeEdge').textContent = 
-                `${formatNumber(result.parlay_metrics?.edge_percent || result.comparison?.edge_percent)}%`;
-            document.getElementById('gradeWinProb').textContent = 
-                `${formatNumber(result.parlay_metrics?.true_probability * 100)}%`;
+            // Update metrics safely
+            if (elements.gradeEv) {
+                elements.gradeEv.textContent = `${formatNumber(result.parlay_metrics?.ev_percent)}%`;
+                console.log('EV updated');
+            }
+            if (elements.gradeEdge) {
+                elements.gradeEdge.textContent = `${formatNumber(result.parlay_metrics?.edge_percent || result.comparison?.edge_percent)}%`;
+                console.log('Edge updated');
+            }
+            if (elements.gradeWinProb) {
+                elements.gradeWinProb.textContent = `${formatNumber(result.parlay_metrics?.true_probability * 100)}%`;
+                console.log('Win probability updated');
+            }
             
-            // Update odds comparison
-            document.getElementById('parlayOdds').textContent = result.parlay_metrics?.american_odds > 0 ? 
-                `+${formatNumber(result.parlay_metrics.american_odds, 0)}` : 
-                formatNumber(result.parlay_metrics.american_odds, 0);
+            // Update odds safely
+            if (elements.parlayOdds) {
+                elements.parlayOdds.textContent = result.parlay_metrics?.american_odds > 0 ? 
+                    `+${formatNumber(result.parlay_metrics.american_odds, 0)}` : 
+                    formatNumber(result.parlay_metrics.american_odds, 0);
+                console.log('Parlay odds updated');
+            }
             
-            document.getElementById('theoreticalOdds').textContent = result.comparison?.theoretical_combined_odds > 0 ?
-                `+${formatNumber(result.comparison.theoretical_combined_odds, 0)}` : 
-                formatNumber(result.comparison.theoretical_combined_odds, 0);
+            if (elements.theoreticalOdds) {
+                elements.theoreticalOdds.textContent = result.comparison?.theoretical_combined_odds > 0 ?
+                    `+${formatNumber(result.comparison.theoretical_combined_odds, 0)}` : 
+                    formatNumber(result.comparison.theoretical_combined_odds, 0);
+                console.log('Theoretical odds updated');
+            }
             
-            // Update bet sizing with proper value access
-            document.getElementById('parlayBetSize').textContent = 
-                `$${formatNumber(result.comparison?.recommended_parlay_size, 0)}`;
+            // Update bet size safely
+            if (elements.parlayBetSize) {
+                elements.parlayBetSize.textContent = `$${formatNumber(result.comparison?.recommended_parlay_size, 0)}`;
+                console.log('Bet size updated');
+            }
             
-            // Show/hide correlation warning in beta notice
-            const correlationWarning = document.getElementById('correlationWarning');
-            correlationWarning.style.display = result.parlay_metrics?.correlated_warning ? 'block' : 'none';
+            // Update correlation warning safely
+            if (elements.correlationWarning) {
+                elements.correlationWarning.style.display = result.parlay_metrics?.correlated_warning ? 'block' : 'none';
+                console.log('Correlation warning updated');
+            }
             
-            parlayResults.style.display = 'block';
+            // Update parlay legs
+            const parlayLegsContainer = document.getElementById('parlayLegs');
+            if (parlayLegsContainer && result.selected_bets) {
+                // Update summary stats
+                document.getElementById('totalLegs').textContent = result.selected_bets.length;
+                document.getElementById('combinedGrade').textContent = result.parlay_metrics?.grade || '-';
+                document.getElementById('totalEdge').textContent = `${formatNumber(result.parlay_metrics?.edge_percent || 0)}%`;
+                
+                // Update individual legs
+                parlayLegsContainer.innerHTML = result.selected_bets.map((bet, index) => `
+                    <div class="flex items-start gap-3 p-3 bg-white rounded-lg border border-gray-200">
+                        <div class="flex-shrink-0 w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center text-sm font-medium text-gray-600">
+                            ${index + 1}
+                        </div>
+                        <div class="flex-grow">
+                            <div class="flex items-start justify-between gap-2 mb-2">
+                                <div>
+                                    <div class="text-sm font-medium text-gray-900">${bet.event_teams}</div>
+                                    <div class="text-xs text-gray-600">${bet.bet_type} - ${bet.description}</div>
+                                </div>
+                                <div class="flex-shrink-0 text-xs font-medium px-2 py-1 rounded-full ${
+                                    bet.grade === 'A' ? 'bg-green-200 text-green-900' : 
+                                    bet.grade === 'B' ? 'bg-blue-200 text-blue-900' : 
+                                    bet.grade === 'C' ? 'bg-purple-200 text-purple-900' : 
+                                    bet.grade === 'D' ? 'bg-orange-200 text-orange-900' : 
+                                    'bg-gray-200 text-gray-900'
+                                }">
+                                    ${bet.grade}
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-4 gap-4">
+                                <div class="text-xs">
+                                    <div class="text-gray-500">Odds</div>
+                                    <div class="font-medium text-gray-900">${bet.odds > 0 ? '+' : ''}${bet.odds}</div>
+                                </div>
+                                <div class="text-xs">
+                                    <div class="text-gray-500">EV</div>
+                                    <div class="font-medium text-gray-900">${formatNumber(bet.ev_percent)}%</div>
+                                </div>
+                                <div class="text-xs">
+                                    <div class="text-gray-500">Edge</div>
+                                    <div class="font-medium text-gray-900">${formatNumber(bet.edge)}%</div>
+                                </div>
+                                <div class="text-xs">
+                                    <div class="text-gray-500">Win Prob</div>
+                                    <div class="font-medium text-gray-900">${formatNumber(bet.win_probability * 100)}%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                console.log('Parlay legs updated');
+            }
+            
+            // Update the payout calculations
+            if (elements.parlayOdds && elements.parlayBetSize) {
+                const trueOdds = result.parlay_metrics?.american_odds || 0;
+                const marketOdds = result.comparison?.theoretical_combined_odds || 0;
+                const betSize = result.comparison?.recommended_parlay_size || 0;
+                
+                // Calculate potential payouts
+                let truePayout = betSize;
+                let marketPayout = betSize;
+                
+                // For true odds
+                if (trueOdds > 0) {
+                    truePayout += (betSize * trueOdds) / 100;
+                } else if (trueOdds < 0) {
+                    truePayout += (betSize * 100) / Math.abs(trueOdds);
+                }
+                
+                // For market odds
+                if (marketOdds > 0) {
+                    marketPayout += (betSize * marketOdds) / 100;
+                } else if (marketOdds < 0) {
+                    marketPayout += (betSize * 100) / Math.abs(marketOdds);
+                }
+                
+                // Update the displays
+                const trueOddsPayoutEl = document.getElementById('trueOddsPayout');
+                const marketOddsPayoutEl = document.getElementById('marketOddsPayout');
+                
+                if (trueOddsPayoutEl) {
+                    trueOddsPayoutEl.textContent = `$${formatNumber(truePayout, 2)}`;
+                    console.log('True odds payout updated');
+                }
+                
+                if (marketOddsPayoutEl) {
+                    marketOddsPayoutEl.textContent = `$${formatNumber(marketPayout, 2)}`;
+                    console.log('Market odds payout updated');
+                }
+            }
+            
+            // Show results
+            if (elements.parlayResults) {
+                elements.parlayResults.style.display = 'block';
+                elements.parlayValueAnalysis.style.display = 'block';
+                console.log('Results shown');
+            }
+            
         } catch (error) {
             console.error('Error calculating parlay:', error);
-            errorState.classList.remove('hidden');
-            errorMessage.textContent = error.message || 'Error calculating parlay. Please try again.';
+            console.log('Error stack:', error.stack);
+            if (elements.errorState) {
+                elements.errorState.classList.remove('hidden');
+                const errorMessage = document.getElementById('errorMessage');
+                if (errorMessage) {
+                    errorMessage.textContent = error.message || 'Error calculating parlay. Please try again.';
+                }
+            }
         }
     }
 });
+
+function createBetItem(bet) {
+    // Helper function to safely format numbers
+    const formatNumber = (value, decimals = 2) => {
+        if (value === undefined || value === null || isNaN(value)) return 'N/A';
+        return Number(value).toFixed(decimals);
+    };
+
+    // Helper function to format odds
+    const formatOdds = (odds) => {
+        if (odds === undefined || odds === null || isNaN(odds)) return 'N/A';
+        return odds > 0 ? `+${odds}` : odds.toString();
+    };
+
+    // Helper function to calculate hours between two timestamps
+    function calculateHoursBetween(eventTime, timestamp) {
+        const eventDate = new Date(eventTime);
+        const currentDate = new Date(timestamp);
+        const diffInHours = (eventDate - currentDate) / (1000 * 60 * 60);
+        return Math.max(0, diffInHours);
+    }
+
+    // Helper function to format time
+    const formatTime = (timeToEvent, bet) => {
+        // If we have event_time and timestamp, calculate the difference
+        if (bet && bet.event_time && bet.timestamp) {
+            const hours = calculateHoursBetween(bet.event_time, bet.timestamp);
+            return `${formatNumber(hours, 1)}h`;
+        }
+        return 'N/A';
+    };
+
+    // Debug log the bet object
+    console.log('Creating bet item with full data:', {
+        id: bet.bet_id,
+        teams: bet.event_teams,
+        event_time: bet.event_time,
+        timestamp: bet.timestamp
+    });
+
+    return `
+        <div class="bet-item py-2 px-3" data-bet-id="${bet.bet_id}">
+            <div class="flex items-start gap-2">
+                <input type="checkbox" id="bet_${bet.bet_id}" data-bet-id="${bet.bet_id}" class="mt-1 h-4 w-4">
+                <div class="flex-grow min-w-0">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="truncate">
+                            <div class="font-medium text-sm text-gray-900 truncate">${bet.event_teams || ''}</div>
+                            <div class="text-xs text-gray-600 truncate">${bet.bet_type || ''} - ${bet.description || ''}</div>
+                        </div>
+                        <div class="flex-shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${
+                            bet.grade === 'A' ? 'bg-green-200 text-green-900' : 
+                            bet.grade === 'B' ? 'bg-blue-200 text-blue-900' : 
+                            bet.grade === 'C' ? 'bg-purple-200 text-purple-900' : 
+                            bet.grade === 'D' ? 'bg-orange-200 text-orange-900' : 
+                            'bg-gray-200 text-gray-900'
+                        }">
+                            ${bet.grade}
+                        </div>
+                    </div>
+                    
+                    <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600">
+                        <div title="American odds">
+                            <span class="font-medium">Odds:</span> ${formatOdds(bet.odds)}
+                        </div>
+                        <div title="Expected Value">
+                            <span class="font-medium">EV:</span> ${formatNumber(bet.ev_percent)}%
+                        </div>
+                        <div title="Edge percentage">
+                            <span class="font-medium">Edge:</span> ${formatNumber(bet.edge)}%
+                        </div>
+                        <div title="Time until event starts">
+                            <span class="font-medium">⏰</span> ${formatTime(null, bet)}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
 </script> 

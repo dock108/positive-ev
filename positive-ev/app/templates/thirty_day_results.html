@@ -66,78 +66,146 @@
 
     <!-- Betting History Table -->
     <div class="bg-white shadow rounded-lg overflow-hidden">
-        <div class="p-6 border-b">
-            <h2 class="text-xl font-bold">Betting History</h2>
+        <div class="p-6 border-b flex justify-between items-center">
+            <h2 class="text-xl font-bold">Opportunity History</h2>
+            <button onclick="toggleFilters()" class="px-4 py-2 text-sm font-medium rounded-md bg-gray-100 text-gray-800 hover:bg-gray-200 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                Filters
+            </button>
         </div>
+
+        <!-- Advanced Filters (Hidden by default) -->
+        <div id="advancedFilters" class="hidden p-4 border-b bg-gray-50">
+            <form id="filterForm" method="GET" action="{{ url_for('main.thirty_day_results') }}">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Grade</label>
+                        <select name="grade" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                            <option value="">All Grades</option>
+                            <option value="A" {% if request.args.get('grade') == 'A' %}selected{% endif %}>A Grade</option>
+                            <option value="B" {% if request.args.get('grade') == 'B' %}selected{% endif %}>B Grade</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Result</label>
+                        <select name="result" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                            <option value="">All Results</option>
+                            <option value="WIN">Wins</option>
+                            <option value="LOSS">Losses</option>
+                            <option value="TIE">Ties</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Min EV%</label>
+                        <input type="number" step="0.1" name="min_ev" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" placeholder="0.0">
+                    </div>
+                </div>
+                <div class="mt-4 flex justify-end">
+                    <button class="px-4 py-2 text-sm font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700">Apply Filters</button>
+                </div>
+            </form>
+        </div>
+
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="sortTable(0)">Date</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="sortTable(1)">Sport</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="sortTable(3)">Grade</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ODDS</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Win Prob</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="sortTable(6)">Edge%</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="sortTable(7)">EV%</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="sortTable(8)">Kelly%</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="sortTable(0)">Date</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="sortTable(1)">Sport</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="sortTable(3)">Grade</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Close</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Win Prob</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="sortTable(6)">Edge%</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="sortTable(7)">EV%</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="sortTable(8)">Kelly%</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Result</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Conf</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Validated</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     {% for bet in bets %}
-                    <tr class="hover:bg-gray-50 cursor-pointer" onclick="showBetPopup('{{ bet.bet_id }}')">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {{ bet.timestamp.strftime('%Y-%m-%d %H:%M') if bet.timestamp else 'N/A' }}
+                    <tr class="hover:bg-gray-50 cursor-pointer group" onclick="showBetPopup('{{ bet.bet_id }}')">
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
+                            {{ bet.timestamp.strftime('%m-%d %H:%M') if bet.timestamp else 'N/A' }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td class="px-3 py-2 whitespace-nowrap text-xs text-gray-500">
                             {{ bet.sport_league }}
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-900">
-                            {{ bet.description }}
+                        <td class="px-3 py-2 text-sm text-gray-900 max-w-md">
+                            <div class="line-clamp-2 group-hover:line-clamp-none">
+                                {% if bet.event_teams and bet.event_teams not in bet.description %}
+                                <div class="text-xs text-gray-500">{{ bet.event_teams }}</div>
+                                {% endif %}
+                                <div class="text-xs text-gray-500">{{ bet.bet_type }}</div>
+                                <div class="text-sm font-medium">{{ bet.description }}</div>
+                            </div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
+                        <td class="px-3 py-2 whitespace-nowrap">
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                                 {% if bet.grade == 'A' %}
-                                    bg-green-100 text-green-800
+                                    bg-green-200 text-green-900
                                 {% elif bet.grade == 'B' %}
-                                    bg-blue-100 text-blue-800
+                                    bg-blue-200 text-blue-900
                                 {% elif bet.grade == 'C' %}
-                                    bg-purple-100 text-purple-800
+                                    bg-purple-200 text-purple-900
                                 {% elif bet.grade == 'D' %}
-                                    bg-yellow-100 text-yellow-800
+                                    bg-orange-200 text-orange-900
                                 {% else %}
-                                    bg-red-100 text-red-800
+                                    bg-gray-200 text-gray-900
                                 {% endif %}">
                                 {{ bet.grade }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                             {% if bet.odds > 0 %}+{% endif %}{{ bet.odds|int }}
-                            {% if bet.low_odds and bet.high_odds and bet.low_odds != bet.high_odds %}
-                            <span class="text-xs text-gray-400">
-                                [{% if bet.low_odds > 0 %}+{% endif %}{{ bet.low_odds|int }} to 
-                                {% if bet.high_odds > 0 %}+{% endif %}{{ bet.high_odds|int }}]
-                            </span>
-                            {% endif %}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                             {{ "%.1f"|format(bet.win_probability) }}%
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <td class="px-3 py-2 whitespace-nowrap text-sm">
                             <span class="text-{{ 'green' if bet.edge > 0 else 'red' }}-600">
                                 {{ "%.1f"|format(bet.edge) }}%
                             </span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <td class="px-3 py-2 whitespace-nowrap text-sm">
                             <span class="text-{{ 'green' if bet.ev_percent > 0 else 'red' }}-600">
                                 {{ "%.1f"|format(bet.ev_percent) }}%
                             </span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <td class="px-3 py-2 whitespace-nowrap text-sm">
                             <span class="text-{{ 'green' if bet.kelly_criterion > 0 else 'red' }}-600">
                                 {{ "%.2f"|format(bet.kelly_criterion) if bet.kelly_criterion else "N/A" }}%
                             </span>
+                        </td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm">
+                            {% if bet.result %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                {% if bet.result == 'WIN' %}bg-green-100 text-green-800
+                                {% elif bet.result == 'LOSS' %}bg-red-100 text-red-800
+                                {% elif bet.result == 'TIE' %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ bet.result }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="pl-1 pr-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                            {% if bet.confidence_score %}
+                                {{ bet.confidence_score|int }}
+                            {% endif %}
+                        </td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm" onclick="event.stopPropagation()">
+                            {% if bet.result %}
+                            <select class="form-select rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                    onchange="updateValidation('{{ bet.bet_id }}', this.value)">
+                                <option value="NO" {% if not bet.validation_status or bet.validation_status == 'NO' %}selected{% endif %}>Not Validated</option>
+                                <option value="PASS" {% if bet.validation_status == 'PASS' %}selected{% endif %}>Pass</option>
+                                <option value="FAIL" {% if bet.validation_status == 'FAIL' %}selected{% endif %}>Fail</option>
+                            </select>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -260,6 +328,13 @@ function showBetPopup(betId) {
     document.getElementById('betDetailsPopup').classList.remove('hidden');
     document.getElementById('betDetailsContent').innerHTML = '<div class="text-center">Loading...</div>';
     
+    // Function to convert URLs to hyperlinks
+    function linkifyText(text) {
+        if (!text) return '';
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        return text.replace(urlRegex, url => `<a href="${url}" target="_blank" class="text-blue-600 hover:text-blue-800 underline">${url}</a>`);
+    }
+    
     // Fetch bet details
     fetch(`/api/bet_details/${betId}`)
         .then(response => response.json())
@@ -270,54 +345,153 @@ function showBetPopup(betId) {
             let html = `
                 <div class="grid grid-cols-2 gap-4 mb-6">
                     <div>
-                        <h4 class="text-sm font-medium text-gray-500">Event</h4>
-                        <p class="text-base text-gray-900">${data.description}</p>
+                        <h4 class="text-sm font-medium text-gray-500">Event Teams</h4>
+                        <p class="text-base text-gray-900">${data.event_teams}</p>
                     </div>
                     <div>
                         <h4 class="text-sm font-medium text-gray-500">Sport/League</h4>
                         <p class="text-base text-gray-900">${data.sport_league}</p>
                     </div>
                 </div>
-                
-                <div class="border-t pt-4">
-                    <h4 class="text-sm font-medium text-gray-500 mb-3">Odds History</h4>
+
+                <div class="border-t pt-4 mb-6">
+                    <h4 class="text-sm font-medium text-gray-500 mb-3">Bet Details</h4>
                     <div class="bg-gray-50 p-4 rounded-lg">
-                        <div class="space-y-2">`;
-            
-            // Add odds history entries
-            data.odds_history.forEach(entry => {
-                const date = new Date(entry.recorded_at);
-                const formattedDate = date.toLocaleString();
-                const sportsbook = entry.sportsbook || 'N/A';
-                const evPercent = entry.ev_percent !== null ? `${entry.ev_percent.toFixed(1)}%` : 'N/A';
-                const edge = entry.edge !== null ? `${entry.edge.toFixed(1)}%` : 'N/A';
-                
-                html += `
-                    <div class="flex justify-between items-center py-2 border-b border-gray-200 last:border-0">
-                        <div class="flex flex-col">
-                            <span class="text-sm text-gray-600">${formattedDate}</span>
-                            <span class="text-xs text-gray-400">${entry.sportsbook || 'N/A'}</span>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <div class="text-right">
-                                <span class="text-xs text-gray-500">EV</span>
-                                <span class="block text-sm ${evPercent !== 'N/A' && parseFloat(evPercent) > 0 ? 'text-green-600' : 'text-gray-600'}">${evPercent}</span>
-                            </div>
-                            <div class="text-right">
-                                <span class="text-xs text-gray-500">Edge</span>
-                                <span class="block text-sm ${edge !== 'N/A' && parseFloat(edge) > 0 ? 'text-green-600' : 'text-gray-600'}">${edge}</span>
+                        <div class="text-sm text-gray-500">${data.bet_type}</div>
+                        <div class="text-base font-medium text-gray-900 mb-4">${linkifyText(data.description)}</div>
+                        
+                        <div class="grid grid-cols-3 gap-4 text-sm">
+                            <div>
+                                <div class="text-gray-500">Grade</div>
+                                <div class="font-medium text-gray-900">${data.grade || 'N/A'}</div>
                             </div>
                             <div>
-                                <span class="text-sm font-medium ${entry.odds > 0 ? 'text-green-600' : 'text-red-600'}">
-                                    ${entry.odds > 0 ? '+' : ''}${entry.odds}
-                                </span>
+                                <div class="text-gray-500">Current Odds</div>
+                                <div class="font-medium text-gray-900">${data.odds > 0 ? '+' : ''}${data.odds}</div>
+                            </div>
+                            <div>
+                                <div class="text-gray-500">Result</div>
+                                <div class="font-medium text-gray-900">${data.result || 'Pending'}</div>
                             </div>
                         </div>
-                    </div>`
-            });
-            
+                        ${data.result ? `
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <div class="mb-3">
+                                <div class="text-gray-500 text-sm">Confidence Score</div>
+                                <div class="font-medium text-gray-900">${data.confidence_score || 'N/A'}</div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="text-gray-500 text-sm">Evaluation Reasoning</div>
+                                <div class="text-sm text-gray-700 mt-1">${linkifyText(data.reasoning || 'No reasoning provided')}</div>
+                            </div>
+                            <div class="mt-4">
+                                <div class="text-gray-500 text-sm mb-2">Validation Status</div>
+                                <select class="form-select rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                        onchange="updateValidation('${data.bet_id}', this.value)">
+                                    <option value="NO" ${!data.validation_status || data.validation_status === 'NO' ? 'selected' : ''}>Not Validated</option>
+                                    <option value="PASS" ${data.validation_status === 'PASS' ? 'selected' : ''}>Pass</option>
+                                    <option value="FAIL" ${data.validation_status === 'FAIL' ? 'selected' : ''}>Fail</option>
+                                </select>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <div class="border-t pt-4 mb-6">
+                    <h4 class="text-sm font-medium text-gray-500 mb-3">Metrics Summary</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="text-xs text-gray-500">EV%</div>
+                            <div class="text-lg font-medium ${data.ev_percent > 0 ? 'text-green-600' : 'text-gray-900'}">${data.ev_percent.toFixed(1)}%</div>
+                        </div>
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="text-xs text-gray-500">Edge%</div>
+                            <div class="text-lg font-medium ${data.edge > 0 ? 'text-green-600' : 'text-gray-900'}">${data.edge.toFixed(1)}%</div>
+                        </div>
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="text-xs text-gray-500">Win Prob</div>
+                            <div class="text-lg font-medium text-gray-900">${data.win_probability.toFixed(1)}%</div>
+                        </div>
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="text-xs text-gray-500">Kelly%</div>
+                            <div class="text-lg font-medium ${data.kelly_criterion > 0 ? 'text-green-600' : 'text-gray-900'}">${data.kelly_criterion ? data.kelly_criterion.toFixed(2) : 'N/A'}%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="border-t pt-4">
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="text-sm font-medium text-gray-500">Odds History</h4>
+                        <div class="flex gap-2">
+                            <button onclick="changePage(-1)" class="text-sm text-gray-500 hover:text-gray-700">Previous</button>
+                            <span class="text-sm text-gray-500" id="pageInfo">Page 1</span>
+                            <button onclick="changePage(1)" class="text-sm text-gray-500 hover:text-gray-700">Next</button>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="space-y-2" id="oddsHistoryContent">`;
+
+            // Add odds history entries with pagination
+            const itemsPerPage = 10;
+            const totalPages = Math.ceil(data.odds_history.length / itemsPerPage);
+            window.currentPage = 1;
+            window.oddsHistory = data.odds_history;
+            window.totalPages = totalPages;
+
+            function displayOddsHistory(page) {
+                const start = (page - 1) * itemsPerPage;
+                const end = start + itemsPerPage;
+                const pageEntries = window.oddsHistory.slice(start, end);
+                
+                let historyHtml = '';
+                pageEntries.forEach(entry => {
+                    const date = new Date(entry.recorded_at);
+                    const formattedDate = date.toLocaleString();
+                    const evPercent = entry.ev_percent !== null ? `${entry.ev_percent.toFixed(1)}%` : 'N/A';
+                    const edge = entry.edge !== null ? `${entry.edge.toFixed(1)}%` : 'N/A';
+                    
+                    historyHtml += `
+                        <div class="flex justify-between items-center py-2 border-b border-gray-200 last:border-0">
+                            <div class="flex flex-col">
+                                <span class="text-sm text-gray-600">${formattedDate}</span>
+                                <span class="text-xs text-gray-400">${entry.sportsbook || 'N/A'}</span>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="text-right">
+                                    <span class="text-xs text-gray-500">EV</span>
+                                    <span class="block text-sm ${evPercent !== 'N/A' && parseFloat(evPercent) > 0 ? 'text-green-600' : 'text-gray-600'}">${evPercent}</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-xs text-gray-500">Edge</span>
+                                    <span class="block text-sm ${edge !== 'N/A' && parseFloat(edge) > 0 ? 'text-green-600' : 'text-gray-600'}">${edge}</span>
+                                </div>
+                                <div>
+                                    <span class="text-sm font-medium ${entry.odds > 0 ? 'text-green-600' : 'text-red-600'}">
+                                        ${entry.odds > 0 ? '+' : ''}${entry.odds}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+                
+                document.getElementById('oddsHistoryContent').innerHTML = historyHtml;
+                document.getElementById('pageInfo').textContent = `Page ${page} of ${window.totalPages}`;
+            }
+
+            window.changePage = function(delta) {
+                const newPage = window.currentPage + delta;
+                if (newPage >= 1 && newPage <= window.totalPages) {
+                    window.currentPage = newPage;
+                    displayOddsHistory(newPage);
+                }
+            }
+
             html += `</div></div></div>`;
             content.innerHTML = html;
+            
+            // Display first page of odds history
+            displayOddsHistory(1);
         })
         .catch(error => {
             console.error('Error:', error);
@@ -328,6 +502,58 @@ function showBetPopup(betId) {
 function closeBetPopup() {
     document.getElementById('betDetailsPopup').classList.add('hidden');
 }
+
+function updateValidation(betId, status) {
+    fetch('/api/verify_bet', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            bet_id: betId,
+            status: status
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            alert('Failed to update validation status');
+            // Reset the select to its previous value
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating validation status');
+        // Reset the select to its previous value
+        location.reload();
+    });
+}
+
+function toggleFilters() {
+    const filtersDiv = document.getElementById('advancedFilters');
+    filtersDiv.classList.toggle('hidden');
+}
+
+// Add event listener for form submission
+document.addEventListener('DOMContentLoaded', function() {
+    const filterForm = document.getElementById('filterForm');
+    if (filterForm) {
+        filterForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Reset to first page when applying filters
+            const pageInput = document.createElement('input');
+            pageInput.type = 'hidden';
+            pageInput.name = 'page';
+            pageInput.value = '1';
+            filterForm.appendChild(pageInput);
+            
+            // Submit the form
+            filterForm.submit();
+        });
+    }
+});
 </script>
 {% endblock scripts %}
 

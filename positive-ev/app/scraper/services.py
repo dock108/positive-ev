@@ -222,8 +222,10 @@ class ScraperService:
             with get_db_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute("""
-                    SELECT * FROM betting_data 
-                    WHERE timestamp < ? AND result IN ('W', 'L', 'R')
+                    SELECT b.*, boe.outcome as result
+                    FROM betting_data b
+                    LEFT JOIN bet_outcome_evaluation boe ON b.bet_id = boe.bet_id
+                    WHERE b.timestamp < ? AND boe.outcome IN ('WIN', 'LOSS', 'TIE')
                 """, (cutoff_date.strftime('%Y-%m-%d %H:%M:%S'),))
                 old_bets = cursor.fetchall()
                 

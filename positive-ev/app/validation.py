@@ -125,7 +125,7 @@ def validate_bet_data(bet_data):
         
         if 'result' in bet_data:
             result = str(bet_data['result']).strip().upper()
-            if result and result not in ['W', 'L', 'R']:
+            if result and result not in ['WIN', 'LOSS', 'TIE', 'UNCERTAIN']:
                 raise ValidationError("Invalid result value")
             cleaned_data['result'] = result
         

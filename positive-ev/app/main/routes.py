@@ -357,14 +357,86 @@ def thirty_day_results():
     """Display betting opportunities from the last 30 days."""
     # Get query parameters
     page = request.args.get('page', 1, type=int)
-    per_page = 50
+    per_page = 25
     selected_sport = request.args.get('sport', None)
     show_all_sports = request.args.get('show_all', '0') == '1'
     sort_by = request.args.get('sort', 'timestamp')
     sort_dir = request.args.get('dir', 'desc')
     
+    # Get filter parameters
+    grade_filter = request.args.get('grade')
+    result_filter = request.args.get('result')
+    min_ev_filter = request.args.get('min_ev', type=float)
+    
     with get_db_connection() as conn:
         cursor = conn.cursor()
+        
+        # First calculate summary stats from complete 30-day data (before filters)
+        summary_query = """
+            WITH UniqueBets AS (
+                SELECT *,
+                    ROW_NUMBER() OVER (PARTITION BY bet_id ORDER BY timestamp DESC) as rn
+                FROM betting_data
+                WHERE timestamp >= date('now', '-30 days')
+            )
+            SELECT 
+                COUNT(DISTINCT b.bet_id) as total_bets,
+                AVG(CAST(REPLACE(REPLACE(b.ev_percent, '%', ''), ',', '') AS FLOAT)) as avg_ev,
+                COUNT(DISTINCT CASE WHEN g.grade IN ('A', 'B') THEN b.bet_id END) as grade_a_b_count
+            FROM UniqueBets b
+            LEFT JOIN bet_grades g ON b.bet_id = g.bet_id
+            WHERE b.rn = 1
+        """
+        cursor.execute(summary_query)
+        summary_row = cursor.fetchone()
+        
+        # Calculate average edge from complete data
+        edge_query = """
+            WITH UniqueBets AS (
+                SELECT *,
+                    ROW_NUMBER() OVER (PARTITION BY bet_id ORDER BY timestamp DESC) as rn
+                FROM betting_data
+                WHERE timestamp >= date('now', '-30 days')
+            )
+            SELECT 
+                b.odds,
+                CAST(REPLACE(REPLACE(b.win_probability, '%', ''), ',', '') AS FLOAT) as win_prob
+            FROM UniqueBets b
+            WHERE b.rn = 1
+        """
+        cursor.execute(edge_query)
+        edge_rows = cursor.fetchall()
+        
+        total_edge = 0
+        valid_edge_count = 0
+        for row in edge_rows:
+            try:
+                odds = float(row['odds']) if row['odds'] and row['odds'] != 'N/A' else 0
+                win_prob = row['win_prob']
+                
+                market_implied_prob = None
+                if odds > 0:
+                    market_implied_prob = round(100 / (odds + 100) * 100, 2)
+                elif odds < 0:
+                    market_implied_prob = round(abs(odds) / (abs(odds) + 100) * 100, 2)
+                
+                if market_implied_prob is not None and win_prob > 0:
+                    edge = win_prob - market_implied_prob
+                    total_edge += edge
+                    valid_edge_count += 1
+            except Exception as e:
+                logging.error(f"Error calculating edge: {str(e)}")
+                continue
+        
+        avg_edge = total_edge / valid_edge_count if valid_edge_count > 0 else 0
+        
+        # Prepare summary statistics (from complete data)
+        summary_stats = {
+            'total_bets': summary_row['total_bets'],
+            'avg_ev': summary_row['avg_ev'] if summary_row['avg_ev'] is not None else 0,
+            'avg_edge': avg_edge,
+            'grade_a_b_count': summary_row['grade_a_b_count']
+        }
         
         # Archive and clean up old data
         cursor.execute("""
@@ -393,28 +465,68 @@ def thirty_day_results():
             SELECT COUNT(DISTINCT b.bet_id) 
             FROM betting_data b
             LEFT JOIN bet_grades g ON b.bet_id = g.bet_id
+            LEFT JOIN bet_outcome_evaluation boe ON b.bet_id = boe.bet_id
             WHERE b.timestamp >= date('now', '-30 days')
         """
         
         # Base query for fetching bets
         base_query = """
-            WITH LatestBets AS (
-                SELECT b.*, g.grade, g.composite_score,
-                       oh.close_odds, oh.low_odds, oh.high_odds,
-                       ROW_NUMBER() OVER (PARTITION BY b.bet_id ORDER BY b.timestamp DESC) as rn
-                FROM betting_data b
+            WITH UniqueBets AS (
+                SELECT *
+                FROM (
+                    SELECT *,
+                    ROW_NUMBER() OVER (PARTITION BY bet_id ORDER BY timestamp DESC) as bet_rn
+                    FROM betting_data
+                    WHERE timestamp >= date('now', '-30 days')
+                ) sub
+                WHERE bet_rn = 1
+            ),
+            LatestBets AS (
+                SELECT 
+                    b.*,
+                    g.grade,
+                    g.composite_score,
+                    oh.close_odds,
+                    oh.low_odds,
+                    oh.high_odds,
+                    boe.outcome as result,
+                    boe.confidence_score,
+                    bv.status as validation_status,
+                    ROW_NUMBER() OVER (PARTITION BY b.bet_id ORDER BY b.timestamp DESC) as rn
+                FROM UniqueBets b
                 LEFT JOIN bet_grades g ON b.bet_id = g.bet_id
                 LEFT JOIN odds_history oh ON b.bet_id = oh.bet_id
-                WHERE b.timestamp >= date('now', '-30 days')
+                LEFT JOIN bet_outcome_evaluation boe ON b.bet_id = boe.bet_id
+                LEFT JOIN bet_verification bv ON b.bet_id = bv.bet_id
             )
             SELECT * FROM LatestBets WHERE rn = 1"""
         
-        # Add sport filter if selected
+        # Add filters to both queries
         params = []
+        
+        # Sport filter
         if selected_sport:
             base_query += " AND sport_league = ?"
             count_query += " AND b.sport_league = ?"
             params.append(selected_sport)
+        
+        # Grade filter
+        if grade_filter:
+            base_query += " AND grade = ?"
+            count_query += " AND g.grade = ?"
+            params.append(grade_filter)
+        
+        # Result filter
+        if result_filter:
+            base_query += " AND result = ?"
+            count_query += " AND boe.outcome = ?"
+            params.append(result_filter)
+        
+        # Min EV filter
+        if min_ev_filter is not None:
+            base_query += " AND CAST(REPLACE(REPLACE(ev_percent, '%', ''), ',', '') AS FLOAT) >= ?"
+            count_query += " AND CAST(REPLACE(REPLACE(b.ev_percent, '%', ''), ',', '') AS FLOAT) >= ?"
+            params.append(min_ev_filter)
         
         # Get total count for pagination
         cursor.execute(count_query, params)
@@ -427,7 +539,8 @@ def thirty_day_results():
             'sport': 'sport_league',
             'grade': 'grade',
             'ev': 'ev_percent',
-            'composite': 'composite_score'
+            'composite': 'composite_score',
+            'result': 'result'
         }.get(sort_by, 'timestamp')
         
         base_query += f" ORDER BY {sort_column} {sort_dir.upper()}"
@@ -462,8 +575,10 @@ def thirty_day_results():
         for bet in raw_bets:
             bet_dict = dict(bet)
             
-            # Log before calculation
-            logging.debug(f"Processing bet: {bet_dict['bet_id']}")
+            # Debug logging for result and confidence score
+            logging.debug(f"Raw bet data for {bet_dict['bet_id']}:")
+            logging.debug(f"Result from query: {bet_dict.get('result')}")
+            logging.debug(f"Confidence Score from query: {bet_dict.get('confidence_score')}")
             
             # Convert odds and calculate market probability
             odds = float(bet_dict['odds']) if bet_dict['odds'] and bet_dict['odds'] != 'N/A' else 0
@@ -503,7 +618,10 @@ def thirty_day_results():
                 'edge': edge,
                 'kelly_criterion': kelly_criterion,
                 'timestamp': timestamp,
-                'grade': bet_dict.get('grade', 'F')  # Default to F if no grade
+                'grade': bet_dict.get('grade', 'F'),  # Default to F if no grade
+                'result': bet_dict.get('result'),  # Get result directly from bet_outcome_evaluation
+                'confidence_score': bet_dict.get('confidence_score'),  # Get confidence score directly from bet_outcome_evaluation
+                'validation_status': bet_dict.get('validation_status', 'NO')
             })
             
             bets.append(bet_dict)
@@ -514,65 +632,6 @@ def thirty_day_results():
             'total_pages': total_pages,
             'per_page': per_page,
             'total_items': total_bets
-        }
-        
-        # Calculate total unique bets and average EV for the entire 30-day period
-        cursor.execute("""
-            SELECT COUNT(DISTINCT b.bet_id), AVG(b.ev_percent)
-            FROM betting_data b
-            LEFT JOIN bet_grades g ON b.bet_id = g.bet_id
-            WHERE b.timestamp >= date('now', '-30 days')
-        """)
-        total_unique_bets, avg_ev = cursor.fetchone()
-        
-        # Calculate average edge in Python for unique bets
-        seen_bet_ids = set()
-        total_edge = 0
-        valid_edge_count = 0
-        
-        for bet in raw_bets:
-            try:
-                bet_id = bet['bet_id']
-                if bet_id in seen_bet_ids:
-                    continue
-                seen_bet_ids.add(bet_id)
-                
-                # Calculate market implied probability from odds first
-                odds = float(bet['odds']) if bet['odds'] and bet['odds'] != 'N/A' else 0
-                market_implied_prob = None
-                if odds > 0:
-                    market_implied_prob = round(100 / (odds + 100) * 100, 2)
-                elif odds < 0:
-                    market_implied_prob = round(abs(odds) / (abs(odds) + 100) * 100, 2)
-                
-                win_prob = safe_float(bet['win_probability'], '%')
-                edge = win_prob - market_implied_prob if market_implied_prob is not None and win_prob > 0 else None
-                
-                if edge is not None:
-                    total_edge += edge
-                    valid_edge_count += 1
-            except Exception as e:
-                logging.error(f"Error calculating edge for bet {bet['bet_id']}: {str(e)}")
-                continue
-                
-        avg_edge = total_edge / valid_edge_count if valid_edge_count > 0 else 0
-        
-        # Count unique Grade A and B bets for the entire 30-day period
-        cursor.execute("""
-            SELECT COUNT(DISTINCT b.bet_id)
-            FROM betting_data b
-            LEFT JOIN bet_grades g ON b.bet_id = g.bet_id
-            WHERE b.timestamp >= date('now', '-30 days')
-            AND g.grade IN ('A', 'B')
-        """)
-        grade_a_b_count = cursor.fetchone()[0]
-        
-        # Prepare summary statistics
-        summary_stats = {
-            'total_bets': total_unique_bets,  # Now using unique bet count
-            'avg_ev': avg_ev if avg_ev is not None else 0,
-            'avg_edge': avg_edge if avg_edge is not None else 0,
-            'grade_a_b_count': grade_a_b_count
         }
         
         return render_template(
@@ -605,9 +664,10 @@ def get_sportsbook_bets(sportsbook):
                 SELECT b.*, g.grade, g.composite_score, g.ev_score, g.timing_score, g.historical_edge
                 FROM betting_data b
                 LEFT JOIN bet_grades g ON b.bet_id = g.bet_id
+                LEFT JOIN bet_outcome_evaluation boe ON b.bet_id = boe.bet_id
                 WHERE b.sportsbook = ? 
                 AND b.timestamp = ?
-                AND b.result NOT IN ('W', 'L', 'R')
+                AND (boe.outcome IS NULL OR boe.outcome = 'UNCERTAIN')
                 AND g.grade IN ('A', 'B', 'C')
                 ORDER BY g.grade ASC, b.timestamp DESC
             """, (sportsbook, latest_timestamp))
@@ -811,13 +871,145 @@ def calculate_parlay():
         logging.error(f"Error calculating parlay: {str(e)}")  # Log the error
         return jsonify({'error': 'An internal error has occurred.'}), 500 
 
-@bp.route('/api/mark_bet', methods=['POST'])
-def mark_bet():
-    """Mark a bet as already bet."""
+@bp.route('/api/verify_bet', methods=['POST'])
+def verify_bet():
+    """Update validation status for a bet."""
     try:
         data = request.get_json()
         bet_id = data.get('bet_id')
-        is_already_bet = data.get('is_already_bet', True)
+        status = data.get('status', 'NO')
+        
+        if not bet_id:
+            return jsonify({'error': 'No bet_id provided'}), 400
+            
+        if status not in ['PASS', 'FAIL', 'NO']:
+            return jsonify({'error': 'Invalid status'}), 400
+            
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            if status == 'NO':
+                # Remove validation
+                cursor.execute("""
+                    DELETE FROM bet_verification
+                    WHERE bet_id = ?
+                """, (bet_id,))
+            else:
+                # Update validation status
+                cursor.execute("""
+                    INSERT OR REPLACE INTO bet_verification (bet_id, status, verified_at)
+                    VALUES (?, ?, CURRENT_TIMESTAMP)
+                """, (bet_id, status))
+                
+            conn.commit()
+            
+            return jsonify({'success': True, 'status': status})
+            
+    except Exception as e:
+        logging.error(f"Error updating validation status: {str(e)}")
+        return jsonify({'error': 'Error updating validation status'}), 500 
+
+@bp.route('/api/bet_details/<bet_id>')
+def get_bet_details(bet_id):
+    """Get detailed information about a specific bet."""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Get bet details with all related information
+            cursor.execute("""
+                SELECT b.*, g.grade, g.composite_score,
+                       boe.outcome as result,
+                       boe.confidence_score,
+                       boe.reasoning,
+                       bv.status as validation_status
+                FROM betting_data b
+                LEFT JOIN bet_grades g ON b.bet_id = g.bet_id
+                LEFT JOIN bet_outcome_evaluation boe ON b.bet_id = boe.bet_id
+                LEFT JOIN bet_verification bv ON b.bet_id = bv.bet_id
+                WHERE b.bet_id = ?
+            """, (bet_id,))
+            
+            bet = cursor.fetchone()
+            if not bet:
+                return jsonify({'error': 'Bet not found'}), 404
+            
+            bet_dict = dict(bet)
+            
+            # Calculate market metrics
+            odds = float(bet_dict['odds']) if bet_dict['odds'] and bet_dict['odds'] != 'N/A' else 0
+            market_implied_prob = None
+            if odds > 0:
+                market_implied_prob = round(100 / (odds + 100) * 100, 2)
+            elif odds < 0:
+                market_implied_prob = round(abs(odds) / (abs(odds) + 100) * 100, 2)
+            
+            # Calculate edge and other metrics
+            win_prob = safe_float(bet_dict['win_probability'], '%')
+            edge = round(win_prob - market_implied_prob, 2) if market_implied_prob is not None and win_prob > 0 else 0
+            
+            # Calculate Kelly criterion
+            kelly_criterion = None
+            if odds and win_prob > 0:
+                decimal_odds = (abs(odds) + 100) / 100 if odds > 0 else (100 / abs(odds)) + 1
+                kelly_criterion = ((win_prob / 100 * (decimal_odds - 1)) - (1 - win_prob / 100)) / (decimal_odds - 1) * 100
+            
+            # Get odds history
+            cursor.execute("""
+                SELECT oh.*, b.sportsbook,
+                       b.ev_percent, b.win_probability,
+                       CAST((CAST(b.win_probability AS FLOAT) - 
+                            CASE 
+                                WHEN oh.close_odds > 0 THEN 100.0 / (oh.close_odds + 100.0) * 100.0
+                                ELSE ABS(oh.close_odds) / (ABS(oh.close_odds) + 100.0) * 100.0
+                            END) AS FLOAT) as edge
+                FROM odds_history oh
+                LEFT JOIN betting_data b ON oh.bet_id = b.bet_id
+                WHERE oh.bet_id = ?
+                ORDER BY oh.recorded_at DESC
+            """, (bet_id,))
+            
+            odds_history = []
+            for row in cursor.fetchall():
+                history_dict = dict(row)
+                odds_history.append({
+                    'recorded_at': history_dict['recorded_at'],
+                    'odds': history_dict['close_odds'],
+                    'sportsbook': history_dict['sportsbook'],
+                    'ev_percent': safe_float(history_dict['ev_percent'], '%'),
+                    'edge': safe_float(history_dict['edge'], '%')
+                })
+            
+            return jsonify({
+                'bet_id': bet_dict['bet_id'],
+                'event_teams': bet_dict['event_teams'],
+                'sport_league': bet_dict['sport_league'],
+                'bet_type': bet_dict['bet_type'],
+                'description': bet_dict['description'],
+                'odds': odds,
+                'grade': bet_dict.get('grade'),
+                'result': bet_dict.get('result'),
+                'ev_percent': safe_float(bet_dict['ev_percent'], '%'),
+                'win_probability': win_prob,
+                'edge': edge,
+                'kelly_criterion': kelly_criterion,
+                'confidence_score': bet_dict.get('confidence_score'),
+                'reasoning': bet_dict.get('reasoning'),
+                'validation_status': bet_dict.get('validation_status', 'NO'),
+                'odds_history': odds_history
+            })
+            
+    except Exception as e:
+        logging.error(f"Error fetching bet details: {str(e)}")
+        return jsonify({'error': 'Error loading bet details'}), 500 
+
+@bp.route('/api/mark_bet', methods=['POST'])
+def mark_bet():
+    """Mark a bet as already bet or remove the mark."""
+    try:
+        data = request.get_json()
+        bet_id = data.get('bet_id')
+        is_already_bet = data.get('is_already_bet', False)
         
         if not bet_id:
             return jsonify({'error': 'No bet_id provided'}), 400
@@ -828,11 +1020,11 @@ def mark_bet():
             if is_already_bet:
                 # Mark as already bet
                 cursor.execute("""
-                    INSERT OR IGNORE INTO already_bet (bet_id)
-                    VALUES (?)
+                    INSERT OR IGNORE INTO already_bet (bet_id, marked_at)
+                    VALUES (?, CURRENT_TIMESTAMP)
                 """, (bet_id,))
             else:
-                # Unmark as already bet
+                # Remove already bet mark
                 cursor.execute("""
                     DELETE FROM already_bet
                     WHERE bet_id = ?
@@ -844,116 +1036,4 @@ def mark_bet():
             
     except Exception as e:
         logging.error(f"Error marking bet: {str(e)}")
-        return jsonify({'error': 'Error marking bet. Please try again.'}), 500 
-
-@bp.route('/api/bet_details/<bet_id>')
-def get_bet_details(bet_id):
-    """Get detailed information about a specific bet, including odds history."""
-    try:
-        with get_db_connection() as conn:
-            cursor = conn.cursor()
-            
-            # Get bet details with grade
-            cursor.execute("""
-                SELECT b.*, g.grade, g.composite_score,
-                       oh.close_odds, oh.low_odds, oh.high_odds
-                FROM betting_data b
-                LEFT JOIN bet_grades g ON b.bet_id = g.bet_id
-                LEFT JOIN odds_history oh ON b.bet_id = oh.bet_id
-                WHERE b.bet_id = ?
-            """, (bet_id,))
-            bet = cursor.fetchone()
-            
-            if not bet:
-                return jsonify({'error': 'Bet not found'}), 404
-            
-            bet_dict = dict(bet)
-            
-            # Get complete odds history from betting_data table
-            cursor.execute("""
-                SELECT 
-                    odds,
-                    timestamp as recorded_at,
-                    sportsbook,
-                    ev_percent,
-                    win_probability
-                FROM betting_data
-                WHERE bet_id = ?
-                UNION ALL
-                SELECT 
-                    close_odds as odds,
-                    recorded_at,
-                    NULL as sportsbook,
-                    NULL as ev_percent,
-                    NULL as win_probability
-                FROM odds_history
-                WHERE bet_id = ?
-                UNION ALL
-                SELECT 
-                    close_odds as odds,
-                    recorded_at,
-                    NULL as sportsbook,
-                    NULL as ev_percent,
-                    NULL as win_probability
-                FROM odds_history_archive
-                WHERE bet_id = ?
-                ORDER BY recorded_at DESC
-            """, (bet_id, bet_id, bet_id))
-            
-            odds_history = []
-            seen_timestamps = set()  # To handle potential duplicates
-            
-            for row in cursor.fetchall():
-                row_dict = dict(row)
-                # Convert odds to integer and ensure it's not None
-                if row_dict['odds'] and row_dict['odds'] != 'N/A':
-                    try:
-                        row_dict['odds'] = int(float(row_dict['odds']))
-                        # Calculate metrics for this entry
-                        odds = row_dict['odds']
-                        market_implied_prob = None
-                        if odds > 0:
-                            market_implied_prob = round(100 / (odds + 100) * 100, 2)
-                        elif odds < 0:
-                            market_implied_prob = round(abs(odds) / (abs(odds) + 100) * 100, 2)
-                        
-                        win_prob = safe_float(row_dict['win_probability'], '%')
-                        edge = round(win_prob - market_implied_prob, 2) if market_implied_prob is not None and win_prob > 0 else None
-                        ev_percent = safe_float(row_dict['ev_percent'], '%')
-                        
-                        # Add metrics to the row dictionary
-                        row_dict['edge'] = edge
-                        row_dict['ev_percent'] = ev_percent
-                        row_dict['market_implied_prob'] = market_implied_prob
-                        
-                        # Only add if we haven't seen this timestamp before
-                        if row_dict['recorded_at'] not in seen_timestamps:
-                            odds_history.append(row_dict)
-                            seen_timestamps.add(row_dict['recorded_at'])
-                    except (ValueError, TypeError):
-                        continue
-            
-            # Format response
-            response = {
-                'bet_id': bet_dict['bet_id'],
-                'description': bet_dict['description'],
-                'sport_league': bet_dict['sport_league'],
-                'bet_type': bet_dict['bet_type'],
-                'sportsbook': bet_dict['sportsbook'],
-                'odds': odds_history[0]['odds'] if odds_history else None,
-                'close_odds': odds_history[0]['odds'] if odds_history else None,
-                'low_odds': odds_history[0]['odds'] if odds_history else None,
-                'high_odds': odds_history[0]['odds'] if odds_history else None,
-                'win_probability': odds_history[0]['win_probability'] if odds_history else None,
-                'ev_percent': odds_history[0]['ev_percent'] if odds_history else None,
-                'edge': odds_history[0]['edge'] if odds_history else None,
-                'grade': bet_dict.get('grade', 'N/A'),
-                'composite_score': bet_dict.get('composite_score', 0),
-                'odds_history': odds_history
-            }
-            
-            return jsonify(response)
-            
-    except Exception as e:
-        logging.error(f"Error fetching bet details: {str(e)}")
-        return jsonify({'error': 'Error loading bet details. Please try again.'}), 500 
+        return jsonify({'error': 'Error marking bet'}), 500 
