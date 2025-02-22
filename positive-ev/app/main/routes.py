@@ -361,7 +361,9 @@ def thirty_day_results():
     selected_sport = request.args.get('sport', None)
     show_all_sports = request.args.get('show_all', '0') == '1'
     sort_by = request.args.get('sort', 'timestamp')
-    sort_dir = request.args.get('dir', 'desc')
+    sort_dir = request.args.get('dir', 'desc').lower()
+    if sort_dir not in ['asc', 'desc']:
+        sort_dir = 'desc'
     
     # Get filter parameters
     grade_filter = request.args.get('grade')
@@ -543,7 +545,7 @@ def thirty_day_results():
             'result': 'result'
         }.get(sort_by, 'timestamp')
         
-        base_query += f" ORDER BY {sort_column} {sort_dir.upper()}"
+        base_query += f" ORDER BY {sort_column} {sort_dir}"
         base_query += f" LIMIT {per_page} OFFSET {(page - 1) * per_page}"
         
         # Fetch paginated bets
