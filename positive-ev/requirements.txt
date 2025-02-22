@@ -10,7 +10,7 @@ beautifulsoup4==4.12.3
 webdriver-manager==4.0.1
 python-dotenv==1.0.1
 numpy==1.26.4
-requests==2.31.0
+requests==2.32.2
 python-crontab==3.0.0
 ratelimit==2.2.1
 openai==1.12.0
