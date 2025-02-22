@@ -89,7 +89,7 @@ class NBAPropsPredictor:
             
             return {
                 'win_probability': win_probability,
-                'confidence_score': abs(win_probability - 0.5) * 2,  # 0 to 1 scale
+                'confidence_score': abs(win_probability - 0.5) * 200,  # 0 to 100 scale
                 'top_features': top_features,
                 'prediction_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             }

@@ -5,6 +5,68 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2025-02-23
+
+### Added
+- Enhanced bet details popup functionality:
+  - Added metrics summary section showing EV%, Edge%, Win Probability, and Kelly%
+  - Added paginated odds history display (10 items per page)
+  - Added automatic URL hyperlinking in descriptions and reasoning text
+  - Added validation status dropdown in popup
+  - Added comprehensive odds history with timestamps and sportsbook info
+
+### Changed
+- Improved thirty_day_results page:
+  - Updated to 25 items per page for better readability
+  - Made sport column font smaller and more compact
+  - Adjusted confidence score column positioning
+  - Improved date format display (removed year for compactness)
+  - Enhanced filter button with expandable advanced options
+  - Summary statistics now show complete 30-day data regardless of filters
+
+### Fixed
+- Fixed summary statistics calculation to use complete 30-day data
+- Fixed pagination display and navigation
+- Fixed validation status updates in popup
+- Fixed odds history display formatting
+
+## [2.0.0] - 2025-02-22
+
+### Added
+- Automated database backup before schema changes
+- Sport and league columns to betting_data table
+- New indexes for improved query performance:
+  - idx_betting_data_sport_league
+  - idx_betting_data_event_time
+  - idx_betting_data_composite
+- Whitelist of supported leagues with standardized names:
+  - Basketball: NBA, NCAAB
+  - Hockey: NHL
+  - Tennis: WTA, ATP, ATP Challenger, ITF Men
+  - Soccer: Saudi League, Premier League, FA Cup, La Liga, Champions League, Europa League, Serie A
+  - Baseball: MLB
+  - Football: NFL, NCAAF
+  - MMA: UFC
+
+### Changed
+- Updated sport detection logic to use standardized sport/league pairs
+- Modified bet evaluation to filter for supported leagues only
+- Improved search queries to include league information
+- Enhanced sport-specific instructions in evaluation prompts
+
+### Fixed
+- SQLite compatibility issues with ALTER TABLE syntax
+- Sport detection accuracy by using standardized league names
+- Search relevance by including league information in queries
+
+### Security
+- Added automatic database backup before schema changes
+- Improved error handling for database operations
+
+## [1.0.0] - 2025-02-21
+
+Initial release
+
 ## [Unreleased]
 
 ### Added

@@ -126,8 +126,6 @@ def parse_cleaned_data(soup, timestamp):
                 win_probability = block.select_one(SELECTORS['win_probability'])
                 row["Win Probability"] = win_probability.text.strip('%') if win_probability else "N/A"
 
-                row["Result"] = ""  # Default value
-
                 # Generate bet ID
                 row["bet_id"] = generate_bet_id(
                     row["Event Time"], row["Event Teams"],
@@ -154,13 +152,13 @@ def upsert_data(data):
             INSERT INTO betting_data (
                 bet_id, timestamp, ev_percent, event_time, event_teams,
                 sport_league, bet_type, description, odds, sportsbook,
-                bet_size, win_probability, result
+                bet_size, win_probability
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             row["bet_id"], row["timestamp"], row["EV Percent"], row["Event Time"],
             row["Event Teams"], row["Sport/League"], row["Bet Type"], row["Description"],
-            row["Odds"], row["Sportsbook"], row["Bet Size"], row["Win Probability"], ""
+            row["Odds"], row["Sportsbook"], row["Bet Size"], row["Win Probability"]
         ))
     conn.commit()
     conn.close()

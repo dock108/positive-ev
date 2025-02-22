@@ -42,20 +42,21 @@ def clean_logs():
 def load_data():
     """Load and prepare data for modeling."""
     conn = sqlite3.connect(DB_PATH)
-    query = """
-    SELECT *
-    FROM model_work_table
-    WHERE result IN ('W', 'L')
-    ORDER BY event_time
-    """
-    df = pd.read_sql_query(query, conn)
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT b.*, boe.outcome as result
+        FROM betting_data b
+        LEFT JOIN bet_outcome_evaluation boe ON b.bet_id = boe.bet_id
+        WHERE boe.outcome IN ('WIN', 'LOSS')
+    """)
+    df = pd.read_sql_query("SELECT * FROM model_work_table", conn)
     conn.close()
     return df
 
 def prepare_features(df):
     """Enhanced feature preparation with interaction terms and transformations."""
     # Convert categorical variables
-    df['result_binary'] = (df['result'] == 'W').astype(int)
+    df['result_binary'] = (df['result'] == 'WIN').astype(int)
     df['bet_time_encoded'] = pd.Categorical(df['bet_time_category']).codes
     
     # Basic features with potential
@@ -311,7 +312,7 @@ def main():
     print("\nLoading data...")
     df = load_data()
     print(f"Total samples: {len(df)}")
-    print(f"Win rate in data: {(df['result'] == 'W').mean():.2%}")
+    print(f"Win rate in data: {(df['result'] == 'WIN').mean():.2%}")
     
     print("\nPreparing features...")
     X, y, feature_names = prepare_features(df)

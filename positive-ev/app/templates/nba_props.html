@@ -134,12 +134,14 @@
                     <!-- Confidence Score -->
                     <div class="flex justify-between items-center">
                         <span class="text-sm text-gray-600">Confidence Score</span>
-                        <span class="px-2 py-1 text-sm font-semibold rounded-full
-                            {% if prop.model_prediction.confidence_score >= 0.8 %}bg-violet-200 text-violet-900
-                            {% elif prop.model_prediction.confidence_score >= 0.6 %}bg-fuchsia-200 text-fuchsia-900
-                            {% else %}bg-gray-100 text-gray-800{% endif %}">
-                            {{ "%.0f"|format(prop.model_prediction.confidence_score * 100) }}
-                        </span>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                {% if prop.model_prediction.confidence_score >= 80 %}bg-violet-200 text-violet-900
+                                {% elif prop.model_prediction.confidence_score >= 60 %}bg-fuchsia-200 text-fuchsia-900
+                                {% else %}bg-gray-200 text-gray-900{% endif %}">
+                                {{ prop.model_prediction.confidence_score|int }}
+                            </span>
+                        </td>
                     </div>
 
                     <!-- Top Features -->

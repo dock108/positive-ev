@@ -22,7 +22,12 @@ def index():
             total_bets = cursor.fetchone()[0]
             
             # Get active bets count
-            cursor.execute("SELECT COUNT(*) FROM betting_data WHERE result NOT IN ('W', 'L', 'R')")
+            cursor.execute("""
+                SELECT COUNT(DISTINCT b.bet_id)
+                FROM betting_data b
+                LEFT JOIN bet_outcome_evaluation boe ON b.bet_id = boe.bet_id
+                WHERE boe.outcome IN ('WIN', 'LOSS')
+            """)
             active_bets = cursor.fetchone()[0]
             
             stats = {

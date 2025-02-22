@@ -1,0 +1,175 @@
+event_time,event_teams,bet_type,description,odds,predicted_win_prob,model_confidence,ev_percent,model_adjusted_ev,opportunity_score,score_explanation
+2025-02-13 20:30,Miami Heat vs Dallas Mavericks,Player Rebounds,Olivier-Maxence Prosper Under 6.5,+112,0.509,0.8765207619504439,7.9,1.5816,86.25,"Score: 86.25/100 - Standard (80+ Score)
+  • Original EV (7.90%): 99.0/100 pts
+  • Profit Potential ($1.58): 65.8/100 pts
+  • Bet Size ($20.00): 80.0/100 pts
+  • Model Confidence (87.7%): 87.7/100 pts
+  • EV Agreement (0.0080% diff): 100.0/100 pts"
+2025-02-13 20:30,Oklahoma City Thunder vs Minnesota Timberwolves,Player Points,Naz Reid Under 18.5,-105,0.551,0.8765207619504439,7.51,1.5152380952380966,83.72,"Score: 83.72/100 - Standard (80+ Score)
+  • Original EV (7.51%): 95.1/100 pts
+  • Profit Potential ($1.52): 65.2/100 pts
+  • Bet Size ($20.00): 80.0/100 pts
+  • Model Confidence (87.7%): 87.7/100 pts
+  • EV Agreement (0.0662% diff): 90.0/100 pts"
+2025-02-13 20:00,Golden State Warriors vs Houston Rockets,Player Points,Alperen Sengun Over 20.5,+125,0.48100000000000004,0.8773225102720951,8.23,1.2337500000000023,82.74,"Score: 82.74/100 - Standard (80+ Score)
+  • Original EV (8.23%): 100.0/100 pts
+  • Profit Potential ($1.23): 62.3/100 pts
+  • Bet Size ($15.00): 60.0/100 pts
+  • Model Confidence (87.7%): 87.7/100 pts
+  • EV Agreement (0.0050% diff): 100.0/100 pts"
+2025-02-13 20:30,Oklahoma City Thunder vs Minnesota Timberwolves,Player Rebounds,Anthony Edwards Under 5.5,+134,0.462,0.8765207619504439,8.13,1.2161999999999988,82.19,"Score: 82.19/100 - Standard (80+ Score)
+  • Original EV (8.13%): 100.0/100 pts
+  • Profit Potential ($1.22): 62.2/100 pts
+  • Bet Size ($15.00): 60.0/100 pts
+  • Model Confidence (87.7%): 87.7/100 pts
+  • EV Agreement (0.0220% diff): 95.0/100 pts"
+2025-02-13 20:00,Golden State Warriors vs Houston Rockets,Player Points + Rebounds + Assists,Jimmy Butler Under 30.5,-110,0.561,0.8773225102720951,7.05,1.4200000000000017,81.88,"Score: 81.88/100 - Standard (80+ Score)
+  • Original EV (7.05%): 90.5/100 pts
+  • Profit Potential ($1.42): 64.2/100 pts
+  • Bet Size ($20.00): 80.0/100 pts
+  • Model Confidence (87.7%): 87.7/100 pts
+  • EV Agreement (0.0500% diff): 90.0/100 pts"
+2025-02-13 20:00,Golden State Warriors vs Houston Rockets,Player Points + Rebounds + Assists,Jalen Green Under 32.5,-110,0.561,0.8773225102720951,7.05,1.4200000000000017,81.88,"Score: 81.88/100 - Standard (80+ Score)
+  • Original EV (7.05%): 90.5/100 pts
+  • Profit Potential ($1.42): 64.2/100 pts
+  • Bet Size ($20.00): 80.0/100 pts
+  • Model Confidence (87.7%): 87.7/100 pts
+  • EV Agreement (0.0500% diff): 90.0/100 pts"
+2025-02-13 20:00,Golden State Warriors vs Houston Rockets,Player Points,Cam Whitmore Over 12.5,-105,0.546,0.8773225102720951,6.68,1.320000000000002,80.34,"Score: 80.34/100 - Standard (80+ Score)
+  • Original EV (6.68%): 86.8/100 pts
+  • Profit Potential ($1.32): 63.2/100 pts
+  • Bet Size ($20.00): 80.0/100 pts
+  • Model Confidence (87.7%): 87.7/100 pts
+  • EV Agreement (0.0800% diff): 90.0/100 pts"
+2025-02-13 20:00,Sacramento Kings vs New Orleans Pelicans,Player Assists,CJ McCollum Under 4.5,-130,0.598,0.8773225102720951,5.79,1.1599999999999984,76.59,"Score: 76.59/100 - Aggressive (70+ Score)
+  • Original EV (5.79%): 75.8/100 pts
+  • Profit Potential ($1.16): 61.6/100 pts
+  • Bet Size ($20.00): 80.0/100 pts
+  • Model Confidence (87.7%): 87.7/100 pts
+  • EV Agreement (0.0100% diff): 95.0/100 pts"
+2025-02-13 21:00,Los Angeles Clippers vs Utah Jazz,Player Assists,James Harden Under 9.5,+100,0.534,0.8758101056587514,6.69,1.0200000000000005,76.5,"Score: 76.5/100 - Aggressive (70+ Score)
+  • Original EV (6.69%): 86.9/100 pts
+  • Profit Potential ($1.02): 60.2/100 pts
+  • Bet Size ($15.00): 60.0/100 pts
+  • Model Confidence (87.6%): 87.6/100 pts
+  • EV Agreement (0.1100% diff): 89.0/100 pts"
+2025-02-13 20:30,Oklahoma City Thunder vs Minnesota Timberwolves,Player Points,Isaiah Hartenstein Over 8.5,-105,0.544,0.8765207619504439,6.26,0.9314285714285715,74.71,"Score: 74.71/100 - Aggressive (70+ Score)
+  • Original EV (6.26%): 82.6/100 pts
+  • Profit Potential ($0.93): 58.6/100 pts
+  • Bet Size ($15.00): 60.0/100 pts
+  • Model Confidence (87.7%): 87.7/100 pts
+  • EV Agreement (0.0505% diff): 90.0/100 pts"
+2025-02-13 21:00,Los Angeles Clippers vs Utah Jazz,Player Assists,Ben Simmons Over 4.5,-130,0.596,0.8758101056587514,5.49,1.0892307692307686,74.29,"Score: 74.29/100 - Aggressive (70+ Score)
+  • Original EV (5.49%): 69.8/100 pts
+  • Profit Potential ($1.09): 60.9/100 pts
+  • Bet Size ($20.00): 80.0/100 pts
+  • Model Confidence (87.6%): 87.6/100 pts
+  • EV Agreement (0.0438% diff): 95.0/100 pts"
+2025-02-13 21:00,Los Angeles Clippers vs Utah Jazz,Player Assists,Isaiah Collier Under 8.5,+107,0.512,0.8758101056587514,6.04,0.8976000000000024,73.77,"Score: 73.77/100 - Aggressive (70+ Score)
+  • Original EV (6.04%): 80.4/100 pts
+  • Profit Potential ($0.90): 58.0/100 pts
+  • Bet Size ($15.00): 60.0/100 pts
+  • Model Confidence (87.6%): 87.6/100 pts
+  • EV Agreement (0.0560% diff): 90.0/100 pts"
+2025-02-13 21:00,Los Angeles Clippers vs Utah Jazz,Player Points,Amir Coffey Over 10.5,+100,0.529,0.8758101056587514,5.79,0.870000000000001,72.52,"Score: 72.52/100 - Aggressive (70+ Score)
+  • Original EV (5.79%): 75.8/100 pts
+  • Profit Potential ($0.87): 57.4/100 pts
+  • Bet Size ($15.00): 60.0/100 pts
+  • Model Confidence (87.6%): 87.6/100 pts
+  • EV Agreement (0.0100% diff): 95.0/100 pts"
+2025-02-13 21:00,Los Angeles Clippers vs Utah Jazz,Player Double Double,James Harden Under 0.5,+100,0.528,0.8758101056587514,5.59,0.8399999999999999,70.97,"Score: 70.97/100 - Aggressive (70+ Score)
+  • Original EV (5.59%): 71.8/100 pts
+  • Profit Potential ($0.84): 56.8/100 pts
+  • Bet Size ($15.00): 60.0/100 pts
+  • Model Confidence (87.6%): 87.6/100 pts
+  • EV Agreement (0.0100% diff): 95.0/100 pts"
+2025-02-13 20:00,Sacramento Kings vs New Orleans Pelicans,Player Assists,Domantas Sabonis Under 6.5,-145,0.621,0.8773225102720951,4.89,0.985517241379311,69.82,"Score: 69.82/100 - Not Recommended
+  • Original EV (4.89%): 57.8/100 pts
+  • Profit Potential ($0.99): 59.7/100 pts
+  • Bet Size ($20.00): 80.0/100 pts
+  • Model Confidence (87.7%): 87.7/100 pts
+  • EV Agreement (0.0376% diff): 95.0/100 pts"
+2025-02-13 21:00,Los Angeles Clippers vs Utah Jazz,Player Assists,Keyonte George Over 5.5,+112,0.498,0.8758101056587514,5.53,0.5576000000000016,69.14,"Score: 69.14/100 - Not Recommended
+  • Original EV (5.53%): 70.6/100 pts
+  • Profit Potential ($0.56): 51.2/100 pts
+  • Bet Size ($10.00): 60.0/100 pts
+  • Model Confidence (87.6%): 87.6/100 pts
+  • EV Agreement (0.0460% diff): 95.0/100 pts"
+2025-02-13 20:00,Sacramento Kings vs New Orleans Pelicans,Player Points,DeMar DeRozan Under 20.5,+102,0.521,0.8773225102720951,5.29,0.7863000000000007,68.62,"Score: 68.62/100 - Not Recommended
+  • Original EV (5.29%): 65.8/100 pts
+  • Profit Potential ($0.79): 55.7/100 pts
+  • Bet Size ($15.00): 60.0/100 pts
+  • Model Confidence (87.7%): 87.7/100 pts
+  • EV Agreement (0.0480% diff): 95.0/100 pts"
+2025-02-13 21:00,Los Angeles Clippers vs Utah Jazz,Player Points,Isaiah Collier Under 10.5,+102,0.521,0.8758101056587514,5.29,0.7863000000000007,68.6,"Score: 68.6/100 - Not Recommended
+  • Original EV (5.29%): 65.8/100 pts
+  • Profit Potential ($0.79): 55.7/100 pts
+  • Bet Size ($15.00): 60.0/100 pts
+  • Model Confidence (87.6%): 87.6/100 pts
+  • EV Agreement (0.0480% diff): 95.0/100 pts"
+2025-02-13 20:00,Sacramento Kings vs New Orleans Pelicans,Player Points,Trey Murphy III Over 24.5,+110,0.5,0.8773225102720951,5.0,0.5,65.66,"Score: 65.66/100 - Not Recommended
+  • Original EV (5.00%): 60.0/100 pts
+  • Profit Potential ($0.50): 50.0/100 pts
+  • Bet Size ($10.00): 60.0/100 pts
+  • Model Confidence (87.7%): 87.7/100 pts
+  • EV Agreement (0.0000% diff): 100.0/100 pts"
+2025-02-13 20:00,Sacramento Kings vs New Orleans Pelicans,Player Made Threes,Malik Monk Under 2.5,-120,0.5720000000000001,0.8773225102720951,4.92,0.730000000000004,65.25,"Score: 65.25/100 - Not Recommended
+  • Original EV (4.92%): 58.4/100 pts
+  • Profit Potential ($0.73): 54.6/100 pts
+  • Bet Size ($15.00): 60.0/100 pts
+  • Model Confidence (87.7%): 87.7/100 pts
+  • EV Agreement (0.0533% diff): 90.0/100 pts"
+2025-02-13 21:00,Los Angeles Clippers vs Utah Jazz,Player Made Threes,John Collins Under 1.5,-154,0.633,0.8758101056587514,4.41,0.6605844155844167,62.31,"Score: 62.31/100 - Not Recommended
+  • Original EV (4.41%): 48.2/100 pts
+  • Profit Potential ($0.66): 53.2/100 pts
+  • Bet Size ($15.00): 60.0/100 pts
+  • Model Confidence (87.6%): 87.6/100 pts
+  • EV Agreement (0.0061% diff): 100.0/100 pts"
+2025-02-13 20:00,Golden State Warriors vs Houston Rockets,Player Assists,Brandin Podziemski Over 3.5,+100,0.524,0.8773225102720951,4.69,0.4800000000000004,62.29,"Score: 62.29/100 - Not Recommended
+  • Original EV (4.69%): 53.8/100 pts
+  • Profit Potential ($0.48): 49.6/100 pts
+  • Bet Size ($10.00): 60.0/100 pts
+  • Model Confidence (87.7%): 87.7/100 pts
+  • EV Agreement (0.1100% diff): 89.0/100 pts"
+2025-02-13 20:30,Oklahoma City Thunder vs Minnesota Timberwolves,Player Rebounds,Rudy Gobert Under 10.5,+136,0.44299999999999995,0.8765207619504439,4.62,0.45480000000000054,61.76,"Score: 61.76/100 - Not Recommended
+  • Original EV (4.62%): 52.4/100 pts
+  • Profit Potential ($0.45): 49.1/100 pts
+  • Bet Size ($10.00): 60.0/100 pts
+  • Model Confidence (87.7%): 87.7/100 pts
+  • EV Agreement (0.0720% diff): 90.0/100 pts"
+2025-02-13 20:00,Golden State Warriors vs Houston Rockets,Player Assists,Jimmy Butler Under 5.5,-135,0.598,0.8773225102720951,4.09,0.6144444444444428,59.86,"Score: 59.86/100 - Not Recommended
+  • Original EV (4.09%): 41.8/100 pts
+  • Profit Potential ($0.61): 52.3/100 pts
+  • Bet Size ($15.00): 60.0/100 pts
+  • Model Confidence (87.7%): 87.7/100 pts
+  • EV Agreement (0.0063% diff): 100.0/100 pts"
+2025-02-13 21:00,Los Angeles Clippers vs Utah Jazz,Player Points,John Collins Under 16.5,+104,0.511,0.8758101056587514,4.29,0.4244000000000012,59.79,"Score: 59.79/100 - Not Recommended
+  • Original EV (4.29%): 45.8/100 pts
+  • Profit Potential ($0.42): 48.5/100 pts
+  • Bet Size ($10.00): 60.0/100 pts
+  • Model Confidence (87.6%): 87.6/100 pts
+  • EV Agreement (0.0460% diff): 95.0/100 pts"
+2025-02-13 20:00,Sacramento Kings vs New Orleans Pelicans,Player Rebounds,Trey Murphy III Under 5.5,-110,0.546,0.8773225102720951,4.32,0.4236363636363656,59.52,"Score: 59.52/100 - Not Recommended
+  • Original EV (4.32%): 46.4/100 pts
+  • Profit Potential ($0.42): 48.5/100 pts
+  • Bet Size ($10.00): 60.0/100 pts
+  • Model Confidence (87.7%): 87.7/100 pts
+  • EV Agreement (0.0836% diff): 90.0/100 pts"
+2025-02-13 20:00,Golden State Warriors vs Houston Rockets,Player Points,Jimmy Butler Under 19.5,+100,0.521,0.8773225102720951,4.25,0.41999999999999993,59.01,"Score: 59.01/100 - Not Recommended
+  • Original EV (4.25%): 45.0/100 pts
+  • Profit Potential ($0.42): 48.4/100 pts
+  • Bet Size ($10.00): 60.0/100 pts
+  • Model Confidence (87.7%): 87.7/100 pts
+  • EV Agreement (0.0500% diff): 90.0/100 pts"
+2025-02-13 20:30,Oklahoma City Thunder vs Minnesota Timberwolves,Player Points + Rebounds + Assists,Isaiah Hartenstein Over 22.5,+102,0.516,0.8765207619504439,4.17,0.42320000000000046,58.45,"Score: 58.45/100 - Not Recommended
+  • Original EV (4.17%): 43.4/100 pts
+  • Profit Potential ($0.42): 48.5/100 pts
+  • Bet Size ($10.00): 60.0/100 pts
+  • Model Confidence (87.7%): 87.7/100 pts
+  • EV Agreement (0.0620% diff): 90.0/100 pts"
+2025-02-13 20:30,Oklahoma City Thunder vs Minnesota Timberwolves,Player Points,Chet Holmgren Under 13.5,+110,0.495,0.8765207619504439,4.06,0.39500000000000046,57.44,"Score: 57.44/100 - Not Recommended
+  • Original EV (4.06%): 41.2/100 pts
+  • Profit Potential ($0.40): 47.9/100 pts
+  • Bet Size ($10.00): 60.0/100 pts
+  • Model Confidence (87.7%): 87.7/100 pts
+  • EV Agreement (0.1100% diff): 89.0/100 pts"

@@ -112,7 +112,7 @@ def generate_summary_report(df):
         
         # Overall metrics
         f.write(f"Total Bets Analyzed: {len(df)}\n")
-        f.write(f"Overall Win Rate: {(df['result'] == 'W').mean():.2%}\n")
+        f.write(f"Overall Win Rate: {(df['result'] == 'WIN').mean():.2%}\n")
         f.write(f"Average EV%: {df['ev_percent'].mean():.2f}%\n")
         f.write(f"Average CLV%: {df['clv_percent'].mean():.2f}%\n\n")
         

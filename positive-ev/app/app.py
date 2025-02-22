@@ -29,9 +29,11 @@ def index():
     """Home Dashboard: Summary of recent activity."""
     # Get all unresolved bets
     unresolved_bets = query_db("""
-        SELECT * FROM betting_data
-        WHERE result NOT IN ('W', 'L', 'R')
-        ORDER BY timestamp DESC
+        SELECT b.*, boe.outcome as result, boe.confidence_score
+        FROM betting_data b
+        LEFT JOIN bet_outcome_evaluation boe ON b.bet_id = boe.bet_id
+        WHERE boe.outcome IN ('WIN', 'LOSS', 'TIE')
+        ORDER BY b.timestamp DESC
     """)
     
     # Count sportsbooks for parlay button visibility
