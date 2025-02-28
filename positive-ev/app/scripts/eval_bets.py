@@ -264,28 +264,33 @@ def get_ungraded_bets(conn, start_date: Optional[str] = None, end_date: Optional
                b.sport_league
         FROM betting_data b
         LEFT JOIN bet_outcome_evaluation e ON b.bet_id = e.bet_id
-        WHERE datetime(b.event_time, '+4 hours') < datetime('now')
-        AND e.bet_id IS NULL
-        AND b.sport_league IN (
-            'Basketball | NBA',
-            'Basketball | NCAAB',
-            'Hockey | NHL',
-            'Tennis | WTA',
-            'Tennis | ATP',
-            'Tennis | ATP Challenger',
-            'Tennis | ITF Men',
-            'Soccer | Saudi Arabia - Saudi League',
-            'Soccer | England - Premier League',
-            'Soccer | England - FA Cup',
-            'Soccer | Spain - La Liga',
-            'Soccer | UEFA - Champions League',
-            'Soccer | UEFA - Europa League',
-            'Soccer | Italy - Serie A',
-            'Baseball | MLB',
-            'Football | NFL',
-            'Football | NCAAF',
-            'MMA | UFC'
-        )
+        WHERE 
+            -- Only evaluate games that:
+            -- 1. Have already started (event time is in the past)
+            -- 2. Started at least 4 hours ago (to ensure game is finished)
+            datetime(b.event_time) < datetime('now')
+            AND datetime(b.event_time, '+4 hours') < datetime('now')
+            AND e.bet_id IS NULL  -- Only get bets without any evaluation
+            AND b.sport_league IN (
+                'Basketball | NBA',
+                'Basketball | NCAAB',
+                'Hockey | NHL',
+                'Tennis | WTA',
+                'Tennis | ATP',
+                'Tennis | ATP Challenger',
+                'Tennis | ITF Men',
+                'Soccer | Saudi Arabia - Saudi League',
+                'Soccer | England - Premier League',
+                'Soccer | England - FA Cup',
+                'Soccer | Spain - La Liga',
+                'Soccer | UEFA - Champions League',
+                'Soccer | UEFA - Europa League',
+                'Soccer | Italy - Serie A',
+                'Baseball | MLB',
+                'Football | NFL',
+                'Football | NCAAF',
+                'MMA | UFC'
+            )
     """
     
     params = []
@@ -331,15 +336,6 @@ def store_outcome(conn, bet_id: str, outcome: str, confidence: float, reasoning:
             (bet_id, outcome, confidence_score, reasoning)
             VALUES (?, ?, ?, ?)
         """, (bet_id, outcome, confidence, reasoning))
-        
-        # Always update the main betting_data table with the result
-        if outcome != "UNCERTAIN":
-            result = outcome[0]  # 'W' for WIN, 'L' for LOSS, 'T' for TIE
-            cursor.execute("""
-                UPDATE betting_data 
-                SET result = ? 
-                WHERE bet_id = ?
-            """, (result, bet_id))
         
         conn.commit()
         logger.info(f"Stored outcome for bet {bet_id}: {outcome} ({confidence}%)")

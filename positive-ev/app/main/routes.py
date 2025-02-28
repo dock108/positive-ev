@@ -383,7 +383,6 @@ def thirty_day_results():
             )
             SELECT 
                 COUNT(DISTINCT b.bet_id) as total_bets,
-                AVG(CAST(REPLACE(REPLACE(b.ev_percent, '%', ''), ',', '') AS FLOAT)) as avg_ev,
                 COUNT(DISTINCT CASE WHEN g.grade IN ('A', 'B') THEN b.bet_id END) as grade_a_b_count
             FROM UniqueBets b
             LEFT JOIN bet_grades g ON b.bet_id = g.bet_id
@@ -392,8 +391,34 @@ def thirty_day_results():
         cursor.execute(summary_query)
         summary_row = cursor.fetchone()
         
-        # Calculate average edge from complete data
-        edge_query = """
+        # Calculate average EV for A and B grade bets only
+        ab_ev_query = """
+            WITH UniqueBets AS (
+                SELECT *,
+                    ROW_NUMBER() OVER (PARTITION BY bet_id ORDER BY timestamp DESC) as rn
+                FROM betting_data
+                WHERE timestamp >= date('now', '-30 days')
+            )
+            SELECT 
+                CAST(REPLACE(REPLACE(b.ev_percent, '%', ''), ',', '') AS FLOAT) as ev_percent
+            FROM UniqueBets b
+            JOIN bet_grades g ON b.bet_id = g.bet_id
+            WHERE b.rn = 1 AND g.grade IN ('A', 'B')
+        """
+        cursor.execute(ab_ev_query)
+        ab_ev_rows = cursor.fetchall()
+        
+        total_ab_ev = 0
+        ab_ev_count = 0
+        for row in ab_ev_rows:
+            if row['ev_percent']:
+                total_ab_ev += row['ev_percent']
+                ab_ev_count += 1
+        
+        avg_ab_ev = total_ab_ev / ab_ev_count if ab_ev_count > 0 else 0
+        
+        # Calculate average edge from A and B grade bets only
+        ab_edge_query = """
             WITH UniqueBets AS (
                 SELECT *,
                     ROW_NUMBER() OVER (PARTITION BY bet_id ORDER BY timestamp DESC) as rn
@@ -404,14 +429,15 @@ def thirty_day_results():
                 b.odds,
                 CAST(REPLACE(REPLACE(b.win_probability, '%', ''), ',', '') AS FLOAT) as win_prob
             FROM UniqueBets b
-            WHERE b.rn = 1
+            JOIN bet_grades g ON b.bet_id = g.bet_id
+            WHERE b.rn = 1 AND g.grade IN ('A', 'B')
         """
-        cursor.execute(edge_query)
-        edge_rows = cursor.fetchall()
+        cursor.execute(ab_edge_query)
+        ab_edge_rows = cursor.fetchall()
         
-        total_edge = 0
-        valid_edge_count = 0
-        for row in edge_rows:
+        total_ab_edge = 0
+        valid_ab_edge_count = 0
+        for row in ab_edge_rows:
             try:
                 odds = float(row['odds']) if row['odds'] and row['odds'] != 'N/A' else 0
                 win_prob = row['win_prob']
@@ -424,19 +450,19 @@ def thirty_day_results():
                 
                 if market_implied_prob is not None and win_prob > 0:
                     edge = win_prob - market_implied_prob
-                    total_edge += edge
-                    valid_edge_count += 1
+                    total_ab_edge += edge
+                    valid_ab_edge_count += 1
             except Exception as e:
-                logging.error(f"Error calculating edge: {str(e)}")
+                logging.error(f"Error calculating A/B edge: {str(e)}")
                 continue
         
-        avg_edge = total_edge / valid_edge_count if valid_edge_count > 0 else 0
+        avg_ab_edge = total_ab_edge / valid_ab_edge_count if valid_ab_edge_count > 0 else 0
         
         # Prepare summary statistics (from complete data)
         summary_stats = {
             'total_bets': summary_row['total_bets'],
-            'avg_ev': summary_row['avg_ev'] if summary_row['avg_ev'] is not None else 0,
-            'avg_edge': avg_edge,
+            'avg_ev': avg_ab_ev,  # Now only for A/B bets
+            'avg_edge': avg_ab_edge,  # Now only for A/B bets
             'grade_a_b_count': summary_row['grade_a_b_count']
         }
         
@@ -552,25 +578,59 @@ def thirty_day_results():
         cursor.execute(base_query, params)
         raw_bets = cursor.fetchall()
         
-        # Get sport distribution
+        # Get sport distribution with A/B counts and stats with edge calculation in SQL
         sport_query = """
             WITH LatestBets AS (
-                SELECT bet_id, sport_league, timestamp,
-                       ROW_NUMBER() OVER (PARTITION BY bet_id ORDER BY timestamp DESC) as rn
-                FROM betting_data
-                WHERE timestamp >= date('now', '-30 days')
+                SELECT b.bet_id, b.sport_league, b.timestamp, g.grade,
+                       CAST(REPLACE(REPLACE(b.ev_percent, '%', ''), ',', '') AS FLOAT) as ev_percent,
+                       b.odds, 
+                       CAST(REPLACE(REPLACE(b.win_probability, '%', ''), ',', '') AS FLOAT) as win_prob,
+                       CASE 
+                            WHEN CAST(b.odds AS FLOAT) > 0 THEN 
+                                100.0 / (CAST(b.odds AS FLOAT) + 100.0) * 100.0
+                            WHEN CAST(b.odds AS FLOAT) < 0 THEN 
+                                ABS(CAST(b.odds AS FLOAT)) / (ABS(CAST(b.odds AS FLOAT)) + 100.0) * 100.0
+                            ELSE NULL
+                       END as market_implied_prob,
+                       ROW_NUMBER() OVER (PARTITION BY b.bet_id ORDER BY b.timestamp DESC) as rn
+                FROM betting_data b
+                LEFT JOIN bet_grades g ON b.bet_id = g.bet_id
+                WHERE b.timestamp >= date('now', '-30 days')
             )
-            SELECT sport_league as name, COUNT(*) as count
+            SELECT 
+                sport_league as name, 
+                COUNT(*) as count,
+                SUM(CASE WHEN grade IN ('A', 'B') THEN 1 ELSE 0 END) as ab_count,
+                AVG(CASE WHEN grade IN ('A', 'B') THEN ev_percent ELSE NULL END) as ab_avg_ev,
+                AVG(CASE WHEN grade IN ('A', 'B') AND market_implied_prob IS NOT NULL 
+                    THEN (win_prob - market_implied_prob) ELSE NULL END) as ab_avg_edge
             FROM LatestBets
             WHERE rn = 1
             GROUP BY sport_league
-            ORDER BY count DESC
+            ORDER BY ab_count DESC, count DESC
         """
         if not show_all_sports:
             sport_query += " LIMIT 8"  # Show only top 8 sports by default
             
         cursor.execute(sport_query)
-        sports = [dict(row) for row in cursor.fetchall()]
+        sports_raw = cursor.fetchall()
+        
+        # Process sport data and filter out sports with 0 A/B bets
+        sports = []
+        for sport in sports_raw:
+            sport_dict = dict(sport)
+            
+            # Skip sports with 0 A+B bets
+            if sport_dict.get('ab_count', 0) == 0:
+                continue
+            
+            # Ensure values are proper numbers
+            if sport_dict.get('ab_avg_ev') is None:
+                sport_dict['ab_avg_ev'] = 0
+            if sport_dict.get('ab_avg_edge') is None:
+                sport_dict['ab_avg_edge'] = 0
+                
+            sports.append(sport_dict)
         
         # Process bets to ensure correct types
         bets = []
