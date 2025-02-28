@@ -1,0 +1,27 @@
+{
+    "name": "EV Edge",
+    "short_name": "EV Edge",
+    "description": "Smart sports betting analytics and opportunity finder",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#000000",
+    "theme_color": "#000000",
+    "icons": [
+        {
+            "src": "/static/images/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/static/images/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "/static/images/maskable-icon.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+} 

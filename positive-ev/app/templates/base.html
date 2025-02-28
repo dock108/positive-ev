@@ -3,9 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Sports Betting Dashboard{% endblock %}</title>
+    <meta name="description" content="EV Edge - Smart sports betting analytics and opportunity finder">
+    <meta name="theme-color" content="#000000">
+    
+    <!-- App Icons -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicon.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/apple-touch-icon.png') }}">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="EV Edge">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    
+    <title>{% block title %}EV Edge{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    {% block head %}{% endblock %}
 </head>
 <body class="bg-gray-100">
     <nav class="bg-white shadow-lg">
@@ -13,7 +29,11 @@
             <div class="flex justify-between h-16">
                 <div class="flex">
                     <div class="flex-shrink-0 flex items-center">
-                        <a href="{{ url_for('main.index') }}" class="text-xl font-bold text-gray-800">Betting Dashboard</a>
+                        <img src="{{ url_for('static', filename='images/logo.png') }}" 
+                             alt="EV Edge" 
+                             class="h-8 w-8 mr-2 object-contain"
+                             style="background: transparent;">
+                        <a href="{{ url_for('main.index') }}" class="text-xl font-bold text-gray-800">EV Edge</a>
                     </div>
                     <div class="ml-6 flex space-x-8">
                         <a href="{{ url_for('main.index') }}" 
@@ -41,7 +61,7 @@
     <footer class="bg-white shadow-lg mt-8">
         <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
             <p class="text-center text-gray-500 text-sm">
-                &copy; 2024 Sports Betting Dashboard. All rights reserved.
+                &copy; 2024 EV Edge. All rights reserved.
             </p>
         </div>
     </footer>
