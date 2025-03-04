@@ -38,6 +38,60 @@ venv.bak/
 *.swo
 .DS_Store
 .cursorfile
+.cursor/
+
+# Node.js / JavaScript / TypeScript
+node_modules/
+**/node_modules/
+npm-debug.log*
+**/npm-debug.log*
+yarn-debug.log*
+**/yarn-debug.log*
+yarn-error.log*
+**/yarn-error.log*
+.pnpm-debug.log*
+**/.pnpm-debug.log*
+.npm
+.eslintcache
+**/.eslintcache
+.stylelintcache
+**/.stylelintcache
+.node_repl_history
+*.tsbuildinfo
+**/*.tsbuildinfo
+.yarn-integrity
+.yarn/
+.pnp.*
+coverage/
+**/coverage/
+.next/
+**/.next/
+out/
+**/out/
+.nuxt
+**/.nuxt
+.cache/
+**/.cache/
+.parcel-cache
+**/.parcel-cache
+.docusaurus
+**/.docusaurus
+
+# React / Frontend
+build/
+**/build/
+dist/
+**/dist/
+.env.local
+**/.env.local
+.env.development.local
+**/.env.development.local
+.env.test.local
+**/.env.test.local
+.env.production.local
+**/.env.production.local
+**/public/assets/
+**/src/assets/generated/
 
 # Flask specific
 instance/
@@ -46,13 +100,18 @@ instance/
 flask.log
 migrations/
 *.db
+**/*.db
 positive-ev.db
 app.db
 positive-ev/app/betting_data.db
+betting-chatbot/web/backend/database/*.db
+betting-chatbot/database/*.db
 
 # Testing
 .pytest_cache/
+**/.pytest_cache/
 .coverage
+**/coverage/
 htmlcov/
 .tox/
 nosetests.xml
@@ -60,29 +119,48 @@ coverage.xml
 *.cover
 .hypothesis/
 cover/
+.nyc_output
+**/.nyc_output
 
 # Logs
 logs/
+**/logs/
 *.log
+**/*.log
 *.log.*
+**/*.log.*
 positive-ev/app/logs/
 positive-ev/logs/
+betting-chatbot/logs/
+betting-chatbot/*.log
 
 # Project specific data and outputs
 data/
+**/data/
 models/
+**/models/
 sql/outputs/
 scripts/outputs/
 *.pkl
+**/*.pkl
 *.h5
+**/*.h5
 *.pt
+**/*.pt
 *.pth
+**/*.pth
 *.onnx
+**/*.onnx
 *.joblib
+**/*.joblib
 *.model
+**/*.model
 *checkpoint*
+**/*checkpoint*
 saved_models/
+**/saved_models/
 model_outputs/
+**/model_outputs/
 
 # Analysis directory - ignore everything except Python and SQL files
 analysis/*
@@ -104,28 +182,54 @@ analysis/**/__pycache__/
 
 # Notebooks and visualization outputs
 notebooks/
+**/notebooks/
 figures/
+**/figures/
 plots/
+**/plots/
 results/
+**/results/
 reports/
+**/reports/
 
 # Temporary files
 *.tmp
+**/*.tmp
 *.temp
+**/*.temp
 .coverage
 htmlcov/
 
 # Documentation build
 docs/_build/
+docs/site/
+docs/api/
 
 # Backup files
 backups/
+**/backups/
 *.bak
+**/*.bak
 
 # Local configuration
 config.ini
+**/config.ini
 credentials.json
+**/credentials.json
 secrets.yaml
+**/secrets.yaml
+.env.*
+**/.env.*
+!.env.example
+!**/.env.example
+
+# OS specific
+Thumbs.db
+**/Thumbs.db
+ehthumbs.db
+**/ehthumbs.db
+Desktop.ini
+**/Desktop.ini
 
 # Keep these files
 !requirements.txt
