@@ -66,3 +66,7 @@ Thumbs.db
 .vercel
 node_modules/ 
 chrome-profile/
+
+# Chrome profiles
+ScraperProfile/
+chrome-profile/

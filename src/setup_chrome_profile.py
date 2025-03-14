@@ -84,4 +84,4 @@ if __name__ == "__main__":
         logging.error("Failed to set up Chrome profile")
         sys.exit(1)
     
-    logging.info("Chrome profile setup complete!") 
+    logging.info("Chrome profile setup complete!")

@@ -7,6 +7,7 @@ A betting analytics platform that scrapes positive EV betting opportunities and 
 - Automated scraping of betting opportunities
 - Advanced bet grading system
 - Real-time analytics and insights
+- Cross-platform support (macOS, Linux, Raspberry Pi)
 - Automated deployment to Vercel
 - Daily scheduled pipeline runs
 
@@ -14,10 +15,10 @@ A betting analytics platform that scrapes positive EV betting opportunities and 
 
 ### Prerequisites
 
-1. A Vercel account
-2. Vercel CLI installed: `npm install -g vercel`
-3. A Chrome profile with necessary login sessions
-4. Python 3.8 or higher
+1. A Vercel account (optional, for cloud deployment)
+2. Vercel CLI installed: `npm install -g vercel` (optional)
+3. Python 3.8 or higher
+4. Chrome/Chromium browser
 
 ### Installation
 
@@ -39,13 +40,24 @@ cp .env.example .env
 
 4. Edit `.env` with your configuration:
 - `SUPABASE_URL` and `SUPABASE_KEY`: Your Supabase credentials
-- `CHROME_PROFILE`: Path to your Chrome profile
 - Other settings as needed
 
-### Deployment
+### Deployment Options
 
-The recommended way to deploy is using our automated script:
+#### Local Development (macOS)
+The scraper will automatically use your Chrome profile at:
+```
+~/Library/Application Support/Google/Chrome/ScraperProfile
+```
 
+#### Raspberry Pi Deployment
+The scraper will automatically use the Chromium profile at:
+```
+~/.config/chromium/Default
+```
+
+#### Vercel Deployment (Optional)
+For cloud deployment:
 ```bash
 chmod +x deploy_to_vercel.sh
 ./deploy_to_vercel.sh
@@ -92,22 +104,20 @@ positive-ev/
 
 - `SUPABASE_URL`: Your Supabase project URL
 - `SUPABASE_KEY`: Your Supabase API key
-- `CHROME_PROFILE`: Path to Chrome profile
 - See `.env.example` for all options
 
-### Chrome Profile
+### Chrome/Chromium Profile
 
-The application requires a Chrome profile with valid authentication cookies. This profile is:
-- Manually exported from your local machine
-- Deployed to Vercel with your application
-- Used for authenticated scraping
+The application automatically detects and uses the appropriate Chrome/Chromium profile based on your operating system:
+- macOS: `~/Library/Application Support/Google/Chrome/ScraperProfile`
+- Linux/Raspberry Pi: `~/.config/chromium/Default`
 
 ### Scheduled Runs
 
 The pipeline runs automatically:
-- Once per day at midnight UTC
-- Configurable via `vercel.json`
-- Manually triggerable via API endpoint
+- Every 5 minutes (configurable)
+- At 2 and 32 minutes past every hour
+- Configurable via crontab
 
 ## Documentation
 
@@ -118,26 +128,27 @@ The pipeline runs automatically:
 
 ### Common Issues
 
-1. **Chrome Profile Issues**
+1. **Chrome/Chromium Profile Issues**
    - Verify profile exists and has valid cookies
-   - Check Vercel function logs
-   - Try re-deploying with updated profile
+   - Check logs for detailed error messages
+   - Ensure proper permissions on profile directory
 
 2. **Pipeline Failures**
-   - Check Vercel function logs
+   - Check logs in the `logs` directory
    - Verify Supabase connection
-   - Check Chrome profile status
+   - Check Chrome/Chromium profile status
 
 3. **Deployment Issues**
-   - Verify Chrome profile was exported correctly
-   - Check environment variables
    - Review deployment logs
+   - Check environment variables
+   - Verify file permissions
 
 ### Getting Help
 
-1. Check the [Troubleshooting](./DEPLOYMENT.md#troubleshooting) section
-2. Review Vercel function logs
-3. Open an issue on GitHub
+1. Check the error message in the logs
+2. Review the relevant log files
+3. Check Chrome/Chromium profile status
+4. Verify environment variables
 
 ## Contributing
 

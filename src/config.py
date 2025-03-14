@@ -2,24 +2,17 @@ import os
 import logging
 from pathlib import Path
 from dotenv import load_dotenv
+import platform
 
 # Load environment variables
 load_dotenv()
 
-# Environment detection
-IS_LOCAL = os.environ.get('IS_LOCAL', '0') == '1'
-IS_VERCEL = os.environ.get('VERCEL', '0') == '1'
-
 # Project structure - use relative path approach
 PROJECT_ROOT = Path(__file__).parent.parent.absolute()
 
-# Use /tmp directory for logs and backups when running on Vercel
-if IS_VERCEL:
-    LOGS_DIR = Path('/tmp/logs')
-    BACKUP_DIR = Path('/tmp/backups')
-else:
-    LOGS_DIR = Path(PROJECT_ROOT) / "logs"
-    BACKUP_DIR = Path(PROJECT_ROOT) / "backups"
+# Directory Configuration
+LOGS_DIR = Path('/tmp/logs') if os.environ.get('VERCEL') else Path(PROJECT_ROOT) / "logs"
+BACKUP_DIR = Path('/tmp/backups') if os.environ.get('VERCEL') else Path(PROJECT_ROOT) / "backups"
 
 # Ensure all directories exist
 for directory in [LOGS_DIR, BACKUP_DIR]:
@@ -41,12 +34,10 @@ TARGET_URL = "https://oddsjam.com/betting-tools/positive-ev"
 PAGE_LOAD_WAIT = int(os.environ.get('PAGE_LOAD_WAIT', '10'))
 
 # Chrome Configuration
-if IS_LOCAL:
-    # Use local Chrome profile when running locally
+if platform.system() == 'Darwin':  # macOS
     CHROME_PROFILE = os.path.expanduser(os.environ.get('CHROME_PROFILE', '~/Library/Application Support/Google/Chrome/ScraperProfile'))
-else:
-    # Use a Chrome profile at the project root for deployment
-    CHROME_PROFILE = os.path.join(PROJECT_ROOT, "chrome-profile")
+else:  # Linux (including Raspberry Pi)
+    CHROME_PROFILE = os.path.expanduser(os.environ.get('CHROME_PROFILE', '~/.config/chromium/Default'))
 
 CHROME_OPTIONS = [
     "--disable-blink-features=AutomationControlled",

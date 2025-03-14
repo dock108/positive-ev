@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2025-03-14
+
+### Changed
+- Simplified Chrome profile configuration to automatically detect OS
+- Removed IS_LOCAL and IS_VERCEL environment variables
+- Streamlined directory configuration for logs and backups
+- Updated deployment documentation for Raspberry Pi support
+
+### Added
+- Support for Raspberry Pi deployment with automatic Chrome profile detection
+- Cross-platform Chrome profile path handling (macOS and Linux)
+
+### Removed
+- Redundant environment variables and configuration checks
+- Legacy Chrome profile export functionality
+
 ## [2.2.0] - 2025-03-13
 
 ### Changed
