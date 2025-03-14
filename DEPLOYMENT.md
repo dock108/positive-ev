@@ -1,181 +1,117 @@
 # Deployment Guide
 
-This guide explains how to deploy the Positive EV betting data pipeline to Vercel with scheduled daily runs.
+This guide explains how to deploy the Positive EV betting data pipeline on a Raspberry Pi with scheduled runs.
 
 ## Table of Contents
 
 1. [Prerequisites](#prerequisites)
-2. [Deployment Options](#deployment-options)
-3. [Chrome Profile Management](#chrome-profile-management)
-4. [Monitoring & Maintenance](#monitoring--maintenance)
-5. [Troubleshooting](#troubleshooting)
+2. [Initial Setup](#initial-setup)
+3. [Chrome Setup](#chrome-setup)
+4. [Environment Configuration](#environment-configuration)
+5. [Scheduling](#scheduling)
+6. [Monitoring & Maintenance](#monitoring--maintenance)
+7. [Troubleshooting](#troubleshooting)
 
 ## Prerequisites
 
-1. A Vercel account
-2. Vercel CLI installed: `npm install -g vercel`
-3. A Chrome profile with necessary login sessions
-4. Python 3.8 or higher
-5. Bash shell (macOS/Linux) or Git Bash/WSL (Windows)
+1. Raspberry Pi (3B+ or newer recommended)
+2. Python 3.8 or higher
+3. Chrome browser
+4. Supabase account and credentials
+5. Internet connection
 
-## Deployment Options
+## Initial Setup
 
-### Option 1: Automated Deployment Script (Recommended)
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/positive-ev.git
+   cd positive-ev
+   ```
 
-The simplest approach is to use our automated deployment script:
+2. Install Python dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-```bash
-# Make the script executable
-chmod +x deploy_to_vercel.sh
+3. Create required directories:
+   ```bash
+   mkdir -p logs backups
+   ```
 
-# Run the deployment script
-./deploy_to_vercel.sh
-```
+## Chrome Setup
 
-The script will:
-1. Export your Chrome profile from your local machine
-2. Ensure the `.vercelignore` file is properly configured
-3. Deploy the application to Vercel
-4. Clean up temporary files (optional)
+1. Install Chrome on Raspberry Pi:
+   ```bash
+   wget https://dl.google.com/linux/direct/google-chrome-stable_current_arm64.deb
+   sudo dpkg -i google-chrome-stable_current_arm64.deb
+   sudo apt-get install -f
+   ```
 
-### Option 2: Manual Deployment Steps
+2. Create a Chrome profile for the scraper:
+   - Open Chrome
+   - Go to chrome://version
+   - Note the "Profile Path"
+   - Create a new profile named "ScraperProfile"
 
-If you prefer to perform the steps manually:
+3. Configure Chrome for headless operation:
+   ```bash
+   mkdir -p ~/.config/chromium/ScraperProfile
+   ```
 
-1. **Prepare Environment Variables**
+## Environment Configuration
+
+1. Copy the example environment file:
    ```bash
    cp .env.example .env
    ```
-   Edit `.env` with your values:
+
+2. Edit `.env` with your values:
    - `SUPABASE_URL` and `SUPABASE_KEY`: Your Supabase credentials
-   - `CHROME_PROFILE`: Set to `/tmp/chrome-profile` for Vercel
-   - Other settings as needed
+   - `CHROME_PROFILE`: Set to "ScraperProfile"
+   - Other variables can be left as default
 
-2. **Export Chrome Profile**
+## Scheduling
+
+1. Open crontab:
    ```bash
-   python export_chrome_profile.py
+   crontab -e
    ```
 
-3. **Configure .vercelignore**
+2. Add the following line to run every 5 minutes:
    ```bash
-   # Ensure Chrome profile is not ignored
-   echo "!chrome-profile/" >> .vercelignore
+   */5 * * * * cd /home/pi/positive-ev && PYTHONPATH=/home/pi/positive-ev python3 src/scraper.py && PYTHONPATH=/home/pi/positive-ev python3 src/grade_calculator.py
    ```
-
-4. **Deploy to Vercel**
-   ```bash
-   vercel --prod
-   ```
-
-## Chrome Profile Management
-
-### Why Chrome Profiles Are Needed
-
-The scraper requires a Chrome profile with valid authentication cookies to access betting data. This profile must be:
-- Manually exported from your local machine
-- Deployed to Vercel with your application
-- Updated when cookies expire
-
-### Important Note on CI/CD Deployments
-
-**CI/CD deployments will NOT include the Chrome profile.** The Chrome profile must be manually deployed from your local machine to Vercel. This is by design to ensure that:
-1. Sensitive authentication cookies are only handled by you
-2. The profile is only deployed when explicitly needed
-3. CI/CD pipelines remain clean and focused on code deployment
-
-### Updating the Chrome Profile
-
-When cookies expire or you need to update the profile:
-
-1. Log in to required websites using your local Chrome profile
-2. Run the deployment script:
-   ```bash
-   ./deploy_to_vercel.sh
-   ```
-
-### Initial Setup
-
-#### Local Development Profile
-
-1. Create a dedicated Chrome profile for scraping:
-   - Open Chrome
-   - Click on your profile icon in the top-right corner
-   - Click "Add" to create a new profile
-   - Name it "ScraperProfile" (or any name you prefer)
-   - Log in to the required websites
-
-2. Set the environment variables in your `.env` file:
-   ```
-   IS_LOCAL=1
-   CHROME_PROFILE=~/Library/Application Support/Google/Chrome/ScraperProfile
-   ```
-
-#### Vercel Deployment Profile
-
-1. Ensure you have a working local Chrome profile
-2. The deployment script will automatically:
-   - Export your profile using `export_chrome_profile.py`
-   - Create a `chrome-profile` directory in the project root
-   - Include this directory in the Vercel deployment
 
 ## Monitoring & Maintenance
 
-### Scheduled Runs
+1. Check logs:
+   ```bash
+   tail -f logs/scraper.log
+   ```
 
-The pipeline is configured to run once per day at midnight UTC. This schedule is defined in `vercel.json`:
+2. Monitor backups:
+   ```bash
+   ls -l backups/
+   ```
 
-```json
-{
-  "crons": [
-    {
-      "path": "/api/run",
-      "schedule": "0 0 * * *"
-    }
-  ]
-}
-```
-
-### Manual Runs
-
-You can trigger the pipeline manually by visiting:
-```
-https://your-vercel-app.vercel.app/api/run
-```
-
-### Monitoring Tools
-
-1. **Vercel Dashboard**
-   - View function execution logs
-   - Monitor cron job runs
-   - Check error rates and performance
-
-2. **Application Logs**
-   - Pipeline execution status
-   - Scraping results
-   - Grading calculations
+3. Check system resources:
+   ```bash
+   top
+   ```
 
 ## Troubleshooting
 
-### Common Issues
+1. If Chrome fails to start:
+   - Check Chrome installation: `google-chrome --version`
+   - Verify profile path in logs
+   - Try running with `--no-sandbox` flag
 
-1. **Chrome Profile Issues**
-   - Verify profile exists and has valid cookies
-   - Check Vercel function logs
-   - Try re-deploying with updated profile
+2. If scraper fails:
+   - Check logs for specific errors
+   - Verify internet connection
+   - Check Supabase credentials
 
-2. **Pipeline Failures**
-   - Check Vercel function logs
-   - Verify Supabase connection
-   - Check Chrome profile status
-
-3. **Deployment Issues**
-   - Verify Chrome profile was exported correctly
-   - Check `.vercelignore` configuration
-   - Review deployment logs
-
-### Getting Help
-
-1. Check the error message in the API response
-2. Review Vercel function logs
-3. Check Chrome profile status
-4. Verify environment variables 
+3. If cron job isn't running:
+   - Check cron logs: `grep CRON /var/log/syslog`
+   - Verify cron service: `sudo service cron status`
+   - Test cron job manually 

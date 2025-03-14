@@ -80,6 +80,7 @@
 │  🌐 Chrome/Chromium          │
 │  🔧 Git                      │
 │  ☁️ Vercel (optional)        │
+│  📦 pip                      │
 └─────────────────────────────────┘
 ```
 
@@ -91,12 +92,28 @@
    cd positive-ev
    ```
 
-2. **Install dependencies**:
+2. **Set up Python environment**:
    ```bash
-   pip install -r requirements.txt
+   # Create and activate virtual environment (recommended)
+   python -m venv venv
+   source venv/bin/activate  # On Unix/macOS
+   # or
+   .\venv\Scripts\activate  # On Windows
    ```
 
-3. **Set up Chrome/Chromium profile**:
+3. **Install dependencies**:
+   ```bash
+   # Install all required packages
+   pip install -r requirements.txt
+   
+   # If you encounter any issues, try installing key packages individually:
+   pip install supabase
+   pip install selenium
+   pip install pandas
+   pip install numpy
+   ```
+
+4. **Set up Chrome/Chromium profile**:
    ```ascii
    ┌─────────────────────────────────┐
    │  Chrome Profile Locations      │
@@ -111,11 +128,16 @@
    └─────────────────────────────────┘
    ```
 
-4. **Configure environment variables**:
+5. **Configure environment variables**:
    ```bash
-   # .env
-   BETFAIR_API_KEY=your_api_key
-   BETFAIR_SESSION_TOKEN=your_session_token
+   # Create .env file
+   touch .env
+   
+   # Add required variables
+   echo "BETFAIR_API_KEY=your_api_key" >> .env
+   echo "BETFAIR_SESSION_TOKEN=your_session_token" >> .env
+   echo "SUPABASE_URL=your_supabase_url" >> .env
+   echo "SUPABASE_KEY=your_supabase_key" >> .env
    ```
 
 ## 📁 Project Structure
@@ -141,12 +163,21 @@ positive-ev/
 
 ### 🏠 Local Development
 
-1. **Start the scraper**:
+1. **Set PYTHONPATH**:
+   ```bash
+   # For Unix/macOS
+   export PYTHONPATH=$PYTHONPATH:$(pwd)
+   
+   # For Windows (PowerShell)
+   $env:PYTHONPATH = "$env:PYTHONPATH;$(pwd)"
+   ```
+
+2. **Start the scraper**:
    ```bash
    python src/scraper.py
    ```
 
-2. **Run bet evaluation**:
+3. **Run bet evaluation**:
    ```bash
    python src/grade_calculator.py
    ```
@@ -167,8 +198,12 @@ positive-ev/
 ```
 
 ```bash
-# Run every 5 minutes
-*/5 * * * * cd /path/to/project && python src/scraper.py && python src/grade_calculator.py
+# Add to crontab (crontab -e)
+*/5 * * * * cd /path/to/project && \
+    PYTHONPATH=/path/to/project \
+    /path/to/python src/scraper.py && \
+    PYTHONPATH=/path/to/project \
+    /path/to/python src/grade_calculator.py
 ```
 
 ### ☁️ Vercel Deployment
@@ -220,7 +255,21 @@ positive-ev/
 
 ### 🚨 Common Issues
 
-1. **Chrome Profile Not Found**
+1. **Import Errors**
+   ```ascii
+   ┌─────────────────────────────────┐
+   │  Import Error Solutions        │
+   ├─────────────────────────────────┤
+   │  1. Set PYTHONPATH            │
+   │  2. Check virtual environment  │
+   │  3. Verify package install     │
+   └─────────────────────────────────┘
+   ```
+   - Ensure PYTHONPATH is set correctly
+   - Verify you're in the virtual environment
+   - Check if all packages are installed
+
+2. **Chrome Profile Not Found**
    ```ascii
    ┌─────────────────────────────────┐
    │  Troubleshooting Steps        │
@@ -231,7 +280,7 @@ positive-ev/
    └─────────────────────────────────┘
    ```
 
-2. **API Connection Issues**
+3. **API Connection Issues**
    ```ascii
    ┌─────────────────────────────────┐
    │  Connection Checklist          │
@@ -242,7 +291,7 @@ positive-ev/
    └─────────────────────────────────┘
    ```
 
-3. **Data Collection Errors**
+4. **Data Collection Errors**
    ```ascii
    ┌─────────────────────────────────┐
    │  Error Resolution             │

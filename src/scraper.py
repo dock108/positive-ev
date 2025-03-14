@@ -9,31 +9,17 @@ import sys
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
-# Import from new consolidated modules
-try:
-    # Try relative imports (when used as a module)
-    from .config import (
-        TARGET_URL, PAGE_LOAD_WAIT, BACKUP_RETENTION_DAYS,
-        SELECTORS, SCRAPER_LOG_FILE, BACKUP_DIR, SUPABASE_BATCH_SIZE,
-        setup_logging
-    )
-    from .common_utils import (
-        cleanup_logs, fix_event_time, generate_bet_id
-    )
-    from .supabase_client import batch_upsert
-    from .chrome_utils import setup_chrome_driver
-except ImportError:
-    # Fall back to absolute imports (when run directly)
-    from src.config import (
-        TARGET_URL, PAGE_LOAD_WAIT, BACKUP_RETENTION_DAYS,
-        SELECTORS, SCRAPER_LOG_FILE, BACKUP_DIR, SUPABASE_BATCH_SIZE,
-        setup_logging
-    )
-    from src.common_utils import (
-        cleanup_logs, fix_event_time, generate_bet_id
-    )
-    from src.supabase_client import batch_upsert
-    from src.chrome_utils import setup_chrome_driver
+# Import from src modules
+from src.config import (
+    TARGET_URL, PAGE_LOAD_WAIT, BACKUP_RETENTION_DAYS,
+    SELECTORS, SCRAPER_LOG_FILE, BACKUP_DIR, SUPABASE_BATCH_SIZE,
+    setup_logging
+)
+from src.common_utils import (
+    cleanup_logs, fix_event_time, generate_bet_id
+)
+from src.supabase_client import batch_upsert
+from src.chrome_utils import setup_chrome_driver
 
 # Initialize logger
 logger = setup_logging(SCRAPER_LOG_FILE, "scraper")
