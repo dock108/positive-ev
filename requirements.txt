@@ -1,0 +1,15 @@
+beautifulsoup4==4.12.2
+selenium==4.15.2
+webdriver-manager==4.0.1
+supabase==2.0.3
+python-dotenv==1.0.0
+requests==2.31.0
+pandas==2.1.3
+numpy==1.26.2
+pytz==2023.3.post1
+httpx>=0.24.1
+urllib3>=2.0.0
+certifi>=2023.5.7
+charset-normalizer>=3.1.0
+idna>=3.4
+zipfile36>=0.1.3 
