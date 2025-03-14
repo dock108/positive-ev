@@ -1,163 +1,280 @@
-# Positive EV
+# 🎲 Positive EV Sports Betting System
 
-A betting analytics platform that scrapes positive EV betting opportunities and calculates bet grades.
-
-## Features
-
-- Automated scraping of betting opportunities
-- Advanced bet grading system
-- Real-time analytics and insights
-- Cross-platform support (macOS, Linux, Raspberry Pi)
-- Automated deployment to Vercel
-- Daily scheduled pipeline runs
-
-## Quick Start
-
-### Prerequisites
-
-1. A Vercel account (optional, for cloud deployment)
-2. Vercel CLI installed: `npm install -g vercel` (optional)
-3. Python 3.8 or higher
-4. Chrome/Chromium browser
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/positive-ev.git
-cd positive-ev
+```ascii
+    ____            _           _    __     ___    ___
+   / __ \____  ____(_)__  _____/ |  / /__  / _ \  / _ \
+  / /_/ / __ \/ __/ / _ \/ ___/  | / / _ \/ / / / / / / /
+ / ____/ /_/ / /_/ /  __/ /  | | |/ /  __/ /_/ / / /_/ /
+/_/    \____/\__/_/\___/_/   |_|___/\___/\____/  \____/
 ```
 
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
+> *Because why gamble on your future when you can mathematically optimize it?* 🤓
+
+## 🚀 Features
+
+### 📊 Real-time Odds Monitoring
+```ascii
+┌─────────────────────────────────┐
+│  Live Odds Tracking System      │
+├─────────────────────────────────┤
+│  ⚡ Real-time updates           │
+│  🔄 Automated comparisons      │
+│  📈 Historical analysis        │
+└─────────────────────────────────┘
+```
+- Live tracking of odds across multiple sportsbooks
+- Automated odds comparison and arbitrage detection
+- Historical odds tracking and analysis
+
+### 🎯 Bet Evaluation System
+```ascii
+┌─────────────────────────────────┐
+│  Advanced Grading Algorithm     │
+├─────────────────────────────────┤
+│  ⭐ Quality assessment         │
+│  📊 Performance tracking       │
+│  💰 Risk optimization         │
+└─────────────────────────────────┘
+```
+- Advanced grading system for bet quality
+- Historical performance tracking
+- Automated bet recommendations
+- Risk management and bankroll optimization
+
+### 💾 Data Management
+```ascii
+┌─────────────────────────────────┐
+│  Data Integrity Pipeline       │
+├─────────────────────────────────┤
+│  🔄 Automated collection      │
+│  💾 Secure storage            │
+│  🔒 Backup systems           │
+└─────────────────────────────────┘
+```
+- Automated data collection and storage
+- Historical data analysis
+- Backup and recovery systems
+- Data integrity validation
+
+### 🌐 Cross-platform Support
+```ascii
+┌─────────────────────────────────┐
+│  Platform Compatibility        │
+├─────────────────────────────────┤
+│  🍎 macOS                     │
+│  🐧 Linux                     │
+│  🍓 Raspberry Pi              │
+└─────────────────────────────────┘
+```
+- macOS, Linux, and Raspberry Pi compatibility
+- Automated environment detection
+- Platform-specific optimizations
+
+## 🛠️ Prerequisites
+
+```ascii
+┌─────────────────────────────────┐
+│  Required Components           │
+├─────────────────────────────────┤
+│  🐍 Python 3.8+               │
+│  🌐 Chrome/Chromium          │
+│  🔧 Git                      │
+│  ☁️ Vercel (optional)        │
+└─────────────────────────────────┘
 ```
 
-3. Copy the example environment file:
-```bash
-cp .env.example .env
-```
+## 📦 Installation
 
-4. Edit `.env` with your configuration:
-- `SUPABASE_URL` and `SUPABASE_KEY`: Your Supabase credentials
-- Other settings as needed
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/yourusername/positive-ev.git
+   cd positive-ev
+   ```
 
-### Deployment Options
+2. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-#### Local Development (macOS)
-The scraper will automatically use your Chrome profile at:
-```
-~/Library/Application Support/Google/Chrome/ScraperProfile
-```
+3. **Set up Chrome/Chromium profile**:
+   ```ascii
+   ┌─────────────────────────────────┐
+   │  Chrome Profile Locations      │
+   ├─────────────────────────────────┤
+   │  🍎 macOS:                     │
+   │     ~/Library/Application      │
+   │     Support/Google/Chrome/     │
+   │  🐧 Linux:                     │
+   │     ~/.config/google-chrome/   │
+   │  🍓 Raspberry Pi:              │
+   │     ~/.config/chromium/        │
+   └─────────────────────────────────┘
+   ```
 
-#### Raspberry Pi Deployment
-The scraper will automatically use the Chromium profile at:
-```
-~/.config/chromium/Default
-```
+4. **Configure environment variables**:
+   ```bash
+   # .env
+   BETFAIR_API_KEY=your_api_key
+   BETFAIR_SESSION_TOKEN=your_session_token
+   ```
 
-#### Vercel Deployment (Optional)
-For cloud deployment:
-```bash
-chmod +x deploy_to_vercel.sh
-./deploy_to_vercel.sh
-```
+## 📁 Project Structure
 
-For detailed deployment instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md).
-
-## Development
-
-### Running Locally
-
-```bash
-# Run the complete pipeline
-python src/run_pipeline.py
-
-# Or run individual components
-python src/scraper.py
-python src/grade_calculator.py
-```
-
-### Project Structure
-
-```
+```ascii
 positive-ev/
-├── api/                # Vercel serverless function
-├── src/               # Source code
-│   ├── scraper.py    # Web scraping logic
-│   ├── grade_calculator.py  # Bet grading logic
-│   └── ...
-├── tests/            # Test files
-└── docs/             # Documentation
+├── src/                    # 🧠 Source code
+│   ├── scraper.py         # 🕷️ Odds scraping
+│   ├── grade_calculator.py # 📊 Bet evaluation
+│   ├── config.py          # ⚙️ Configuration
+│   └── utils/             # 🛠️ Utilities
+├── logs/                   # 📝 Application logs
+├── data/                   # 💾 Data storage
+│   ├── odds/              # 📈 Historical odds
+│   ├── bets/              # 🎲 Bet history
+│   └── backups/           # 💾 Data backups
+├── tests/                  # 🧪 Test suite
+├── docs/                   # 📚 Documentation
+└── scripts/               # 🔧 Utility scripts
 ```
 
-### Key Components
+## 🚀 Usage
 
-1. **Scraper**: Collects betting opportunities from various sources
-2. **Grade Calculator**: Analyzes and grades betting opportunities
-3. **Pipeline**: Orchestrates the entire process
-4. **API**: Single serverless endpoint for scheduled runs
+### 🏠 Local Development
 
-## Configuration
+1. **Start the scraper**:
+   ```bash
+   python src/scraper.py
+   ```
 
-### Environment Variables
+2. **Run bet evaluation**:
+   ```bash
+   python src/grade_calculator.py
+   ```
 
-- `SUPABASE_URL`: Your Supabase project URL
-- `SUPABASE_KEY`: Your Supabase API key
-- See `.env.example` for all options
+### ⏰ Automated Scheduling
 
-### Chrome/Chromium Profile
+```ascii
+┌─────────────────────────────────┐
+│  Crontab Configuration         │
+├─────────────────────────────────┤
+│  */5 * * * *                   │
+│  └─┬─┘ └─┬─┘ └─┬─┘ └─┬─┘      │
+│    │     │     │     └─ Day   │
+│    │     │     └────── Month  │
+│    │     └──────────── Week   │
+│    └────────────────── Hour    │
+└─────────────────────────────────┘
+```
 
-The application automatically detects and uses the appropriate Chrome/Chromium profile based on your operating system:
-- macOS: `~/Library/Application Support/Google/Chrome/ScraperProfile`
-- Linux/Raspberry Pi: `~/.config/chromium/Default`
+```bash
+# Run every 5 minutes
+*/5 * * * * cd /path/to/project && python src/scraper.py && python src/grade_calculator.py
+```
 
-### Scheduled Runs
+### ☁️ Vercel Deployment
 
-The pipeline runs automatically:
-- Every 5 minutes (configurable)
-- At 2 and 32 minutes past every hour
-- Configurable via crontab
+1. **Install Vercel CLI**:
+   ```bash
+   npm install -g vercel
+   ```
 
-## Documentation
+2. **Deploy to Vercel**:
+   ```bash
+   ./deploy_to_vercel.sh
+   ```
 
-- [Deployment Guide](./DEPLOYMENT.md) - Detailed deployment instructions
-- [Changelog](./CHANGELOG.md) - Version history and updates
+3. **Configure environment variables** in Vercel dashboard
 
-## Troubleshooting
+## 💾 Data Management
 
-### Common Issues
+### 🔄 Backup System
 
-1. **Chrome/Chromium Profile Issues**
-   - Verify profile exists and has valid cookies
-   - Check logs for detailed error messages
-   - Ensure proper permissions on profile directory
+```ascii
+┌─────────────────────────────────┐
+│  Backup Rotation Schedule      │
+├─────────────────────────────────┤
+│  📅 Daily backups              │
+│  🔄 7-day rotation            │
+│  🧹 Auto cleanup              │
+└─────────────────────────────────┘
+```
 
-2. **Pipeline Failures**
-   - Check logs in the `logs` directory
-   - Verify Supabase connection
-   - Check Chrome/Chromium profile status
+### 📝 Logging
 
-3. **Deployment Issues**
-   - Review deployment logs
-   - Check environment variables
-   - Verify file permissions
+```ascii
+┌─────────────────────────────────┐
+│  Log File Structure           │
+├─────────────────────────────────┤
+│  scraper.log                  │
+│  ├── Odds scraping           │
+│  └── Data collection         │
+│  grade_calculator.log         │
+│  ├── Bet evaluation          │
+│  └── Performance metrics     │
+│  error.log                    │
+│  └── Error tracking          │
+└─────────────────────────────────┘
+```
 
-### Getting Help
+## 🔧 Troubleshooting
 
-1. Check the error message in the logs
-2. Review the relevant log files
-3. Check Chrome/Chromium profile status
-4. Verify environment variables
+### 🚨 Common Issues
 
-## Contributing
+1. **Chrome Profile Not Found**
+   ```ascii
+   ┌─────────────────────────────────┐
+   │  Troubleshooting Steps        │
+   ├─────────────────────────────────┤
+   │  1. Verify installation       │
+   │  2. Check profile path        │
+   │  3. Verify permissions        │
+   └─────────────────────────────────┘
+   ```
 
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+2. **API Connection Issues**
+   ```ascii
+   ┌─────────────────────────────────┐
+   │  Connection Checklist          │
+   ├─────────────────────────────────┤
+   │  🔑 API keys valid            │
+   │  🌐 Internet connected        │
+   │  ⚡ Rate limits ok            │
+   └─────────────────────────────────┘
+   ```
 
-## License
+3. **Data Collection Errors**
+   ```ascii
+   ┌─────────────────────────────────┐
+   │  Error Resolution             │
+   ├─────────────────────────────────┤
+   │  📝 Check logs                │
+   │  🔒 Verify permissions        │
+   │  💾 Check disk space          │
+   └─────────────────────────────────┘
+   ```
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 
+## 🤝 Contributing
+
+```ascii
+┌─────────────────────────────────┐
+│  Contribution Process          │
+├─────────────────────────────────┤
+│  1. 🍴 Fork repository         │
+│  2. 🌿 Create feature branch   │
+│  3. 💾 Commit changes          │
+│  4. 📤 Push to branch          │
+│  5. 🔄 Create Pull Request     │
+└─────────────────────────────────┘
+```
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 💬 Support
+
+For support, please open an issue in the GitHub repository or contact the maintainers.
+
+---
+
+*Made with ❤️ by math-loving betting enthusiasts* 🎲 
