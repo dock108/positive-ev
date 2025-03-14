@@ -36,8 +36,17 @@ fi
 
 echo "Chrome profile exported successfully."
 
-# Step 2: Deploy to Vercel
-echo "=== Step 2: Deploying to Vercel ==="
+# Step 2: Ensure .vercelignore is properly configured
+echo "=== Step 2: Checking .vercelignore configuration ==="
+if ! grep -q "!chrome-profile/" .vercelignore; then
+    echo "Adding chrome-profile to .vercelignore exceptions..."
+    echo "!chrome-profile/" >> .vercelignore
+fi
+
+echo ".vercelignore configured correctly."
+
+# Step 3: Deploy to Vercel
+echo "=== Step 3: Deploying to Vercel ==="
 echo "Would you like to deploy to production? (y/n)"
 read -r deploy_prod
 
@@ -49,8 +58,8 @@ else
     vercel
 fi
 
-# Step 3: Clean up (optional)
-echo "=== Step 3: Clean up ==="
+# Step 4: Clean up (optional)
+echo "=== Step 4: Clean up ==="
 echo "Would you like to remove the local chrome-profile directory? (y/n)"
 read -r cleanup
 

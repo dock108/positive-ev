@@ -1,39 +1,21 @@
 {
   "version": 2,
-  "name": "positive-ev",
   "builds": [
     {
-      "src": "src/run_pipeline.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/vercel_handler.py",
+      "src": "api/run.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
-      "src": "/api/run_pipeline",
-      "dest": "api/vercel_handler.py"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "src/run_pipeline.py"
+      "src": "/api/run",
+      "dest": "api/run.py"
     }
   ],
   "crons": [
     {
-      "path": "/api/run_pipeline",
-      "schedule": "*/5 * * * *"
+      "path": "/api/run",
+      "schedule": "0 0 * * *"
     }
-  ],
-  "env": {
-    "PYTHONPATH": ".",
-    "ENVIRONMENT": "staging",
-    "VERCEL": "1",
-    "IS_LOCAL": "0"
-  },
-  "includeFiles": [
-    "chrome-profile/**"
   ]
 } 

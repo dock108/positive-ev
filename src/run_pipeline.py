@@ -20,17 +20,17 @@ sys.path.insert(0, project_root)
 # Import from new consolidated modules
 try:
     # Try relative imports (when used as a module)
-    from .config import setup_logging
+    from .config import setup_logging, LOGS_DIR
     from .scraper import main as run_scraper
     from .grade_calculator import main as run_grade_calculator
 except ImportError:
     # Fall back to absolute imports (when run directly)
-    from src.config import setup_logging
+    from src.config import setup_logging, LOGS_DIR
     from src.scraper import main as run_scraper
     from src.grade_calculator import main as run_grade_calculator
 
 # Initialize logger
-logger = setup_logging(os.path.join(project_root, "logs", "pipeline.log"), "pipeline")
+logger = setup_logging(os.path.join(LOGS_DIR, "pipeline.log"), "pipeline")
 
 def run_pipeline(scrape=True, grade=True, full_grade=False, setup_chrome=False):
     """

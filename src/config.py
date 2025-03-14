@@ -6,10 +6,20 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+# Environment detection
+IS_LOCAL = os.environ.get('IS_LOCAL', '0') == '1'
+IS_VERCEL = os.environ.get('VERCEL', '0') == '1'
+
 # Project structure - use relative path approach
 PROJECT_ROOT = Path(__file__).parent.parent.absolute()
-LOGS_DIR = Path(PROJECT_ROOT) / "logs"
-BACKUP_DIR = Path(PROJECT_ROOT) / "backups"
+
+# Use /tmp directory for logs and backups when running on Vercel
+if IS_VERCEL:
+    LOGS_DIR = Path('/tmp/logs')
+    BACKUP_DIR = Path('/tmp/backups')
+else:
+    LOGS_DIR = Path(PROJECT_ROOT) / "logs"
+    BACKUP_DIR = Path(PROJECT_ROOT) / "backups"
 
 # Ensure all directories exist
 for directory in [LOGS_DIR, BACKUP_DIR]:
@@ -29,10 +39,6 @@ LOG_RETENTION_HOURS = int(os.environ.get('LOG_RETENTION_HOURS', '4'))
 # Scraping Configuration
 TARGET_URL = "https://oddsjam.com/betting-tools/positive-ev"
 PAGE_LOAD_WAIT = int(os.environ.get('PAGE_LOAD_WAIT', '10'))
-
-# Environment detection
-IS_LOCAL = os.environ.get('IS_LOCAL', '0') == '1'
-IS_VERCEL = os.environ.get('VERCEL', '0') == '1'
 
 # Chrome Configuration
 if IS_LOCAL:
@@ -97,7 +103,12 @@ def setup_logging(log_file, name, clean_logs=True):
     
     # Clean old log entries if requested
     if clean_logs:
-        from common_utils import cleanup_logs
+        try:
+            # Try relative imports (when used as a module)
+            from .common_utils import cleanup_logs
+        except ImportError:
+            # Fall back to absolute imports (when run directly)
+            from src.common_utils import cleanup_logs
         cleanup_logs(log_file, LOG_RETENTION_HOURS)
     
     return logger 

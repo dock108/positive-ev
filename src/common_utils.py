@@ -2,7 +2,14 @@ import os
 import logging
 import hashlib
 from datetime import datetime, timedelta
-from config import LOG_RETENTION_HOURS
+
+# Try both relative and absolute imports
+try:
+    # Try relative imports (when used as a module)
+    from .config import LOG_RETENTION_HOURS
+except ImportError:
+    # Fall back to absolute imports (when run directly)
+    from src.config import LOG_RETENTION_HOURS
 
 def safe_float(value, strip_chars='%$'):
     """Safely convert string to float, handling N/A and other invalid values."""

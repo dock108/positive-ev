@@ -55,4 +55,6 @@ LICENSE
 # Don't ignore key application files
 !requirements.txt
 !vercel.json
-!src/ 
+!src/
+!api/
+!chrome-profile/ 
