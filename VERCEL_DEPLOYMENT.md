@@ -8,7 +8,34 @@ This guide explains how to deploy the Positive EV betting data pipeline to Verce
 2. The Vercel CLI installed (`npm i -g vercel`)
 3. A Chrome profile with any necessary login sessions
 
-## Deployment Steps
+## Deployment Options
+
+We now offer multiple deployment options to suit different needs:
+
+1. **Automated Deployment Script (Recommended)** - One-step deployment with Chrome profile handling
+2. **Remote Chrome Profile** - Store your Chrome profile externally and download it during initialization
+3. **Manual Deployment** - Traditional approach with manual steps
+
+For detailed instructions on each option, see [CHROME_PROFILE_DEPLOYMENT.md](./CHROME_PROFILE_DEPLOYMENT.md).
+
+## Option 1: Automated Deployment Script (Recommended)
+
+The simplest approach is to use our automated deployment script:
+
+```bash
+# Make the script executable
+chmod +x deploy_to_vercel.sh
+
+# Run the deployment script
+./deploy_to_vercel.sh
+```
+
+This script will:
+1. Export your Chrome profile from your local machine
+2. Deploy the application to Vercel
+3. Clean up temporary files (optional)
+
+## Option 2: Manual Deployment Steps
 
 ### 1. Prepare Your Environment Variables
 
@@ -27,17 +54,11 @@ Edit the `.env` file with your actual values:
 
 To use your existing Chrome profile on Vercel, you need to export the essential files:
 
-1. Locate your Chrome profile directory (typically in `~/.config/google-chrome/Default` on Linux, `~/Library/Application Support/Google/Chrome/Default` on macOS, or `%LOCALAPPDATA%\Google\Chrome\User Data\Default` on Windows)
+```bash
+python export_chrome_profile.py
+```
 
-2. Create a ZIP file of the essential profile files:
-   ```bash
-   cd /path/to/your/chrome/profile
-   zip -r chrome-profile.zip Cookies Preferences Login\ Data Web\ Data Bookmarks History Favicons Shortcuts "Local Storage"
-   ```
-
-3. Upload this ZIP file to a secure location (e.g., a private S3 bucket)
-
-4. In your Vercel deployment, you'll need to download and extract this ZIP file to the `/tmp/chrome-profile` directory during initialization
+This will create a `chrome-profile` directory in your project root with the necessary files.
 
 ### 3. Set Up Vercel Environment Variables
 
@@ -47,14 +68,13 @@ When deploying to Vercel, you'll need to set up the following environment variab
 2. Go to your project settings
 3. Navigate to the "Environment Variables" section
 4. Add all the variables from your `.env` file
-5. Add an additional variable `CHROME_PROFILE_URL` pointing to your uploaded Chrome profile ZIP file
 
 ### 4. Deploy to Vercel
 
 Deploy your project to Vercel using the CLI:
 
 ```bash
-vercel
+vercel --prod
 ```
 
 Follow the prompts to link your project to your Vercel account.
@@ -68,11 +88,34 @@ Vercel Cron Jobs are available on paid plans. To enable the cron job:
 3. Verify that the cron job is set up to run every 5 minutes (`*/5 * * * *`)
 4. Enable the cron job
 
+## Option 3: Remote Chrome Profile
+
+For more advanced deployments, you can store your Chrome profile in a remote location and have it downloaded during function initialization:
+
+1. Export and zip your Chrome profile:
+   ```bash
+   python export_chrome_profile.py
+   cd chrome-profile
+   zip -r ../chrome-profile.zip .
+   cd ..
+   ```
+
+2. Upload the ZIP file to a secure location
+
+3. Set the `CHROME_PROFILE_URL` environment variable in your Vercel project
+
+4. Deploy to Vercel:
+   ```bash
+   vercel --prod
+   ```
+
+For more details, see [CHROME_PROFILE_DEPLOYMENT.md](./CHROME_PROFILE_DEPLOYMENT.md).
+
 ## How It Works
 
 1. The cron job triggers the `/api/run_pipeline` endpoint every 5 minutes
 2. The API handler:
-   - Sets up the Chrome profile by downloading and extracting your profile ZIP
+   - Sets up the Chrome profile (either from the deployment or by downloading it)
    - Runs the scraper to collect new betting data
    - Runs the grade calculator to grade new bets
    - Returns a JSON response with the results
@@ -84,7 +127,7 @@ Vercel Cron Jobs are available on paid plans. To enable the cron job:
 If you encounter issues with the Chrome profile:
 
 1. Check the logs in the Vercel dashboard
-2. Verify that your Chrome profile ZIP file is accessible
+2. Verify that your Chrome profile is properly set up
 3. Try running with a fresh profile by setting `SOURCE_CHROME_PROFILE` to an empty string
 
 ### Cron Job Not Running

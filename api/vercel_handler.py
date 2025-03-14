@@ -12,8 +12,9 @@ sys.path.insert(0, project_root)
 # Import the necessary modules
 try:
     from src.config import setup_logging, CHROME_PROFILE, IS_VERCEL
-    from src.setup_chrome_profile import setup_chrome_profile
     from src.run_pipeline import run_pipeline
+    # Import the new Vercel-specific Chrome profile setup
+    from api.setup_chrome_profile_vercel import download_and_setup_chrome_profile
 except ImportError as e:
     print(f"Error importing modules: {e}")
     sys.exit(1)
@@ -38,34 +39,10 @@ class handler(BaseHTTPRequestHandler):
             logger.info(f"Using Chrome profile at: {CHROME_PROFILE}")
             logger.info(f"Running on Vercel: {IS_VERCEL}")
             
-            # Step 1: Verify Chrome profile
-            logger.info("Verifying Chrome profile")
-            if not os.path.exists(CHROME_PROFILE):
-                error_msg = f"Chrome profile directory does not exist: {CHROME_PROFILE}"
-                logger.error(error_msg)
-                logger.error("The Chrome profile must be manually copied during deployment")
-                logger.error(f"Current directory contents: {os.listdir(project_root)}")
-                
-                response = {
-                    "status": "error", 
-                    "message": error_msg,
-                    "project_root": project_root,
-                    "directory_contents": os.listdir(project_root)
-                }
-                self.wfile.write(json.dumps(response).encode())
-                return
-                
-            # Log Chrome profile contents
-            logger.info(f"Chrome profile exists at: {CHROME_PROFILE}")
-            try:
-                profile_contents = os.listdir(CHROME_PROFILE)
-                logger.info(f"Chrome profile contents: {profile_contents}")
-            except Exception as e:
-                logger.error(f"Error listing Chrome profile contents: {str(e)}")
-                
-            # Verify Chrome profile setup
-            if not setup_chrome_profile():
-                error_msg = "Failed to verify Chrome profile"
+            # Step 1: Set up Chrome profile using the new method
+            logger.info("Setting up Chrome profile")
+            if not download_and_setup_chrome_profile():
+                error_msg = "Failed to set up Chrome profile"
                 logger.error(error_msg)
                 response = {
                     "status": "error", 
@@ -74,7 +51,7 @@ class handler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps(response).encode())
                 return
                 
-            logger.info("Chrome profile verified successfully")
+            logger.info("Chrome profile set up successfully")
             
             # Step 2: Run the pipeline
             logger.info("Running pipeline (scrape + grade)")

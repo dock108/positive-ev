@@ -14,7 +14,46 @@ This project is configured for deployment to Vercel with automated cron jobs for
 
 ### Deployment Methods
 
-#### Option 1: Automated Deployment (Recommended)
+#### Option 1: Automated Deployment Script (Recommended)
+
+We now provide an automated deployment script that handles the Chrome profile export and Vercel deployment in one step:
+
+```bash
+# Make the script executable
+chmod +x deploy_to_vercel.sh
+
+# Run the deployment script
+./deploy_to_vercel.sh
+```
+
+The script will:
+1. Export your Chrome profile from your local machine
+2. Deploy the application to Vercel
+3. Clean up temporary files (optional)
+
+#### Option 2: Remote Chrome Profile (Advanced)
+
+For more advanced deployments, you can store your Chrome profile in a remote location (e.g., S3, GitHub, etc.) and have it downloaded during function initialization:
+
+1. Export your Chrome profile to a ZIP file:
+   ```bash
+   python export_chrome_profile.py
+   cd chrome-profile
+   zip -r ../chrome-profile.zip .
+   ```
+
+2. Upload the ZIP file to a secure location (e.g., S3, GitHub, etc.)
+
+3. Set the `CHROME_PROFILE_URL` environment variable in your Vercel project to point to the ZIP file URL
+
+4. Deploy to Vercel:
+   ```bash
+   vercel --prod
+   ```
+
+The application will automatically download and set up the Chrome profile during initialization.
+
+#### Option 3: GitHub Actions (CI/CD)
 
 This project uses GitHub Actions to automatically deploy to Vercel whenever changes are pushed to:
 - `main` branch → Production environment
@@ -22,9 +61,7 @@ This project uses GitHub Actions to automatically deploy to Vercel whenever chan
 
 For setup instructions, see [GitHub Actions Setup Guide](./docs/GITHUB_ACTIONS_SETUP.md).
 
-**Note**: The Chrome profile setup must still be done manually after deployment.
-
-#### Option 2: Manual Deployment
+#### Option 4: Manual Deployment
 
 1. **Clone the repository**
 
