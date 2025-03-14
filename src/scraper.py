@@ -1,9 +1,10 @@
 import os
+import sys
 import time
 import json
+import csv
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
-import sys
 
 # Add the project root to Python path
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -13,7 +14,7 @@ sys.path.insert(0, project_root)
 from src.config import (
     TARGET_URL, PAGE_LOAD_WAIT, BACKUP_RETENTION_DAYS,
     SELECTORS, SCRAPER_LOG_FILE, BACKUP_DIR, SUPABASE_BATCH_SIZE,
-    setup_logging
+    CSV_FILE, setup_logging
 )
 from src.common_utils import (
     cleanup_logs, fix_event_time, generate_bet_id
@@ -189,14 +190,14 @@ def upsert_data(data):
             "betid_timestamp": row["betid_timestamp"],
             "ev_percent": row.get("EV Percent", ""),
             "event_time": row.get("Event Time", ""),
-            "home_team": "",  # Will be parsed from Event Teams
-            "away_team": "",  # Will be parsed from Event Teams
-            "sport": "",      # Will be parsed from Sport/League
-            "league": "",     # Will be parsed from Sport/League
-            "prop_type": row.get("Bet Type", ""),
-            "participant": "",  # Will be parsed from Description
-            "prop_line": "",    # Will be parsed from Description
-            "bet_category": "",  # Will be determined based on Bet Type
+            "home_team": "",      # Will be parsed from Event Teams
+            "away_team": "",      # Will be parsed from Event Teams
+            "sport": "",          # Will be parsed from Sport/League
+            "league": "",         # Will be parsed from Sport/League
+            "bet_type": "",       # Will be parsed from Bet Type
+            "participant": "",    # Will be parsed from Description
+            "bet_line": "",      # Will be parsed from Description
+            "bet_category": "",   # Will be determined based on Bet Type
             "odds": row.get("Odds", ""),
             "sportsbook": row.get("Sportsbook", ""),
             "bet_size": row.get("Bet Size", ""),
@@ -220,7 +221,48 @@ def upsert_data(data):
                 record["sport"] = parts[0].strip()
                 record["league"] = parts[1].strip()
         
-        # TODO: Add parsing logic for participant, prop_line, and bet_category
+        # Parse bet_type and bet_category from Bet Type
+        bet_type = row.get("Bet Type", "")
+        if bet_type:
+            # Store original bet type
+            record["bet_type"] = bet_type.strip()
+            
+            # Determine category
+            if "Player" in bet_type:
+                record["bet_category"] = "Player Props"
+            elif "Moneyline" in bet_type:
+                record["bet_category"] = "Moneyline"
+            elif "Point Spread" in bet_type or "Spread" in bet_type:
+                record["bet_category"] = "Spread"
+            elif "Total" in bet_type:
+                record["bet_category"] = "Total"
+            else:
+                record["bet_category"] = "Other"
+
+        # Parse participant and bet_line from Description
+        description = row.get("Description", "")
+        if description and description != "N/A":
+            # Split on Over/Under if present
+            if "Over" in description:
+                parts = description.split("Over")
+                record["participant"] = parts[0].strip()
+                record["bet_line"] = f"Over {parts[1].strip()}"
+            elif "Under" in description:
+                parts = description.split("Under")
+                record["participant"] = parts[0].strip()
+                record["bet_line"] = f"Under {parts[1].strip()}"
+            else:
+                # For moneyline bets or other types, use the whole description
+                record["participant"] = description.strip()
+                record["bet_line"] = ""  # No line for moneyline bets
+
+        # Clean up numeric fields
+        if record["ev_percent"]:
+            record["ev_percent"] = record["ev_percent"].replace("%", "").strip()
+        if record["win_probability"]:
+            record["win_probability"] = record["win_probability"].replace("%", "").strip()
+        if record["bet_size"]:
+            record["bet_size"] = record["bet_size"].replace("$", "").replace(",", "").strip()
         
         supabase_records.append(record)
     
@@ -228,6 +270,104 @@ def upsert_data(data):
     batch_upsert("betting_data", supabase_records, "betid_timestamp", SUPABASE_BATCH_SIZE)
     
     logger.info(f"Successfully processed {len(data)} records")
+
+def update_csv_backup(data):
+    """Update the CSV backup with new betting data."""
+    try:
+        # Define CSV headers based on Supabase schema
+        headers = [
+            "bet_id", "timestamp", "betid_timestamp", "ev_percent", "event_time",
+            "home_team", "away_team", "sport", "league", "bet_type",
+            "participant", "bet_line", "bet_category", "odds", "sportsbook",
+            "bet_size", "win_probability", "result"
+        ]
+
+        # Check if file exists to determine if we need to write headers
+        file_exists = os.path.exists(CSV_FILE)
+
+        # Open in append mode
+        with open(CSV_FILE, 'a', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=headers)
+            
+            # Write headers if file is new
+            if not file_exists:
+                writer.writeheader()
+
+            # Convert and write each record
+            for row in data:
+                # Create record with Supabase schema
+                record = {
+                    "bet_id": row["bet_id"],
+                    "timestamp": row["timestamp"],
+                    "betid_timestamp": row["betid_timestamp"],
+                    "ev_percent": row.get("EV Percent", ""),
+                    "event_time": row.get("Event Time", ""),
+                    "home_team": "",    # Will be parsed from Event Teams
+                    "away_team": "",    # Will be parsed from Event Teams
+                    "sport": "",        # Will be parsed from Sport/League
+                    "league": "",       # Will be parsed from Sport/League
+                    "bet_type": row.get("Bet Type", ""),
+                    "participant": "",  # Will be parsed from Description
+                    "bet_line": "",    # Will be parsed from Description
+                    "bet_category": "", # Will be determined based on Bet Type
+                    "odds": row.get("Odds", ""),
+                    "sportsbook": row.get("Sportsbook", ""),
+                    "bet_size": row.get("Bet Size", ""),
+                    "win_probability": row.get("Win Probability", ""),
+                    "result": ""
+                }
+
+                # Parse team names from Event Teams
+                event_teams = row.get("Event Teams", "")
+                if event_teams and event_teams != "N/A":
+                    parts = event_teams.split(" vs ")
+                    if len(parts) >= 2:
+                        record["home_team"] = parts[0].strip()
+                        record["away_team"] = parts[1].strip()
+
+                # Parse sport and league from Sport/League
+                sport_league = row.get("Sport/League", "")
+                if sport_league and sport_league != "N/A":
+                    parts = sport_league.split("|")
+                    if len(parts) >= 2:
+                        record["sport"] = parts[0].strip()
+                        record["league"] = parts[1].strip()
+
+                # Parse participant and bet_line from Description
+                description = row.get("Description", "")
+                if description and description != "N/A":
+                    # Split on Over/Under if present
+                    if "Over" in description:
+                        parts = description.split("Over")
+                        record["participant"] = parts[0].strip()
+                        record["bet_line"] = f"Over {parts[1].strip()}"
+                    elif "Under" in description:
+                        parts = description.split("Under")
+                        record["participant"] = parts[0].strip()
+                        record["bet_line"] = f"Under {parts[1].strip()}"
+                    else:
+                        # If no Over/Under, use the whole description as participant
+                        record["participant"] = description.strip()
+
+                # Determine bet_category based on Bet Type
+                bet_type = row.get("Bet Type", "")
+                if bet_type:
+                    if "Player" in bet_type:
+                        record["bet_category"] = "Player Props"
+                    elif "Moneyline" in bet_type:
+                        record["bet_category"] = "Moneyline"
+                    elif "Point Spread" in bet_type or "Spread" in bet_type:
+                        record["bet_category"] = "Spread"
+                    elif "Total" in bet_type:
+                        record["bet_category"] = "Total"
+                    else:
+                        record["bet_category"] = "Other"
+
+                writer.writerow(record)
+
+        logger.info(f"Successfully updated CSV backup with {len(data)} records")
+    except Exception as e:
+        logger.error(f"Error updating CSV backup: {e}", exc_info=True)
 
 # Main script logic
 def main():
@@ -249,6 +389,9 @@ def main():
             with open(backup_file, 'w') as f:
                 json.dump(betting_data, f, indent=2)
             logger.info(f"Saved backup to {backup_file}")
+            
+            # Update CSV backup
+            update_csv_backup(betting_data)
             
             # Insert or update in Supabase
             upsert_data(betting_data)

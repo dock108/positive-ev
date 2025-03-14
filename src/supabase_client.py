@@ -334,6 +334,7 @@ def get_filtered_bets_with_grades(full_mode=False):
     
     # Get current time for filtering
     now = datetime.utcnow()
+    logger.info(f"Current UTC time: {now.isoformat()}")
     
     # STEP 1: Get recent betting data
     if full_mode:
@@ -347,6 +348,7 @@ def get_filtered_bets_with_grades(full_mode=False):
         two_days_ago_str = two_days_ago.strftime("%Y-%m-%d")
         
         logger.info(f"Using database filtering for events not older than {two_days_ago_str}")
+        logger.info(f"Cutoff datetime: {two_days_ago.isoformat()}")
         
         # Get only records with event_time >= two_days_ago OR timestamp within last 7 days
         all_bets = []
@@ -373,6 +375,9 @@ def get_filtered_bets_with_grades(full_mode=False):
                 
                 if records:
                     logger.info(f"Retrieved {len(records)} betting records (offset {start})")
+                    logger.info(f"Sample record timestamps:")
+                    for i, record in enumerate(records[:5]):  # Log first 5 records
+                        logger.info(f"  Record {i+1}: event_time={record.get('event_time')}, timestamp={record.get('timestamp')}")
                     all_bets.extend(records)
                     
                     if len(records) == page_size:
@@ -392,12 +397,20 @@ def get_filtered_bets_with_grades(full_mode=False):
     
     # Get unique bet IDs from filtered bets
     bet_ids = set()
+    timestamps_by_id = {}  # New dict to track timestamps
     for bet in all_bets:
         bet_id = bet.get("bet_id")
+        timestamp = bet.get("timestamp")
         if bet_id:
             bet_ids.add(bet_id)
+            if bet_id not in timestamps_by_id or timestamp > timestamps_by_id[bet_id]:
+                timestamps_by_id[bet_id] = timestamp
     
     logger.info(f"Found {len(bet_ids)} unique bet IDs to check for existing grades")
+    logger.info("Sample of bet IDs and their latest timestamps:")
+    sample_ids = list(bet_ids)[:5]  # Take first 5 bet IDs
+    for bet_id in sample_ids:
+        logger.info(f"  {bet_id}: {timestamps_by_id[bet_id]}")
     
     # STEP 2: Only get grades for the bet IDs we need to check
     # Instead of fetching all grades, we'll use an "in" filter to just get what we need
@@ -423,6 +436,7 @@ def get_filtered_bets_with_grades(full_mode=False):
                     bet_id = record.get("bet_id")
                     if bet_id:
                         existing_grades[bet_id] = record
+                        logger.info(f"Found existing grade for {bet_id}: calculated_at={record.get('calculated_at')}")
                 
                 logger.info(f"Retrieved {len(result.data)} grade records in batch {batch_idx + 1}")
                 
@@ -430,6 +444,15 @@ def get_filtered_bets_with_grades(full_mode=False):
                 logger.error(f"Error fetching grades for batch {batch_idx + 1}: {e}")
                 
     logger.info(f"Total existing grades found: {len(existing_grades)}")
+    
+    # Log some sample comparisons
+    logger.info("Sample timestamp comparisons for first 5 bets:")
+    for bet_id in sample_ids:
+        bet_timestamp = timestamps_by_id.get(bet_id)
+        grade_timestamp = existing_grades.get(bet_id, {}).get('calculated_at')
+        logger.info(f"  Bet {bet_id}:")
+        logger.info(f"    Latest bet timestamp: {bet_timestamp}")
+        logger.info(f"    Grade calculated_at:  {grade_timestamp}")
     
     return all_bets, existing_grades
 

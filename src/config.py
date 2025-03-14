@@ -13,9 +13,10 @@ PROJECT_ROOT = Path(__file__).parent.parent.absolute()
 # Directory Configuration
 LOGS_DIR = Path('/tmp/logs') if os.environ.get('VERCEL') else Path(PROJECT_ROOT) / "logs"
 BACKUP_DIR = Path('/tmp/backups') if os.environ.get('VERCEL') else Path(PROJECT_ROOT) / "backups"
+CSV_DIR = Path(PROJECT_ROOT) / "csv_backups"  # New directory for CSV backups
 
 # Ensure all directories exist
-for directory in [LOGS_DIR, BACKUP_DIR]:
+for directory in [LOGS_DIR, BACKUP_DIR, CSV_DIR]:
     directory.mkdir(parents=True, exist_ok=True)
 
 # File Paths
@@ -24,6 +25,7 @@ SCRAPER_LOG_FILE = os.path.join(LOGS_DIR, "scraping.log")
 CALCULATOR_LOG_FILE = os.path.join(LOGS_DIR, "grade_calculator.log")
 SUPABASE_LOG_FILE = os.path.join(LOGS_DIR, "supabase.log")
 CHROME_LOG_FILE = os.path.join(LOGS_DIR, "chrome.log")
+CSV_FILE = os.path.join(CSV_DIR, "betting_data.csv")  # CSV backup file
 
 # Cleanup Settings
 BACKUP_RETENTION_DAYS = int(os.environ.get('BACKUP_RETENTION_DAYS', '10'))

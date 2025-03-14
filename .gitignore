@@ -43,6 +43,7 @@ logs/
 backups/
 *.bak
 *.backup
+csv_backups/
 
 # Jupyter Notebook
 .ipynb_checkpoints

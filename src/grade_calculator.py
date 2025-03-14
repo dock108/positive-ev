@@ -198,15 +198,25 @@ def calculate_grades():
         # Dictionary to store the latest bet for each bet_id
         latest_bets_by_id = {}
         
+        # Add debugging for timestamp comparison
+        debug_print("Starting to process bets and compare timestamps...", logger)
         for bet in all_bets:
             bet_id = bet.get("bet_id")
             timestamp = bet.get("timestamp", "")
             
             if not bet_id or not timestamp:
+                debug_print(f"Skipping bet due to missing bet_id or timestamp: {bet}", logger)
                 continue
             
+            # Debug current bet being processed
+            debug_print(f"Processing bet_id: {bet_id}, timestamp: {timestamp}", logger)
+            
             # If we haven't seen this bet_id yet, or if this timestamp is newer
-            if bet_id not in latest_bets_by_id or timestamp > latest_bets_by_id[bet_id].get("timestamp", ""):
+            if bet_id not in latest_bets_by_id:
+                debug_print(f"New bet_id found: {bet_id}", logger)
+                latest_bets_by_id[bet_id] = bet
+            elif timestamp > latest_bets_by_id[bet_id].get("timestamp", ""):
+                debug_print(f"Updated bet {bet_id} with newer timestamp: {timestamp} > {latest_bets_by_id[bet_id].get('timestamp', '')}", logger)
                 latest_bets_by_id[bet_id] = bet
         
         debug_print(f"Found {len(latest_bets_by_id)} unique bet IDs", logger)
@@ -216,10 +226,13 @@ def calculate_grades():
         new_bets = 0
         regraded_bets = 0
         
+        debug_print("Starting to identify bets that need grading...", logger)
         for bet_id, bet in latest_bets_by_id.items():
-            # Normal grading logic - the time filtering is now done at the database level
+            # Debug current bet evaluation
+            debug_print(f"Evaluating bet_id: {bet_id}", logger)
+            
             if bet_id not in existing_grades:
-                # New bet that has never been graded
+                debug_print(f"New bet found that needs grading: {bet_id}", logger)
                 bets_to_grade.append(bet)
                 new_bets += 1
             else:
@@ -227,10 +240,16 @@ def calculate_grades():
                 existing_timestamp = existing_grades[bet_id].get("calculated_at", "")
                 bet_timestamp = bet.get("timestamp", "")
                 
+                debug_print(f"Comparing timestamps for bet {bet_id}:", logger)
+                debug_print(f"  Bet timestamp: {bet_timestamp}", logger)
+                debug_print(f"  Last calculated at: {existing_timestamp}", logger)
+                
                 if bet_timestamp > existing_timestamp:
-                    # This bet has newer data than when it was last graded
+                    debug_print(f"Bet {bet_id} needs regrading (newer data available)", logger)
                     bets_to_grade.append(bet)
                     regraded_bets += 1
+                else:
+                    debug_print(f"Bet {bet_id} already has up-to-date grade", logger)
         
         debug_print(f"Found {len(bets_to_grade)} bets to grade (New: {new_bets}, Regrade: {regraded_bets})", logger)
         
