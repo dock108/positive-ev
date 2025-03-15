@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2025-03-15
+
+### Added
+- Comprehensive file header documentation for all Python modules
+- New `get_most_recent_timestamp()` function in supabase_client.py
+- Enhanced grading logic to use most recent timestamp from database
+- Improved error handling and logging across all modules
+
+### Changed
+- Updated author information to "highlyprofitable108"
+- Streamlined module imports and organization
+- Improved code documentation and type hints
+- Enhanced error handling in database operations
+- Optimized database queries for better performance
+
+### Removed
+- Unused functions from supabase_client.py:
+  - get_all_records()
+  - get_existing_grades()
+  - upsert_single_record()
+  - get_most_recent_bets()
+
 ## [2.3.0] - 2025-03-14
 
 ### Changed

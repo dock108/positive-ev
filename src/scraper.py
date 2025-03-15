@@ -1,3 +1,46 @@
+"""
+Web Scraper Module
+=================
+
+This module handles the scraping of betting opportunities from the target website.
+It uses Selenium for web automation and BeautifulSoup for HTML parsing.
+
+Key Features:
+    - Automated web navigation and data extraction
+    - Parallel processing of betting opportunities
+    - Data cleaning and normalization
+    - Automatic retry on failure
+    - CSV backup creation
+    - Supabase database integration
+
+Data Extraction:
+    - Expected Value (EV)
+    - Event Time
+    - Teams/Participants
+    - Sport/League
+    - Bet Type
+    - Odds
+    - Sportsbook
+    - Win Probability
+
+Dependencies:
+    - selenium: For web automation
+    - beautifulsoup4: For HTML parsing
+    - supabase-py: For database operations
+    - pandas: For data manipulation
+    - python-dotenv: For environment variables
+
+Environment Variables Required:
+    - SUPABASE_URL: URL of the Supabase instance
+    - SUPABASE_KEY: API key for Supabase authentication
+
+Usage:
+    python src/scraper.py
+
+Author: highlyprofitable108
+Created: March 2025
+"""
+
 import os
 import sys
 import time
@@ -201,8 +244,7 @@ def upsert_data(data):
             "odds": row.get("Odds", ""),
             "sportsbook": row.get("Sportsbook", ""),
             "bet_size": row.get("Bet Size", ""),
-            "win_probability": row.get("Win Probability", ""),
-            "result": ""
+            "win_probability": row.get("Win Probability", "")
         }
         
         # Parse team names from Event Teams
@@ -279,7 +321,7 @@ def update_csv_backup(data):
             "bet_id", "timestamp", "betid_timestamp", "ev_percent", "event_time",
             "home_team", "away_team", "sport", "league", "bet_type",
             "participant", "bet_line", "bet_category", "odds", "sportsbook",
-            "bet_size", "win_probability", "result"
+            "bet_size", "win_probability"
         ]
 
         # Check if file exists to determine if we need to write headers
@@ -313,8 +355,7 @@ def update_csv_backup(data):
                     "odds": row.get("Odds", ""),
                     "sportsbook": row.get("Sportsbook", ""),
                     "bet_size": row.get("Bet Size", ""),
-                    "win_probability": row.get("Win Probability", ""),
-                    "result": ""
+                    "win_probability": row.get("Win Probability", "")
                 }
 
                 # Parse team names from Event Teams

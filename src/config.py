@@ -1,3 +1,45 @@
+"""
+Configuration Module
+==================
+
+This module centralizes all configuration settings for the Positive EV application.
+It handles environment variables, logging setup, and global constants.
+
+Key Features:
+    - Environment variable management
+    - Logging configuration
+    - Path management
+    - Batch processing settings
+    - Web scraping selectors
+
+Configuration Categories:
+    - Database Settings (Supabase)
+    - File Paths and Directories
+    - Logging Configuration
+    - Batch Processing Parameters
+    - Web Scraping Selectors
+
+Dependencies:
+    - python-dotenv: For environment variable management
+    - logging: For application-wide logging
+
+Environment Variables Required:
+    - SUPABASE_URL: URL of the Supabase instance
+    - SUPABASE_KEY: API key for Supabase authentication
+    - SUPABASE_BATCH_SIZE: Number of records per batch (default: 100)
+    - GRADE_BATCH_SIZE: Number of grades per batch (default: 25)
+
+Usage:
+    from src.config import (
+        SUPABASE_URL,
+        SUPABASE_KEY,
+        setup_logging
+    )
+
+Author: highlyprofitable108
+Created: March 2025
+"""
+
 import os
 import logging
 from pathlib import Path

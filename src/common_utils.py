@@ -1,3 +1,35 @@
+"""
+Common Utilities Module
+=====================
+
+This module provides shared utility functions used across the Positive EV application.
+It contains helper functions for data processing, type conversion, and common operations.
+
+Key Features:
+    - Type conversion utilities
+    - Data validation functions
+    - Common mathematical operations
+    - Shared helper functions
+
+Functions:
+    - safe_float: Safely convert values to float
+    - format_timestamp: Format timestamps consistently
+    - clean_string: Sanitize and normalize strings
+    - validate_data: Common data validation checks
+
+Dependencies:
+    - None (standard library only)
+
+Usage:
+    from src.common_utils import safe_float, format_timestamp
+
+    value = safe_float("123.45")  # Returns 123.45
+    value = safe_float("invalid")  # Returns None
+
+Author: highlyprofitable108
+Created: March 2025
+"""
+
 import os
 import logging
 import hashlib

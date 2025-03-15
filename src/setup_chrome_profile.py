@@ -1,9 +1,41 @@
 #!/usr/bin/env python3
 """
-Chrome profile setup utility script.
-This script sets up a Chrome profile for the scraper to use.
-It assumes the Chrome profile directory already exists and has been
-manually copied to the server during deployment.
+Chrome Profile Setup Module
+=========================
+
+This module handles the creation and configuration of a dedicated Chrome/Chromium
+profile for web scraping. It ensures consistent browser behavior and authentication
+across scraping sessions.
+
+Key Features:
+    - Chrome profile directory creation
+    - Profile configuration and preferences
+    - Cookie management
+    - Cache control
+    - Extension handling
+    - Cross-platform support (macOS, Linux)
+
+Dependencies:
+    - selenium: For browser automation
+    - python-dotenv: For environment variables
+    - shutil: For file operations
+
+Environment Variables Required:
+    - CHROME_PROFILE: Path to Chrome/Chromium profile directory
+
+Usage:
+    from src.setup_chrome_profile import create_chrome_profile
+
+    # Create and configure Chrome profile
+    profile_path = create_chrome_profile()
+
+Notes:
+    - The profile is created only if it doesn't exist
+    - Existing profiles are preserved to maintain login states
+    - Profile is configured for optimal scraping performance
+
+Author: highlyprofitable108
+Created: March 2025
 """
 
 import os

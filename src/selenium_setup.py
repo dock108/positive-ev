@@ -1,3 +1,38 @@
+"""
+Selenium Setup Module
+===================
+
+This module handles the setup and configuration of Selenium WebDriver for web automation.
+It provides a unified interface for creating and managing Chrome/Chromium browser instances.
+
+Key Features:
+    - WebDriver initialization and configuration
+    - Chrome profile management
+    - Proxy support (if configured)
+    - Error handling and recovery
+    - Cross-platform compatibility (macOS, Linux)
+
+Dependencies:
+    - selenium: For web automation
+    - webdriver_manager: For ChromeDriver management
+    - python-dotenv: For environment variables
+
+Environment Variables Used:
+    - CHROME_PROFILE: Path to Chrome/Chromium profile directory
+    - PROXY_SERVER: Optional proxy server configuration
+    - HEADLESS: Whether to run in headless mode (default: true)
+
+Usage:
+    from src.selenium_setup import setup_webdriver
+
+    # Get configured WebDriver instance
+    driver = setup_webdriver()
+    driver.get("https://example.com")
+
+Author: highlyprofitable108
+Created: March 2025
+"""
+
 import os
 import sys
 import logging

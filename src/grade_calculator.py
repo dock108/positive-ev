@@ -1,50 +1,84 @@
+"""
+Grade Calculator Module
+=====================
+
+This module calculates grades for betting opportunities based on multiple factors
+including expected value, timing, Kelly criterion, and market edge.
+
+Key Features:
+    - Multi-factor grade calculation (EV, timing, Kelly, edge)
+    - Batch processing of bets
+    - CSV export functionality
+    - Supabase integration for data storage
+    - Configurable date range processing
+
+Grade Calculation Weights:
+    - Expected Value (EV): 60%
+    - Market Edge: 30%
+    - Timing Score: 5%
+    - Kelly Criterion: 5%
+
+Grade Scale:
+    A: >= 90
+    B: >= 80
+    C: >= 70
+    D: >= 65
+    F: < 65
+
+Dependencies:
+    - pandas: For data manipulation and CSV export
+    - supabase-py: For database operations
+    - python-dotenv: For environment variables
+
+Usage:
+    # Process last 24 hours
+    python src/grade_calculator.py
+
+    # Process specific date range
+    python src/grade_calculator.py --start-date 2024-03-01 --end-date 2024-03-14
+
+Author: highlyprofitable108
+Created: March 2025
+"""
+
 import os
 import sys
-import time
-import traceback
-from datetime import datetime
+import argparse
+import pandas as pd
+from datetime import datetime, timedelta
 
 # Add the project root to Python path
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
-# Import from new consolidated modules
+# Import from consolidated modules
 try:
     # Try relative imports (when used as a module)
     from .config import (
-        CALCULATOR_LOG_FILE, GRADE_BATCH_SIZE,
+        CALCULATOR_LOG_FILE, CSV_DIR,
         setup_logging
     )
     from .common_utils import (
-        safe_float, extract_date_from_timestamp,
-        debug_print
+        safe_float
     )
     from .supabase_client import (
-        get_supabase_client, batch_upsert,
-        get_filtered_bets_with_grades
+        get_supabase_client, batch_upsert, get_most_recent_timestamp
     )
 except ImportError:
     # Fall back to absolute imports (when run directly)
     from src.config import (
-        CALCULATOR_LOG_FILE, GRADE_BATCH_SIZE,
+        CALCULATOR_LOG_FILE, CSV_DIR,
         setup_logging
     )
     from src.common_utils import (
-        safe_float, extract_date_from_timestamp,
-        debug_print
+        safe_float
     )
     from src.supabase_client import (
-        get_supabase_client, batch_upsert,
-        get_filtered_bets_with_grades
+        get_supabase_client, batch_upsert, get_most_recent_timestamp
     )
 
 # Initialize logger
 logger = setup_logging(CALCULATOR_LOG_FILE, "grade_calculator")
-
-# Flag to control full grading mode
-# When False, skips games with past event times or start times more than 2 days prior
-# When True, processes all games regardless of timing
-FULL_MODE = False
 
 def calculate_ev_score(ev_percent):
     """Calculate score based on Expected Value."""
@@ -166,265 +200,420 @@ def assign_grade(composite_score):
         return 'B'
     elif composite_score >= 70:
         return 'C'
-    elif composite_score >= 60:
+    elif composite_score >= 65:
         return 'D'
     else:
         return 'F'
 
-def calculate_grades():
-    """Calculate grades for all ungraded bets in Supabase."""
-    debug_print("Starting grade calculation...", logger)
-    
+def calculate_bet_grade(bet):
+    """Calculate grade for a single bet."""
     try:
-        # Connect to Supabase - this is only used for get_all_records calls, not for batch_upsert
-        debug_print("About to connect to Supabase...", logger)
-        get_supabase_client()  # Just ensure the connection is valid
-        debug_print("Supabase client created successfully", logger)
+        # Extract required fields
+        bet_id = bet.get('bet_id')
+        ev_percent = bet.get('ev_percent')
+        event_time = bet.get('event_time')
+        odds = bet.get('odds')
+        win_probability = bet.get('win_probability')
         
-        # Step 1: Get filtered bets and their existing grades in a single optimized call
-        debug_print("Fetching filtered betting data and grades from Supabase...", logger)
-        all_bets, existing_grades = get_filtered_bets_with_grades(full_mode=FULL_MODE)
+        # Skip bets with missing critical data
+        if not all([bet_id, ev_percent, odds, win_probability, event_time]):
+            logger.debug(f"SKIPPED: Bet {bet_id} - Missing required data")
+            return None
         
-        if not all_bets:
-            debug_print("No bets found in Supabase after filtering", logger)
-            return
-            
-        debug_print(f"Total betting records retrieved after filtering: {len(all_bets)}", logger)
-        debug_print(f"Total existing grade records retrieved: {len(existing_grades)}", logger)
+        # Calculate individual scores
+        ev_score = calculate_ev_score(ev_percent)
+        timing_score = calculate_timing_score(event_time, bet.get('timestamp'))
+        kelly_score = calculate_kelly_score(win_probability, odds)
+        edge_score = calculate_edge_score(win_probability, odds)
         
-        # Group bets by bet_id and keep only the newest record for each
-        debug_print("Grouping bets by bet_id and identifying the newest records...", logger)
+        # Calculate composite score with weights
+        composite_score = (
+            0.60 * ev_score +
+            0.30 * edge_score +
+            0.05 * timing_score +
+            0.05 * kelly_score
+        )
         
-        # Dictionary to store the latest bet for each bet_id
-        latest_bets_by_id = {}
+        # Assign grade
+        grade = assign_grade(composite_score)
         
-        # Add debugging for timestamp comparison
-        debug_print("Starting to process bets and compare timestamps...", logger)
-        for bet in all_bets:
-            bet_id = bet.get("bet_id")
-            timestamp = bet.get("timestamp", "")
-            
-            if not bet_id or not timestamp:
-                debug_print(f"Skipping bet due to missing bet_id or timestamp: {bet}", logger)
-                continue
-            
-            # Debug current bet being processed
-            debug_print(f"Processing bet_id: {bet_id}, timestamp: {timestamp}", logger)
-            
-            # If we haven't seen this bet_id yet, or if this timestamp is newer
-            if bet_id not in latest_bets_by_id:
-                debug_print(f"New bet_id found: {bet_id}", logger)
-                latest_bets_by_id[bet_id] = bet
-            elif timestamp > latest_bets_by_id[bet_id].get("timestamp", ""):
-                debug_print(f"Updated bet {bet_id} with newer timestamp: {timestamp} > {latest_bets_by_id[bet_id].get('timestamp', '')}", logger)
-                latest_bets_by_id[bet_id] = bet
-        
-        debug_print(f"Found {len(latest_bets_by_id)} unique bet IDs", logger)
-        
-        # Determine which bets need grading (either new or need regrading)
-        bets_to_grade = []
-        new_bets = 0
-        regraded_bets = 0
-        
-        debug_print("Starting to identify bets that need grading...", logger)
-        for bet_id, bet in latest_bets_by_id.items():
-            # Debug current bet evaluation
-            debug_print(f"Evaluating bet_id: {bet_id}", logger)
-            
-            if bet_id not in existing_grades:
-                debug_print(f"New bet found that needs grading: {bet_id}", logger)
-                bets_to_grade.append(bet)
-                new_bets += 1
-            else:
-                # Compare timestamps to see if this bet needs regrading
-                existing_timestamp = existing_grades[bet_id].get("calculated_at", "")
-                bet_timestamp = bet.get("timestamp", "")
-                
-                debug_print(f"Comparing timestamps for bet {bet_id}:", logger)
-                debug_print(f"  Bet timestamp: {bet_timestamp}", logger)
-                debug_print(f"  Last calculated at: {existing_timestamp}", logger)
-                
-                if bet_timestamp > existing_timestamp:
-                    debug_print(f"Bet {bet_id} needs regrading (newer data available)", logger)
-                    bets_to_grade.append(bet)
-                    regraded_bets += 1
-                else:
-                    debug_print(f"Bet {bet_id} already has up-to-date grade", logger)
-        
-        debug_print(f"Found {len(bets_to_grade)} bets to grade (New: {new_bets}, Regrade: {regraded_bets})", logger)
-        
-        if not bets_to_grade:
-            debug_print("No bets need grading or regrading", logger)
-            return
-            
-        # Sort bets by timestamp for consistent processing
-        debug_print("Sorting bets by timestamp...", logger)
-        bets_to_grade.sort(key=lambda x: x.get("timestamp", ""))
-        
-        # Group bets by day for batch processing (instead of exact timestamp)
-        bets_by_day = {}
-        for bet in bets_to_grade:
-            timestamp = bet.get("timestamp", "")
-            day = extract_date_from_timestamp(timestamp)
-            
-            if day not in bets_by_day:
-                bets_by_day[day] = []
-            bets_by_day[day].append(bet)
-        
-        debug_print(f"Grouped {len(bets_to_grade)} bets to grade into {len(bets_by_day)} day groups", logger)
-        
-        # Process each day group
-        total_bets_processed = 0
-        total_grades_added = 0
-        total_batches_uploaded = 0
-        
-        # Use a smaller chunk size to prevent API timeouts
-        chunk_size = GRADE_BATCH_SIZE  # Now using the config value
-        
-        debug_print(f"Beginning to process day groups with chunk size {chunk_size}...", logger)
-        
-        for day_idx, (day, bets) in enumerate(bets_by_day.items()):
-            debug_print(f"Processing day group {day_idx + 1}/{len(bets_by_day)}: {day} ({len(bets)} bets)", logger)
-            
-            # Collection for this batch
-            batch_grade_records = []
-            
-            for bet_idx, bet in enumerate(bets):
-                try:
-                    total_bets_processed += 1
-                    bet_id = bet["bet_id"]
-                    timestamp = bet.get("timestamp", "")
-                    
-                    # Log progress for every bet with detailed counter
-                    if bet_idx % 10 == 0:
-                        debug_print(f"Processing bet {bet_idx + 1}/{len(bets)} for day {day} (Total: {total_bets_processed}/{len(bets_to_grade)})", logger)
-                        # Force logs to flush
-                        for handler in logger.handlers:
-                            handler.flush()
-                    
-                    # Extract required fields for grade calculation
-                    ev_percent = bet.get("ev_percent")
-                    event_time = bet.get("event_time")
-                    odds = bet.get("odds")
-                    win_probability = bet.get("win_probability")
-                    
-                    # Skip bets with missing critical data
-                    if not all([ev_percent, odds, win_probability, event_time]):
-                        debug_print(f"Skipping bet {bet_id} due to missing data", logger)
-                        continue
-                    
-                    # Calculate individual scores
-                    ev_score = calculate_ev_score(ev_percent)
-                    timing_score = calculate_timing_score(event_time, timestamp)
-                    kelly_score = calculate_kelly_score(win_probability, odds)
-                    edge_score = calculate_edge_score(win_probability, odds)
-                    
-                    # Calculate composite score with weights
-                    composite_score = (
-                        0.60 * ev_score +
-                        0.30 * edge_score +
-                        0.05 * timing_score +
-                        0.05 * kelly_score
-                    )
-                    
-                    # Create new grade record
-                    grade_record = {
-                        "bet_id": bet_id,
-                        "grade": assign_grade(composite_score),
-                        "calculated_at": datetime.utcnow().isoformat(),
-                        "ev_score": ev_score,
-                        "timing_score": timing_score,
-                        "historical_edge": edge_score,
-                        "composite_score": composite_score,
-                        "similar_bets_count": 0  # Not using historical data yet
-                    }
-                    
-                    # Add to batch collection
-                    batch_grade_records.append(grade_record)
-                    total_grades_added += 1
-                    
-                    # Upload smaller batches as we go to prevent memory issues and keep logs updating
-                    if len(batch_grade_records) >= chunk_size:
-                        upload_batch_to_supabase(batch_grade_records, f"{day}-batch-{total_batches_uploaded}", chunk_size)
-                        total_batches_uploaded += 1
-                        batch_grade_records = []  # Clear batch after upload
-                        
-                        # Small pause to prevent rate limiting
-                        time.sleep(0.5)
-                    
-                except Exception as e:
-                    debug_print(f"Error processing bet {bet.get('bet_id', 'unknown')}: {str(e)}", logger)
-            
-            # Upload any remaining records for this day
-            if batch_grade_records:
-                upload_batch_to_supabase(batch_grade_records, f"{day}-batch-{total_batches_uploaded}", chunk_size)
-                total_batches_uploaded += 1
-                batch_grade_records = []
-        
-        # Final summary
-        debug_print(f"Completed grade calculation: {total_grades_added} grades added/updated in {total_batches_uploaded} batches", logger)
-        debug_print(f"New grades: {new_bets}, Regraded: {regraded_bets}, Total processed: {total_bets_processed}", logger)
-        
+        # Create grade record
+        return {
+            "bet_id": bet_id,
+            "grade": grade,
+            "calculated_at": datetime.now().isoformat(),
+            "ev_score": ev_score,
+            "timing_score": timing_score,
+            "historical_edge": edge_score,
+            "kelly_score": kelly_score,
+            "composite_score": composite_score
+        }
     except Exception as e:
-        debug_print(f"ERROR running grade calculator: {str(e)}", logger)
-        traceback.print_exc()
-        sys.exit(1)
+        logger.error(f"Error calculating grade for bet {bet.get('bet_id', 'unknown')}: {e}")
+        return None
 
-def upload_batch_to_supabase(records, batch_number, batch_size):
-    """Helper function to upload a batch of records to Supabase with retries."""
-    if not records:
-        return
-        
-    debug_print(f"Uploading batch #{batch_number} with {len(records)} records", logger)
+def get_bets_last_24h():
+    """Get bets added in the last 24 hours with only the most recent version of each bet_id."""
+    supabase = get_supabase_client()
+    
+    # Calculate 24 hours ago
+    cutoff_time = (datetime.now() - timedelta(hours=24)).isoformat()
     
     try:
-        # Use the batch_upsert function from supabase module
-        batch_upsert("bet_grades", records, "bet_id", batch_size)
-        debug_print(f"Successfully uploaded {len(records)} records in batch #{batch_number}", logger)
+        # Get all unique bet_ids from the last 24 hours with pagination
+        all_bet_ids = set()
+        page_size = 1000
+        offset = 0
         
-        # Force logs to flush
-        for handler in logger.handlers:
-            handler.flush()
+        while True:
+            query = (
+                supabase.table("betting_data")
+                .select("bet_id")
+                .gte("timestamp", cutoff_time)
+                .limit(page_size)
+                .offset(offset)
+            )
+            
+            response = query.execute()
+            current_page = response.data
+            
+            if not current_page:
+                break
+                
+            bet_ids = [record.get('bet_id') for record in current_page if record.get('bet_id')]
+            all_bet_ids.update(bet_ids)
+            logger.info(f"Retrieved {len(current_page)} bet IDs (offset {offset}), total unique IDs: {len(all_bet_ids)}")
+            
+            if len(current_page) < page_size:
+                break
+                
+            offset += page_size
+        
+        logger.info(f"Found {len(all_bet_ids)} unique bet IDs from the last 24 hours")
+        
+        # Now get the most recent record for each bet_id
+        unique_bets = []
+        for bet_id in all_bet_ids:
+            # Get the most recent record for this bet_id
+            response = supabase.table("betting_data").select("*").eq("bet_id", bet_id).order("timestamp", desc=True).limit(1).execute()
+            if response.data:
+                unique_bets.append(response.data[0])
+        
+        logger.info(f"Retrieved {len(unique_bets)} unique bets from the last 24 hours")
+        return unique_bets
     except Exception as e:
-        debug_print(f"Failed to upload batch: {str(e)}", logger)
-        # Try to upload smaller batches if the whole batch fails
-        if len(records) > 10:
-            debug_print("Attempting to upload in smaller chunks...", logger)
-            mid = len(records) // 2
-            # Split batch in half and try each half
-            upload_batch_to_supabase(records[:mid], f"{batch_number}-A", batch_size)
-            time.sleep(1)  # Pause between uploads
-            upload_batch_to_supabase(records[mid:], f"{batch_number}-B", batch_size)
-        else:
-            # If batch is already small, log IDs of failed records
-            for record in records:
-                debug_print(f"Failed to upload record for bet_id: {record.get('bet_id', 'unknown')}", logger)
+        logger.error(f"Error retrieving bets from last 24 hours: {e}")
+        # Fall back to the pagination method if the approach fails
+        logger.info("Falling back to pagination method")
+        return get_bets_last_24h_paginated()
+
+def get_bets_by_date_range(start_date, end_date):
+    """Get bets within a specific date range with only the most recent version of each bet_id."""
+    supabase = get_supabase_client()
+    
+    # Format end_date to include the entire day
+    if end_date:
+        end_date = f"{end_date}T23:59:59"
+    
+    try:
+        # Get all unique bet_ids in the date range with pagination
+        all_bet_ids = set()
+        page_size = 1000
+        offset = 0
+        
+        while True:
+            query = (
+                supabase.table("betting_data")
+                .select("bet_id")
+            )
+            if start_date:
+                query = query.gte("timestamp", start_date)
+            if end_date:
+                query = query.lte("timestamp", end_date)
+            
+            query = query.limit(page_size).offset(offset)
+            
+            response = query.execute()
+            current_page = response.data
+            
+            if not current_page:
+                break
+                
+            bet_ids = [record.get('bet_id') for record in current_page if record.get('bet_id')]
+            all_bet_ids.update(bet_ids)
+            logger.info(f"Retrieved {len(current_page)} bet IDs (offset {offset}), total unique IDs: {len(all_bet_ids)}")
+            
+            if len(current_page) < page_size:
+                break
+                
+            offset += page_size
+        
+        logger.info(f"Found {len(all_bet_ids)} unique bet IDs in date range")
+        
+        # Now get the most recent record for each bet_id within the date range
+        unique_bets = []
+        total_processed = 0
+        for bet_id in all_bet_ids:
+            # Get the most recent record for this bet_id within the date range
+            query = (
+                supabase.table("betting_data")
+                .select("*")
+                .eq("bet_id", bet_id)
+            )
+            if start_date:
+                query = query.gte("timestamp", start_date)
+            if end_date:
+                query = query.lte("timestamp", end_date)
+            
+            response = query.order("timestamp", desc=True).limit(1).execute()
+            if response.data:
+                unique_bets.append(response.data[0])
+            
+            total_processed += 1
+            if total_processed % 100 == 0:  # Log progress every 100 bets
+                logger.info(f"Processed {total_processed}/{len(all_bet_ids)} bet IDs")
+        
+        logger.info(f"Retrieved {len(unique_bets)} unique bets from date range {start_date} to {end_date}")
+        return unique_bets
+    except Exception as e:
+        logger.error(f"Error retrieving bets from date range: {e}")
+        # Fall back to the pagination method if the approach fails
+        logger.info("Falling back to pagination method")
+        return get_bets_by_date_range_paginated(start_date, end_date)
+
+# Keep the original methods as fallbacks
+def get_bets_last_24h_paginated():
+    """Get bets added in the last 24 hours using pagination."""
+    supabase = get_supabase_client()
+    
+    # Calculate 24 hours ago
+    cutoff_time = (datetime.now() - timedelta(hours=24)).isoformat()
+    
+    try:
+        # Query bets from the last 24 hours with pagination
+        all_bets = []
+        page_size = 1000
+        has_more = True
+        start = 0
+        
+        while has_more:
+            # Build query with pagination
+            query = supabase.table("betting_data").select("*").gte("timestamp", cutoff_time)
+            query = query.range(start, start + page_size - 1)
+            
+            # Execute query
+            response = query.execute()
+            bets = response.data
+            
+            if bets:
+                all_bets.extend(bets)
+                logger.info(f"Retrieved {len(bets)} bets from the last 24 hours (offset {start})")
+                
+                if len(bets) == page_size:
+                    start += page_size
+                else:
+                    has_more = False
+            else:
+                has_more = False
+        
+        # Get only the most recent version of each bet
+        unique_bets = get_most_recent_bets(all_bets)
+        logger.info(f"Retrieved {len(all_bets)} total bets, filtered to {len(unique_bets)} unique bets")
+        return unique_bets
+    except Exception as e:
+        logger.error(f"Error retrieving bets from last 24 hours with pagination: {e}")
+        return []
+
+def get_bets_by_date_range_paginated(start_date, end_date):
+    """Get bets within a specific date range using pagination."""
+    supabase = get_supabase_client()
+    
+    # Format end_date to include the entire day
+    if end_date:
+        end_date = f"{end_date}T23:59:59"
+    
+    try:
+        # Query bets with pagination
+        all_bets = []
+        page_size = 1000
+        has_more = True
+        start = 0
+        
+        while has_more:
+            # Build query with date filters and pagination
+            query = supabase.table("betting_data").select("*")
+            if start_date:
+                query = query.gte("timestamp", start_date)
+            if end_date:
+                query = query.lte("timestamp", end_date)
+            
+            # Apply pagination
+            query = query.range(start, start + page_size - 1)
+            
+            # Execute query
+            response = query.execute()
+            bets = response.data
+            
+            if bets:
+                all_bets.extend(bets)
+                logger.info(f"Retrieved {len(bets)} bets from date range (offset {start})")
+                
+                if len(bets) == page_size:
+                    start += page_size
+                else:
+                    has_more = False
+            else:
+                has_more = False
+        
+        # Get only the most recent version of each bet
+        unique_bets = get_most_recent_bets(all_bets)
+        logger.info(f"Retrieved {len(all_bets)} total bets, filtered to {len(unique_bets)} unique bets from date range {start_date} to {end_date}")
+        return unique_bets
+    except Exception as e:
+        logger.error(f"Error retrieving bets from date range with pagination: {e}")
+        return []
+
+def get_most_recent_bets(bets):
+    """
+    Filter a list of bets to get only the most recent version of each bet_id.
+    
+    Args:
+        bets: List of bet records
+        
+    Returns:
+        List of the most recent betting records for each bet_id
+    """
+    if not bets:
+        return []
+    
+    # Group by bet_id and keep only the most recent
+    latest_bets_by_id = {}
+    for record in bets:
+        bet_id = record.get("bet_id")
+        timestamp = record.get("timestamp", "")
+        
+        if not bet_id or not timestamp:
+            continue
+            
+        if bet_id not in latest_bets_by_id or timestamp > latest_bets_by_id[bet_id].get("timestamp", ""):
+            latest_bets_by_id[bet_id] = record
+    
+    return list(latest_bets_by_id.values())
+
+def process_bets(bets):
+    """Process a list of bets and calculate grades."""
+    if not bets:
+        logger.info("No bets to process")
+        return []
+    
+    logger.info(f"Processing {len(bets)} bets")
+    
+    # Calculate grades for all bets
+    grades = []
+    for bet in bets:
+        grade_record = calculate_bet_grade(bet)
+        if grade_record:
+            grades.append(grade_record)
+    
+    logger.info(f"Calculated grades for {len(grades)} bets")
+    return grades
+
+def save_grades_to_csv(grades, filename):
+    """Save grades to a CSV file."""
+    if not grades:
+        logger.info("No grades to save to CSV")
+        return
+    
+    # Convert to DataFrame
+    df = pd.DataFrame(grades)
+    
+    # Ensure directory exists
+    os.makedirs(CSV_DIR, exist_ok=True)
+    
+    # Save to CSV
+    csv_path = os.path.join(CSV_DIR, filename)
+    df.to_csv(csv_path, index=False)
+    logger.info(f"Saved {len(grades)} grades to {csv_path}")
+
+def upload_grades_to_supabase(grades):
+    """Upload grades to Supabase in bulk."""
+    if not grades:
+        logger.info("No grades to upload to Supabase")
+        return
+    
+    logger.info(f"Uploading {len(grades)} grades to Supabase")
+    
+    # Ensure we have unique bet_ids to avoid conflicts
+    unique_grades = {}
+    for grade in grades:
+        bet_id = grade.get("bet_id")
+        if bet_id:
+            unique_grades[bet_id] = grade
+    
+    unique_grade_list = list(unique_grades.values())
+    logger.info(f"Filtered to {len(unique_grade_list)} unique grades by bet_id")
+    
+    # Use batch_upsert with the unique list
+    batch_upsert("bet_grades", unique_grade_list, "bet_id")
+    logger.info("Upload complete")
+
+def parse_arguments():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(description='Calculate grades for betting data.')
+    parser.add_argument('--start-date', type=str, help='Start date for date range (YYYY-MM-DD)')
+    parser.add_argument('--end-date', type=str, help='End date for date range (YYYY-MM-DD)')
+    return parser.parse_args()
 
 def main():
     """Main function to run grade calculations."""
     try:
-        # Check for command-line argument to enable FULL_MODE
-        global FULL_MODE
-        if len(sys.argv) > 1 and sys.argv[1].lower() in ('--full', '-f'):
-            FULL_MODE = True
-            debug_print("FULL_MODE enabled: Will process all bets regardless of timing", logger)
-        
-        debug_print("Starting grade calculator job", logger)
+        logger.info("Starting grade calculator main function")
+        # Parse command line arguments
+        args = parse_arguments()
         start_time = datetime.now()
         
-        # Calculate grades for all ungraded bets
-        calculate_grades()
+        # Debug log the arguments
+        logger.info(f"Arguments received: start_date={args.start_date}, end_date={args.end_date}")
         
+        # Determine which mode to run in
+        if args.start_date:
+            # Date range mode
+            logger.info(f"Running in date range mode: {args.start_date} to {args.end_date or 'now'}")
+            bets = get_bets_by_date_range(args.start_date, args.end_date)
+        else:
+            # Get most recent timestamp from database
+            most_recent = get_most_recent_timestamp()
+            if most_recent:
+                logger.info(f"Running for most recent timestamp: {most_recent}")
+                bets = get_bets_by_date_range(most_recent, most_recent)
+            else:
+                # Fallback to last 24 hours if no data exists
+                logger.info("No existing bets found, falling back to last 24 hours mode")
+                bets = get_bets_last_24h()
+        
+        # Process bets
+        grades = process_bets(bets)
+        
+        if args.start_date:
+            # Save to CSV with datestamp for date range mode
+            datestamp = datetime.now().strftime("%Y%m%d")
+            filename = f"full_grades_{datestamp}.csv"
+            save_grades_to_csv(grades, filename)
+        
+        # Upload to Supabase
+        upload_grades_to_supabase(grades)
+        
+        # Log completion
         end_time = datetime.now()
         duration = (end_time - start_time).total_seconds()
-        debug_print(f"Grade calculator job completed successfully in {duration:.2f} seconds", logger)
+        logger.info(f"Completed in {duration:.2f} seconds. Processed {len(bets)} bets, created {len(grades) if 'grades' in locals() else 0} grades.")
         
     except Exception as e:
-        debug_print(f"ERROR running grade calculator: {str(e)}", logger)
+        logger.error(f"Error in grade calculator: {e}")
+        import traceback
         traceback.print_exc()
         sys.exit(1)
 
 if __name__ == "__main__":
-    debug_print("Grade calculator script started", logger)
+    logger.info("Script running as __main__")
     main()
-    debug_print("Grade calculator script finished", logger)

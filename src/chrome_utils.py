@@ -1,3 +1,42 @@
+"""
+Chrome Utilities Module
+=====================
+
+This module provides utility functions for managing Chrome/Chromium browser instances
+and WebDriver configurations. It centralizes browser setup and management logic.
+
+Key Features:
+    - Chrome driver setup and configuration
+    - Browser options management
+    - Profile handling
+    - Error recovery and retry logic
+    - Logging and diagnostics
+    - Cross-platform compatibility
+
+Dependencies:
+    - selenium: For web automation
+    - webdriver_manager: For ChromeDriver management
+    - python-dotenv: For environment variables
+
+Environment Variables Used:
+    - CHROME_PROFILE: Path to Chrome/Chromium profile directory
+    - CHROME_OPTIONS: List of Chrome command-line options
+    - CHROME_LOG_FILE: Path to Chrome log file
+
+Usage:
+    from src.chrome_utils import setup_chrome_driver
+
+    # Get configured Chrome driver
+    driver = setup_chrome_driver()
+    
+    # Use driver with automatic cleanup
+    with setup_chrome_driver() as driver:
+        driver.get("https://example.com")
+
+Author: highlyprofitable108
+Created: March 2025
+"""
+
 import os
 import sys
 from selenium import webdriver
