@@ -166,4 +166,4 @@ def debug_print(message, logger=None):
             handler.flush()
     # Force flush stdout
     import sys
-    sys.stdout.flush() 
+    sys.stdout.flush()

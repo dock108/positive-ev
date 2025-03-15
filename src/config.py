@@ -146,4 +146,4 @@ def setup_logging(log_file, name, clean_logs=True):
             from src.common_utils import cleanup_logs
         cleanup_logs(log_file, LOG_RETENTION_HOURS)
     
-    return logger 
+    return logger
