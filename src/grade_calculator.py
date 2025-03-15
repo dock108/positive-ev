@@ -81,13 +81,21 @@ except ImportError:
 logger = setup_logging(CALCULATOR_LOG_FILE, "grade_calculator")
 
 def calculate_ev_score(ev_percent):
-    """Calculate score based on Expected Value."""
+    """Calculate score based on Expected Value, with max cap and decay for high values."""
     try:
         ev = safe_float(ev_percent)
         if ev is None:
             return 0
-        normalized_ev = (ev + 10) * 5
-        return max(0, min(100, normalized_ev))
+        
+        # Cap EV at 15%
+        if ev > 15:
+            # Apply decay for values above 15%
+            normalized_ev = 15 - (ev - 15) * 0.5  # Adjust decay factor as needed
+        else:
+            normalized_ev = ev
+        
+        # Normalize to a score between 0 and 100
+        return max(0, min(100, (normalized_ev + 10) * 5))
     except Exception as e:
         logger.error(f"Error calculating EV score: {str(e)}")
         return 0
@@ -205,6 +213,11 @@ def calculate_edge_score(win_probability, odds):
         
         edge = win_prob - market_implied_prob
         normalized_edge = (edge + 10) * 5
+        
+        # Implement a threshold for minimum edge score
+        if normalized_edge < 49:
+            return 0  # Discard low edge scores
+        
         return max(0, min(100, normalized_edge))
     except Exception as e:
         logger.error(f"Error calculating edge score: {str(e)}")
