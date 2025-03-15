@@ -72,6 +72,10 @@ def setup_driver():
         
         # Add standard Chrome options from config
         for option in CHROME_OPTIONS:
+            # Skip the headless option to show the browser UI
+            if option == "--headless":
+                logging.info("Skipping headless mode to show browser UI")
+                continue
             options.add_argument(option)
             
         # Add additional debugging options
