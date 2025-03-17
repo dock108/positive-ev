@@ -35,6 +35,22 @@ Stores raw betting opportunities scraped from various sources.
 - sport, league
 - betid_timestamp
 
+### initial_bet_details
+
+Stores the initial state of betting opportunities when first discovered.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| bet_id | Text | Unique identifier for each bet |
+| initial_ev | Decimal | Expected value when bet was first seen |
+| initial_line | Text | Betting line when first seen |
+| first_seen | Timestamp | When the bet was first discovered |
+
+**Primary Key**: bet_id
+**Indexes**:
+- bet_id
+- first_seen
+
 ### bet_grades
 
 Stores calculated grades and evaluation metrics for betting opportunities.

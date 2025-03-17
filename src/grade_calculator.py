@@ -48,37 +48,40 @@ import pandas as pd
 from datetime import datetime, timedelta
 
 # Add the project root to Python path
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, project_root)
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
-# Import from consolidated modules
+# Try relative imports first, fall back to absolute
 try:
-    # Try relative imports (when used as a module)
     from .config import (
-        CALCULATOR_LOG_FILE, CSV_DIR,
+        CALCULATOR_LOG_FILE,
+        CSV_DIR,
         setup_logging
     )
-    from .common_utils import (
-        safe_float
-    )
+    from .common_utils import safe_float
     from .supabase_client import (
-        get_supabase_client, batch_upsert, get_most_recent_timestamp
+        get_supabase_client,
+        batch_upsert,
+        get_most_recent_timestamp
     )
 except ImportError:
-    # Fall back to absolute imports (when run directly)
+    # When running as script
     from src.config import (
-        CALCULATOR_LOG_FILE, CSV_DIR,
+        CALCULATOR_LOG_FILE,
+        CSV_DIR,
         setup_logging
     )
-    from src.common_utils import (
-        safe_float
-    )
+    from src.common_utils import safe_float
     from src.supabase_client import (
-        get_supabase_client, batch_upsert, get_most_recent_timestamp
+        get_supabase_client,
+        batch_upsert,
+        get_most_recent_timestamp
     )
 
-# Initialize logger
+# Initialize logger and supabase client
 logger = setup_logging(CALCULATOR_LOG_FILE, "grade_calculator")
+supabase = get_supabase_client()
 
 def calculate_ev_score(ev_percent):
     """Calculate score based on Expected Value."""
@@ -205,6 +208,29 @@ def assign_grade(composite_score):
     else:
         return 'F'
 
+def check_and_store_initial_details(bet):
+    """Check if bet_id exists in initial_bet_details and store if not."""
+    try:
+        bet_id = bet.get('bet_id')
+        if not bet_id:
+            return
+            
+        # Check if bet_id exists in initial_bet_details
+        response = supabase.table("initial_bet_details").select("bet_id").eq("bet_id", bet_id).execute()
+        
+        if not response.data:
+            # Store initial details if bet_id not found
+            initial_details = {
+                "bet_id": bet_id,
+                "initial_ev": bet.get('ev_percent'),
+                "initial_line": bet.get('bet_line'),
+                "first_seen": datetime.now().isoformat()
+            }
+            supabase.table("initial_bet_details").insert(initial_details).execute()
+            logger.info(f"Stored initial details for bet_id: {bet_id}")
+    except Exception as e:
+        logger.error(f"Error storing initial bet details: {str(e)}")
+
 def calculate_bet_grade(bet):
     """Calculate grade for a single bet."""
     try:
@@ -219,6 +245,9 @@ def calculate_bet_grade(bet):
         if not all([bet_id, ev_percent, odds, win_probability, event_time]):
             logger.debug(f"SKIPPED: Bet {bet_id} - Missing required data")
             return None
+        
+        # Check and store initial bet details
+        check_and_store_initial_details(bet)
         
         # Calculate individual scores
         ev_score = calculate_ev_score(ev_percent)
@@ -564,6 +593,72 @@ def parse_arguments():
     parser.add_argument('--end-date', type=str, help='End date for date range (YYYY-MM-DD)')
     return parser.parse_args()
 
+def backfill_initial_bet_details():
+    """
+    Find all bet_ids not in initial_bet_details and add their initial data
+    based on the earliest timestamp for each bet_id in the betting_data table.
+    """
+    try:
+        logger.info("Starting initial bet details backfill")
+        
+        # Get all bet_ids from betting_data
+        response = supabase.table("betting_data").select("bet_id").execute()
+        all_bet_ids = set(record['bet_id'] for record in response.data if record.get('bet_id'))
+        logger.info(f"Found {len(all_bet_ids)} total bet_ids in betting_data")
+        
+        # Get existing bet_ids from initial_bet_details
+        response = supabase.table("initial_bet_details").select("bet_id").execute()
+        existing_bet_ids = set(record['bet_id'] for record in response.data if record.get('bet_id'))
+        logger.info(f"Found {len(existing_bet_ids)} existing bet_ids in initial_bet_details")
+        
+        # Find bet_ids that need to be backfilled
+        missing_bet_ids = all_bet_ids - existing_bet_ids
+        logger.info(f"Found {len(missing_bet_ids)} bet_ids that need backfilling")
+        
+        if not missing_bet_ids:
+            logger.info("No bet_ids need backfilling")
+            return
+        
+        # Process in batches to avoid overwhelming the database
+        batch_size = 100
+        missing_bet_ids_list = list(missing_bet_ids)
+        total_processed = 0
+        initial_details_batch = []
+        
+        for i in range(0, len(missing_bet_ids_list), batch_size):
+            batch = missing_bet_ids_list[i:i + batch_size]
+            
+            for bet_id in batch:
+                # Get earliest record for this bet_id
+                response = supabase.table("betting_data") \
+                    .select("*") \
+                    .eq("bet_id", bet_id) \
+                    .order("timestamp", desc=False) \
+                    .limit(1) \
+                    .execute()
+                
+                if response.data:
+                    earliest_record = response.data[0]
+                    initial_details = {
+                        "bet_id": bet_id,
+                        "initial_ev": earliest_record.get('ev_percent'),
+                        "initial_line": earliest_record.get('bet_line'),
+                        "first_seen": earliest_record.get('timestamp')
+                    }
+                    initial_details_batch.append(initial_details)
+            
+            # Insert batch
+            if initial_details_batch:
+                supabase.table("initial_bet_details").insert(initial_details_batch).execute()
+                total_processed += len(initial_details_batch)
+                logger.info(f"Processed {total_processed}/{len(missing_bet_ids)} bet_ids")
+                initial_details_batch = []
+        
+        logger.info(f"Backfill complete. Added {total_processed} initial bet details records.")
+        
+    except Exception as e:
+        logger.error(f"Error during initial bet details backfill: {str(e)}")
+
 def main():
     """Main function to run grade calculations."""
     try:
@@ -571,6 +666,9 @@ def main():
         # Parse command line arguments
         args = parse_arguments()
         start_time = datetime.now()
+        
+        # Backfill initial bet details first
+        backfill_initial_bet_details()
         
         # Debug log the arguments
         logger.info(f"Arguments received: start_date={args.start_date}, end_date={args.end_date}")
