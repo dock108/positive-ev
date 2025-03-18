@@ -43,7 +43,8 @@ Stores the initial state of betting opportunities when first discovered.
 |--------|------|-------------|
 | bet_id | Text | Unique identifier for each bet |
 | initial_ev | Decimal | Expected value when bet was first seen |
-| initial_line | Text | Betting line when first seen |
+| initial_odds | Text | Initial odds value when first seen |
+| initial_line | Text | Initial betting line when first seen |
 | first_seen | Timestamp | When the bet was first discovered |
 
 **Primary Key**: bet_id
