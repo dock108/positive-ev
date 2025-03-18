@@ -3,20 +3,19 @@ Grade Calculator Module
 =====================
 
 This module calculates grades for betting opportunities based on multiple factors
-including expected value, timing, Kelly criterion, and market edge.
+including expected value, timing, and market edge.
 
 Key Features:
-    - Multi-factor grade calculation (EV, timing, Kelly, edge)
+    - Multi-factor grade calculation (EV, timing, edge)
     - Batch processing of bets
     - CSV export functionality
     - Supabase integration for data storage
     - Configurable date range processing
 
 Grade Calculation Weights:
-    - Expected Value (EV): 60%
+    - Expected Value (EV): 55%
     - Market Edge: 30%
-    - Timing Score: 5%
-    - Kelly Criterion: 5%
+    - Timing Score: 15%
 
 Grade Scale:
     A: >= 90
@@ -39,6 +38,7 @@ Usage:
 
 Author: highlyprofitable108
 Created: March 2025
+Updated: March 2025 - Removed Kelly criterion, adjusted weights, improved timing granularity
 """
 
 import os
@@ -84,19 +84,32 @@ logger = setup_logging(CALCULATOR_LOG_FILE, "grade_calculator")
 supabase = get_supabase_client()
 
 def calculate_ev_score(ev_percent):
-    """Calculate score based on Expected Value."""
+    """Calculate score based on Expected Value, with max cap and decay for high values."""
     try:
         ev = safe_float(ev_percent)
         if ev is None:
             return 0
-        normalized_ev = (ev + 10) * 5
-        return max(0, min(100, normalized_ev))
+        
+        # Cap EV at 15%
+        if ev > 15:
+            # Apply decay for values above 15%
+            normalized_ev = 15 - (ev - 15) * 0.5  # Adjust decay factor as needed
+        else:
+            normalized_ev = ev
+        
+        # Normalize to a score between 0 and 100
+        return max(0, min(100, (normalized_ev + 10) * 5))
     except Exception as e:
         logger.error(f"Error calculating EV score: {str(e)}")
         return 0
 
 def calculate_timing_score(event_time, timestamp):
-    """Calculate score based on time until event."""
+    """
+    Calculate score based on time until event with more granular ranges.
+    
+    The closer to game time, the more valuable a bet with an edge becomes,
+    as it's more likely to represent Closing Line Value (CLV).
+    """
     try:
         # Parse times
         if isinstance(event_time, str):
@@ -122,20 +135,33 @@ def calculate_timing_score(event_time, timestamp):
         # Calculate time difference in hours
         time_diff = (event_dt - bet_dt).total_seconds() / 3600
         
+        # More granular scoring system emphasizing CLV
         if time_diff <= 0:
             return 0  # Event already started
+        elif time_diff <= 0.5:
+            return 100  # Less than 30 minutes
         elif time_diff <= 1:
-            return 100  # Less than 1 hour
+            return 95  # 30-60 minutes
+        elif time_diff <= 2:
+            return 90  # 1-2 hours
         elif time_diff <= 3:
-            return 90  # 1-3 hours
+            return 85  # 2-3 hours
+        elif time_diff <= 4:
+            return 80  # 3-4 hours
         elif time_diff <= 6:
-            return 80  # 3-6 hours
+            return 75  # 4-6 hours
+        elif time_diff <= 8:
+            return 70  # 6-8 hours
         elif time_diff <= 12:
-            return 70  # 6-12 hours
+            return 65  # 8-12 hours
+        elif time_diff <= 18:
+            return 60  # 12-18 hours
         elif time_diff <= 24:
-            return 60  # 12-24 hours
+            return 55  # 18-24 hours
+        elif time_diff <= 36:
+            return 50  # 24-36 hours
         elif time_diff <= 48:
-            return 50  # 24-48 hours
+            return 45  # 36-48 hours
         elif time_diff <= 72:
             return 40  # 48-72 hours
         else:
@@ -190,6 +216,11 @@ def calculate_edge_score(win_probability, odds):
         
         edge = win_prob - market_implied_prob
         normalized_edge = (edge + 10) * 5
+        
+        # Implement a threshold for minimum edge score
+        if normalized_edge < 49:
+            return 0  # Discard low edge scores
+        
         return max(0, min(100, normalized_edge))
     except Exception as e:
         logger.error(f"Error calculating edge score: {str(e)}")
@@ -252,19 +283,26 @@ def calculate_bet_grade(bet):
         # Calculate individual scores
         ev_score = calculate_ev_score(ev_percent)
         timing_score = calculate_timing_score(event_time, bet.get('timestamp'))
-        kelly_score = calculate_kelly_score(win_probability, odds)
         edge_score = calculate_edge_score(win_probability, odds)
         
-        # Calculate composite score with weights
+        # Calculate composite score with updated weights
         composite_score = (
-            0.60 * ev_score +
+            0.55 * ev_score +
             0.30 * edge_score +
-            0.05 * timing_score +
-            0.05 * kelly_score
+            0.15 * timing_score
         )
-        
+
+        # Log individual scores and composite score
+        logger.info(f"Bet ID: {bet_id}, EV Score: {ev_score}, Timing Score: {timing_score}, Edge Score: {edge_score}, Composite Score: {composite_score}")
+
+        # Log the contributions to composite score
+        logger.info(f"Composite Score Calculation: (0.55 * {ev_score}) + (0.30 * {edge_score}) + (0.15 * {timing_score}) = {composite_score}")
+
         # Assign grade
         grade = assign_grade(composite_score)
+        
+        # Log the assigned grade
+        logger.info(f"Assigned Grade for Bet ID {bet_id}: {grade}")
         
         # Create grade record
         return {
@@ -274,7 +312,6 @@ def calculate_bet_grade(bet):
             "ev_score": ev_score,
             "timing_score": timing_score,
             "historical_edge": edge_score,
-            "kelly_score": kelly_score,
             "composite_score": composite_score
         }
     except Exception as e:
