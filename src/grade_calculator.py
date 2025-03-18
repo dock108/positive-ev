@@ -208,6 +208,30 @@ def assign_grade(composite_score):
     else:
         return 'F'
 
+def clean_numeric(value):
+    """Clean numeric values by removing percentage signs and other non-numeric characters.
+    
+    Args:
+        value: The value to clean
+        
+    Returns:
+        Cleaned numeric value as float or None if conversion fails
+    """
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return value
+    if isinstance(value, str):
+        # Remove percentage signs and other non-numeric characters
+        # except for decimal points and minus signs
+        clean_value = value.replace('%', '')
+        try:
+            return float(clean_value)
+        except ValueError:
+            logger.warning(f"Could not convert value '{value}' to numeric, defaulting to None")
+            return None
+    return None
+
 def check_and_store_initial_details(bet):
     """Check if bet_id exists in initial_bet_details and store if not."""
     try:
@@ -222,14 +246,22 @@ def check_and_store_initial_details(bet):
             # Store initial details if bet_id not found
             initial_details = {
                 "bet_id": bet_id,
-                "initial_ev": bet.get('ev_percent'),
+                "initial_ev": clean_numeric(bet.get('ev_percent')),
+                "initial_odds": bet.get('odds'),  # Store odds as-is, not converted
                 "initial_line": bet.get('bet_line'),
-                "first_seen": datetime.now().isoformat()
+                "first_seen": bet.get('timestamp')  # Use bet's timestamp instead of current time
             }
+            
+            # Log the data being inserted for debugging
+            logger.info(f"Adding new initial details for bet_id: {bet_id}, EV: {initial_details['initial_ev']}, "
+                        f"Odds: {initial_details['initial_odds']}, Line: {initial_details['initial_line']}, First seen: {bet.get('timestamp')}")
+            
+            # Insert the record
             supabase.table("initial_bet_details").insert(initial_details).execute()
-            logger.info(f"Stored initial details for bet_id: {bet_id}")
+            logger.info(f"Successfully stored initial details for bet_id: {bet_id}")
     except Exception as e:
-        logger.error(f"Error storing initial bet details: {str(e)}")
+        logger.error(f"Error storing initial bet details for {bet_id}: {str(e)}")
+        logger.error(f"Bet data: {bet}")
 
 def calculate_bet_grade(bet):
     """Calculate grade for a single bet."""
@@ -593,72 +625,6 @@ def parse_arguments():
     parser.add_argument('--end-date', type=str, help='End date for date range (YYYY-MM-DD)')
     return parser.parse_args()
 
-def backfill_initial_bet_details():
-    """
-    Find all bet_ids not in initial_bet_details and add their initial data
-    based on the earliest timestamp for each bet_id in the betting_data table.
-    """
-    try:
-        logger.info("Starting initial bet details backfill")
-        
-        # Get all bet_ids from betting_data
-        response = supabase.table("betting_data").select("bet_id").execute()
-        all_bet_ids = set(record['bet_id'] for record in response.data if record.get('bet_id'))
-        logger.info(f"Found {len(all_bet_ids)} total bet_ids in betting_data")
-        
-        # Get existing bet_ids from initial_bet_details
-        response = supabase.table("initial_bet_details").select("bet_id").execute()
-        existing_bet_ids = set(record['bet_id'] for record in response.data if record.get('bet_id'))
-        logger.info(f"Found {len(existing_bet_ids)} existing bet_ids in initial_bet_details")
-        
-        # Find bet_ids that need to be backfilled
-        missing_bet_ids = all_bet_ids - existing_bet_ids
-        logger.info(f"Found {len(missing_bet_ids)} bet_ids that need backfilling")
-        
-        if not missing_bet_ids:
-            logger.info("No bet_ids need backfilling")
-            return
-        
-        # Process in batches to avoid overwhelming the database
-        batch_size = 100
-        missing_bet_ids_list = list(missing_bet_ids)
-        total_processed = 0
-        initial_details_batch = []
-        
-        for i in range(0, len(missing_bet_ids_list), batch_size):
-            batch = missing_bet_ids_list[i:i + batch_size]
-            
-            for bet_id in batch:
-                # Get earliest record for this bet_id
-                response = supabase.table("betting_data") \
-                    .select("*") \
-                    .eq("bet_id", bet_id) \
-                    .order("timestamp", desc=False) \
-                    .limit(1) \
-                    .execute()
-                
-                if response.data:
-                    earliest_record = response.data[0]
-                    initial_details = {
-                        "bet_id": bet_id,
-                        "initial_ev": earliest_record.get('ev_percent'),
-                        "initial_line": earliest_record.get('bet_line'),
-                        "first_seen": earliest_record.get('timestamp')
-                    }
-                    initial_details_batch.append(initial_details)
-            
-            # Insert batch
-            if initial_details_batch:
-                supabase.table("initial_bet_details").insert(initial_details_batch).execute()
-                total_processed += len(initial_details_batch)
-                logger.info(f"Processed {total_processed}/{len(missing_bet_ids)} bet_ids")
-                initial_details_batch = []
-        
-        logger.info(f"Backfill complete. Added {total_processed} initial bet details records.")
-        
-    except Exception as e:
-        logger.error(f"Error during initial bet details backfill: {str(e)}")
-
 def main():
     """Main function to run grade calculations."""
     try:
@@ -666,9 +632,6 @@ def main():
         # Parse command line arguments
         args = parse_arguments()
         start_time = datetime.now()
-        
-        # Backfill initial bet details first
-        backfill_initial_bet_details()
         
         # Debug log the arguments
         logger.info(f"Arguments received: start_date={args.start_date}, end_date={args.end_date}")
