@@ -22,9 +22,9 @@
 │  📈 Historical analysis        │
 └─────────────────────────────────┘
 ```
-- Live tracking of odds across multiple sportsbooks
-- Automated odds comparison and arbitrage detection
-- Historical odds tracking and analysis
+- Live tracking of odds across multiple sportsbooks.
+- Automated odds comparison and arbitrage detection.
+- Historical odds tracking and analysis to inform betting strategies.
 
 ### 🎯 Bet Evaluation System
 ```ascii
@@ -36,10 +36,10 @@
 │  💰 Risk optimization         │
 └─────────────────────────────────┘
 ```
-- Advanced grading system for bet quality
-- Historical performance tracking
-- Automated bet recommendations
-- Risk management and bankroll optimization
+- Advanced grading system for assessing bet quality.
+- Historical performance tracking to evaluate past bets.
+- Automated bet recommendations based on calculated scores.
+- Risk management and bankroll optimization strategies to enhance profitability.
 
 ### 💾 Data Management
 ```ascii
@@ -51,10 +51,10 @@
 │  🔒 Backup systems           │
 └─────────────────────────────────┘
 ```
-- Automated data collection and storage
-- Historical data analysis
-- Backup and recovery systems
-- Data integrity validation
+- Automated data collection and storage.
+- Historical data analysis.
+- Backup and recovery systems.
+- Data integrity validation.
 
 ### 🌐 Cross-platform Support
 ```ascii
@@ -66,9 +66,9 @@
 │  🍓 Raspberry Pi              │
 └─────────────────────────────────┘
 ```
-- macOS, Linux, and Raspberry Pi compatibility
-- Automated environment detection
-- Platform-specific optimizations
+- macOS, Linux, and Raspberry Pi compatibility.
+- Automated environment detection.
+- Platform-specific optimizations.
 
 ## 🛠️ Prerequisites
 

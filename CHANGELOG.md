@@ -8,40 +8,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.4.0] - 2025-03-15
 
 ### Added
-- Comprehensive file header documentation for all Python modules
-- New `get_most_recent_timestamp()` function in supabase_client.py
-- Enhanced grading logic to use most recent timestamp from database
-- Improved error handling and logging across all modules
+- Comprehensive file header documentation for all Python modules.
+- New `get_most_recent_timestamp()` function in `supabase_client.py`.
+- Enhanced grading logic to utilize the most recent timestamp from the database.
+- Improved error handling and logging across all modules.
 
 ### Changed
-- Updated author information to "highlyprofitable108"
-- Streamlined module imports and organization
-- Improved code documentation and type hints
-- Enhanced error handling in database operations
-- Optimized database queries for better performance
+- Updated author information to "highlyprofitable108."
+- Streamlined module imports and organization for better clarity.
+- Enhanced code documentation and type hints for improved readability.
+- Improved error handling in database operations to ensure robustness.
+- Optimized database queries for better performance and efficiency.
 
 ### Removed
-- Unused functions from supabase_client.py:
-  - get_all_records()
-  - get_existing_grades()
-  - upsert_single_record()
-  - get_most_recent_bets()
+- Unused functions from `supabase_client.py`:
+  - `get_all_records()`
+  - `get_existing_grades()`
+  - `upsert_single_record()`
+  - `get_most_recent_bets()`
 
 ## [2.3.0] - 2025-03-14
 
 ### Changed
-- Simplified Chrome profile configuration to automatically detect OS
-- Removed IS_LOCAL and IS_VERCEL environment variables
-- Streamlined directory configuration for logs and backups
-- Updated deployment documentation for Raspberry Pi support
+- Simplified Chrome profile configuration to automatically detect the operating system.
+- Removed the `IS_LOCAL` and `IS_VERCEL` environment variables for clarity.
+- Streamlined directory configuration for logs and backups to enhance organization.
+- Updated deployment documentation to include support for Raspberry Pi.
 
 ### Added
-- Support for Raspberry Pi deployment with automatic Chrome profile detection
-- Cross-platform Chrome profile path handling (macOS and Linux)
+- Support for Raspberry Pi deployment with automatic Chrome profile detection.
+- Cross-platform Chrome profile path handling for macOS and Linux.
 
 ### Removed
-- Redundant environment variables and configuration checks
-- Legacy Chrome profile export functionality
+- Redundant environment variables and configuration checks to simplify setup.
+- Legacy Chrome profile export functionality that was no longer needed.
 
 ## [2.2.0] - 2025-03-13
 
