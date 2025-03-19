@@ -278,7 +278,7 @@ def check_and_store_initial_details(bet):
             initial_details = {
                 "bet_id": bet_id,
                 "initial_ev": clean_numeric(bet.get('ev_percent')),
-                "initial_odds": bet.get('odds'),  # Store odds as-is, not converted
+                "initial_odds": clean_numeric(bet.get('odds')),  # Ensure odds are cleaned and assigned
                 "initial_line": bet.get('bet_line'),
                 "first_seen": bet.get('timestamp')  # Use bet's timestamp instead of current time
             }
