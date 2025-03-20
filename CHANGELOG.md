@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2025-03-20
+
+### Added
+- Enhanced grade calculation with multi-factor approach
+  - Added EV Trend Score (15%) using initial_bet_details for historical comparison
+  - Added Bayesian Confidence Score (15%) based on EV changes and time factors
+  - Comprehensive debug logging for all mathematical steps
+- New bet_grades table columns
+  - Added ev_trend_score for tracking EV changes
+  - Added bayesian_confidence for complex confidence scoring 
+  - Added grading_method field to indicate grading approach
+- SQL schema update for Supabase with backward compatibility
+
+### Changed
+- Updated grade calculation weights
+  - EV Score: 55% (previously was dominant factor)
+  - Timing Score: 15% (maintained from previous version)
+  - EV Trend Score: 15% (new component)
+  - Bayesian Confidence: 15% (new component)
+- Enhanced debug logging throughout grade calculation process
+- Improved EV score calculation with better normalization
+- Improved data storage with rounded values for better readability
+
+### Fixed
+- Improved error handling in grade calculator with detailed stack traces
+- Fixed timestamp parsing issues in timing calculations
+
 ## [2.4.0] - 2025-03-15
 
 ### Added
