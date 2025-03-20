@@ -36,10 +36,15 @@
 │  💰 Risk optimization         │
 └─────────────────────────────────┘
 ```
-- Advanced grading system for assessing bet quality.
-- Historical performance tracking to evaluate past bets.
-- Automated bet recommendations based on calculated scores.
-- Risk management and bankroll optimization strategies to enhance profitability.
+- Multi-factor grading system that considers:
+  - Expected Value (55%): Primary financial indicator
+  - Timing Score (15%): Proximity to event start time
+  - EV Trend Score (15%): How EV has changed since discovery
+  - Bayesian Confidence (15%): Sophisticated confidence measure
+- Advanced EV normalization with capping for realistic assessment
+- Historical trend analysis using initial bet details
+- Comprehensive debug logging for transparent decision making
+- Override rules for unrealistically high EV percentages
 
 ### 💾 Data Management
 ```ascii

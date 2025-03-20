@@ -50,3 +50,25 @@ Stores the initial state of betting opportunities when first discovered.
 **Primary Key**: bet_id  
 **Indexes**:  
 - bet_id
+
+### bet_grades
+
+Stores grades and evaluation scores for betting opportunities.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| bet_id | Text | Unique identifier for each bet |
+| grade | Text | Letter grade (A, B, C, D, F) assigned to the bet |
+| calculated_at | Timestamp | When the grade was calculated |
+| ev_score | Decimal | Score based on Expected Value (0-100) |
+| timing_score | Decimal | Score based on time until event (0-100) |
+| ev_trend_score | Decimal | Score based on EV changes since first seen (0-100) |
+| bayesian_confidence | Decimal | Bayesian confidence score using multiple factors (0-100) |
+| composite_score | Decimal | Weighted combination of all component scores |
+| grading_method | Text | Method used for grading (currently "absolute") |
+
+**Primary Key**: bet_id  
+**Indexes**:  
+- bet_id
+- grade
+- calculated_at
