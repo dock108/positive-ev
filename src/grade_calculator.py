@@ -460,6 +460,119 @@ def calculate_bayesian_confidence(current_ev, bet_id, event_time, timestamp):
         logger.error(traceback.format_exc())
         return 50  # Return neutral confidence on error
 
+def calculate_true_bayesian_confidence(current_ev, bet_id, event_time, timestamp, debug=True):
+    """
+    Calculate true Bayesian probability of beating closing line value given observed signals.
+    
+    P(Beat CLV|Signals) = P(Signals|Beat CLV) * P(Beat CLV) / P(Signals)
+    """
+    try:
+        debug_info = {
+            "bet_id": bet_id,
+            "current_ev": current_ev,
+            "event_time": event_time,
+            "timestamp": timestamp,
+            "signals": {},
+            "probabilities": {}
+        }
+        
+        # Get initial EV and timing data
+        response = supabase.table("initial_bet_details").select("*").eq("bet_id", bet_id).execute()
+        if not response.data:
+            return 50, {"error": "No initial details found"}
+            
+        initial_data = response.data[0]
+        initial_ev = safe_float(initial_data.get('initial_ev'))
+        first_seen = initial_data.get('first_seen')
+        
+        if initial_ev is None or not first_seen:
+            return 50, {"error": "Missing initial EV or timestamp"}
+            
+        debug_info["initial_ev"] = initial_ev
+        debug_info["first_seen"] = first_seen
+        
+        # 1. Calculate Prior P(Beat CLV)
+        prior_beat_clv = 0.52  # Base rate, to be refined with historical data
+        debug_info["probabilities"]["prior"] = prior_beat_clv
+        
+        # 2. Calculate Likelihoods P(Signal|Beat CLV) for each signal
+        
+        # 2a. EV Change Signal
+        ev_change = current_ev - initial_ev
+        # Use ev_change_pct for more granular probability adjustments
+        ev_change_magnitude = abs(ev_change) / max(abs(initial_ev), 0.1)
+        
+        debug_info["signals"]["ev_change"] = {
+            "raw_change": ev_change,
+            "magnitude": ev_change_magnitude
+        }
+        
+        # Scale probability based on magnitude of change
+        if ev_change > 0:
+            p_ev_signal_given_beat = min(0.7 + (ev_change_magnitude * 0.1), 0.9)
+        else:
+            p_ev_signal_given_beat = max(0.3 - (ev_change_magnitude * 0.1), 0.1)
+            
+        debug_info["probabilities"]["ev_signal"] = p_ev_signal_given_beat
+        
+        # 2b. Timing Signal
+        current_dt = standardize_datetime(timestamp)
+        event_dt = standardize_datetime(event_time)
+        
+        hours_until_event = (event_dt - current_dt).total_seconds() / 3600
+        debug_info["signals"]["hours_until_event"] = hours_until_event
+        
+        # More granular timing probabilities
+        if hours_until_event < 1:
+            p_timing_signal_given_beat = 0.9  # Very close to event
+        elif hours_until_event < 3:
+            p_timing_signal_given_beat = 0.8  # Close to event
+        elif hours_until_event < 6:
+            p_timing_signal_given_beat = 0.7  # Moderately close
+        elif hours_until_event < 12:
+            p_timing_signal_given_beat = 0.6  # Medium timeframe
+        elif hours_until_event < 24:
+            p_timing_signal_given_beat = 0.5  # Further out
+        else:
+            p_timing_signal_given_beat = 0.4  # Far from event
+            
+        debug_info["probabilities"]["timing_signal"] = p_timing_signal_given_beat
+        
+        # 3. Calculate P(Signals) using law of total probability
+        p_signals = (p_ev_signal_given_beat * prior_beat_clv + 
+                   (1 - p_ev_signal_given_beat) * (1 - prior_beat_clv))
+        debug_info["probabilities"]["signals"] = p_signals
+        
+        # 4. Apply Bayes Theorem
+        posterior = (p_ev_signal_given_beat * p_timing_signal_given_beat * prior_beat_clv) / p_signals
+        debug_info["probabilities"]["posterior"] = posterior
+        
+        # Convert to 0-100 scale
+        bayesian_score = posterior * 100
+        debug_info["final_score"] = bayesian_score
+        
+        if debug:
+            logger.debug("\n=== True Bayesian Calculation Debug ===")
+            logger.debug(f"Bet ID: {bet_id}")
+            logger.debug(f"EV Change: {ev_change:.2f}% (Magnitude: {ev_change_magnitude:.2f})")
+            logger.debug(f"Hours until event: {hours_until_event:.1f}")
+            logger.debug("\nProbabilities:")
+            logger.debug(f"- Prior P(Beat CLV): {prior_beat_clv:.3f}")
+            logger.debug(f"- P(EV Signal|Beat CLV): {p_ev_signal_given_beat:.3f}")
+            logger.debug(f"- P(Timing Signal|Beat CLV): {p_timing_signal_given_beat:.3f}")
+            logger.debug(f"- P(Signals): {p_signals:.3f}")
+            logger.debug(f"- Posterior P(Beat CLV|Signals): {posterior:.3f}")
+            logger.debug(f"\nFinal Score (0-100): {bayesian_score:.2f}")
+            logger.debug("=====================================\n")
+        
+        return bayesian_score, debug_info
+        
+    except Exception as e:
+        logger.error(f"Error calculating true Bayesian confidence: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return 50, {"error": str(e)}
+
 def assign_grade(composite_score):
     """Assign letter grade based on absolute composite score."""
     if composite_score >= 90:
@@ -533,7 +646,7 @@ def check_and_store_initial_details(bet):
         logger.error(f"Error storing initial bet details for {bet_id}: {str(e)}")
         logger.error(f"Bet data: {bet}")
 
-def calculate_bet_grade(bet):
+def calculate_bet_grade(bet, use_new_bayesian=False):
     """Calculate grade for a single bet."""
     try:
         # Extract required fields
@@ -581,8 +694,25 @@ def calculate_bet_grade(bet):
         ev_trend_score = calculate_ev_trend_score(ev_percent, bet_id, timestamp)
         logger.debug(f"Component Score - EV Trend Score: {ev_trend_score:.2f}")
         
-        bayesian_score = calculate_bayesian_confidence(ev_percent, bet_id, event_time, timestamp)
-        logger.debug(f"Component Score - Bayesian Confidence: {bayesian_score:.2f}")
+        # Calculate both Bayesian scores
+        old_bayesian_score = calculate_bayesian_confidence(ev_percent, bet_id, event_time, timestamp)
+        new_bayesian_score, debug_info = calculate_true_bayesian_confidence(ev_percent, bet_id, event_time, timestamp)
+        
+        # Choose which Bayesian score to use
+        bayesian_score = new_bayesian_score if use_new_bayesian else old_bayesian_score
+        
+        logger.debug(f"Component Score - Original Bayesian Score: {old_bayesian_score:.2f}")
+        logger.debug(f"Component Score - True Bayesian Score: {new_bayesian_score:.2f}")
+        logger.debug(f"Using {'new' if use_new_bayesian else 'original'} Bayesian score")
+        if use_new_bayesian:
+            logger.debug("True Bayesian Debug Info:")
+            for key, value in debug_info.items():
+                if isinstance(value, dict):
+                    logger.debug(f"{key}:")
+                    for subkey, subvalue in value.items():
+                        logger.debug(f"  {subkey}: {subvalue}")
+                else:
+                    logger.debug(f"{key}: {value}")
         
         # Calculate composite score with updated weights
         logger.debug("Calculating composite score with weights: EV=55%, Timing=15%, EV Trend=15%, Bayesian=15%")
@@ -596,7 +726,7 @@ def calculate_bet_grade(bet):
         logger.debug(f"  EV Score: {ev_score:.2f} × 0.55 = {ev_component:.2f}")
         logger.debug(f"  Timing Score: {timing_score:.2f} × 0.15 = {timing_component:.2f}")
         logger.debug(f"  EV Trend Score: {ev_trend_score:.2f} × 0.15 = {trend_component:.2f}")
-        logger.debug(f"  Bayesian Confidence: {bayesian_score:.2f} × 0.15 = {bayesian_component:.2f}")
+        logger.debug(f"  Bayesian Score: {bayesian_score:.2f} × 0.15 = {bayesian_component:.2f}")
         
         composite_score = (
             ev_component +
